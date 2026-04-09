@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="crm_lead_iomr_inherit" model="ir.ui.view">
+            <field name="name">iomr.crm.lead.form</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='referred']" position="replace">
+                    <field name="referred_partner"/>
+                </xpath>
+
+            </field>
+        </record>
+    </data>
+</odoo>
