@@ -8,6 +8,7 @@
             <xpath expr="//div[@id='probability']" position="after">
                 <group>
                 <field name="referred_partner" widget="many2many_tags"/>
+                    <field name="convenio"/>
                 </group>
             </xpath>
         </field>
