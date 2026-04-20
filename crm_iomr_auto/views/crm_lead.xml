@@ -7,9 +7,28 @@
         <field name="arch" type="xml">
             <xpath expr="//div[@id='probability']" position="after">
                 <group>
-                <field name="referred_partner" widget="many2many_tags"/>
-                    <field name="convenio"/>
+                    <group>
+                        <field name="referred_partner" widget="many2many_tags"/>
+                        <field name="convenio"/>
+                        <field name="doctor" string="Médico"/>
+                    </group>
+                    <group>
+                        <field name="expected_revenue" string="Orçamento"/>
+                        <field name="date" string="Data"/>
+                        <field name="date_contact" string="Data do Contato"/>
+                    </group>
                 </group>
+            </xpath>
+
+            <xpath expr="//page[@name='lead']" position="after">
+                <page name="import" string="Dados de Importação">
+                    <group>
+                        <field name="id_orc" string="Id do Klingo"/>
+                        <field name="state_klingo" string="Status"/>
+                        <field name="motives"/>
+                    </group>
+                </page>
+
             </xpath>
         </field>
     </record>
