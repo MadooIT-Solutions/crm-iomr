@@ -31,6 +31,7 @@
     'website': "https://www.madooit.com",
     'depends': ['crm', 'sale_management','hr'],
     'data': ['views/crm_lead.xml',
+             'views/res_partner.xml',
              ],
     #'images': ['static/description/banner.png'],
     'license': 'AGPL-3',

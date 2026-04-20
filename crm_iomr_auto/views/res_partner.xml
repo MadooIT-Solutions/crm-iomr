@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="res_partner_iomr_auto_form" model="ir.ui.view">
+        <field name="name">res.partner.iomr.auto.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='company_type']" position="after">
+                <group>
+                <field name="type_partner" string="Tipo de contato"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
