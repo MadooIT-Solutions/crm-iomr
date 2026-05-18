@@ -30,6 +30,52 @@
                 </page>
 
             </xpath>
+
+             <xpath expr="//button[@name='action_set_won']" position="before">
+                    <button name="action_rotate_seller"
+                            string="Rotacionar Vendedor"
+                            type="object"
+                            class="oe_highlight"
+                            attrs="{'invisible': [('all_sellers_exhausted', '=', True)]}"/>
+                </xpath>
+
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button type="object"
+                            name="action_open_rotation_history"
+                            class="oe_stat_button"
+                            icon="fa-history">
+                        <field name="rotation_count" widget="statinfo"/>
+                    </button>
+                </xpath>
+
+                <xpath expr="//group" position="inside">
+                    <group string="Informações de Rotação"
+                           attrs="{'invisible': [('rotation_count', '=', 0)]}">
+                        <field name="rotation_count"/>
+                        <field name="date_assigned_to_seller"/>
+                        <field name="days_with_current_seller"/>
+                        <field name="all_sellers_exhausted"/>
+                        <field name="last_activity_date"/>
+                    </group>
+                </xpath>
         </field>
     </record>
+
+      <!-- Lista de histórico de rotação -->
+        <record id="crm_lead_rotation_list" model="ir.ui.view">
+            <field name="name">crm.lead.rotation.tree</field>
+            <field name="model">crm.lead.rotation</field>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="date_rotation"/>
+                    <field name="user_from_id"/>
+                    <field name="user_to_id"/>
+                    <field name="rotation_type"/>
+                    <field name="days_with_seller"/>
+                    <field name="rotation_sequence"/>
+                </tree>
+            </field>
+        </record>
+
 </odoo>

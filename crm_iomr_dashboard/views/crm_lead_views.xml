@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_crm_lead_form_iomr_inherit" model="ir.ui.view">
+        <name>crm.lead.form.iomr.inherit</name>
+        <model>crm.lead</model>
+        <inherit_id ref="crm.crm_lead_view_form"/>
+        <arch type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="IOMR Intelligence" name="iomr_intelligence">
+                    <group>
+                        <group string="Financeiro &amp; ROI">
+                            <field name="weighted_forecast"/>
+                            <field name="acquisition_cost"/>
+                            <field name="roi_value"/>
+                        </group>
+                        <group string="Cirurgia">
+                            <field name="is_surgery"/>
+                            <field name="surgery_type" invisible="not is_surgery"/>
+                            <field name="surgery_value" invisible="not is_surgery"/>
+                            <field name="surgery_date" invisible="not is_surgery"/>
+                        </group>
+                        <group string="SLA &amp; Conversão">
+                            <field name="sdr_id"/>
+                            <field name="is_sql"/>
+                            <field name="first_response_date"/>
+                            <field name="response_time_hours"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </arch>
+    </record>
+</odoo>
