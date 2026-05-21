@@ -10,7 +10,7 @@ class CRMLead(models.Model):
     doctor = fields.Many2one('res.partner', string='Doctor', domain=['|',('type_partner', '=', 'doctorext'),('type_partner', '=', 'doctorint')])
     procedure = fields.Char(string='Procedure')
     id_orc = fields.Integer(string='ID do Orçamento')
-    date = fields.Date(strign='Data')
+    date = fields.Date(string='Data')
     date_contact = fields.Date(string='Data do Contato')
     motives = fields.Char(string='Motives')
     state_klingo = fields.Char(string='State Klingo')
@@ -27,7 +27,7 @@ class CRMLead(models.Model):
     )
 
     rotation_history_ids = fields.One2many(
-        'crm.lead.rotation',
+        'crm.rotation.service',
         'lead_id',
         string='Histórico de Rotação'
     )
@@ -81,7 +81,7 @@ class CRMLead(models.Model):
                     new_user = self.env['res.users'].browse(vals['user_id'])
 
                     # Registrar rotação
-                    self.env['crm.lead.rotation'].create({
+                    self.env['crm.rotation.service'].create({
                         'lead_id': lead.id,
                         'user_from_id': old_user.id,
                         'user_to_id': new_user.id,
@@ -123,7 +123,7 @@ class CRMLead(models.Model):
                     })
 
                     # Registrar rotação
-                    self.env['crm.lead.rotation'].create({
+                    self.env['crm.rotation.service'].create({
                         'lead_id': lead.id,
                         'user_from_id': lead.user_id.id,
                         'user_to_id': next_seller.id,
@@ -141,7 +141,7 @@ class CRMLead(models.Model):
                         'date_assigned_to_seller': fields.Datetime.now()
                     })
 
-                    self.env['crm.lead.rotation'].create({
+                    self.env['crm.rotation.service'].create({
                         'lead_id': lead.id,
                         'user_from_id': lead.user_id.id,
                         'user_to_id': sdr_user.id,
