@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_crm_iomr_snapshot_list" model="ir.ui.view">
+        <field name="name">crm.iomr.snapshot.list</field>
+        <field name="model">crm.iomr.snapshot</field>
+        <field name="arch" type="xml">
+            <list string="Snapshots Semanais">
+                <field name="date"/>
+                <field name="total_weighted_forecast" sum="Total"/>
+                <field name="avg_ticket"/>
+                <field name="avg_roi"/>
+                <field name="recovered_revenue" sum="Total"/>
+                <field name="recovery_rate"/>
+                <field name="avg_response_time"/>
+                <field name="avg_conversion_rate"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_crm_iomr_snapshot_form" model="ir.ui.view">
+        <field name="name">crm.iomr.snapshot.form</field>
+        <field name="model">crm.iomr.snapshot</field>
+        <field name="arch" type="xml">
+            <form string="Snapshot">
+                <sheet>
+                    <group>
+                        <group string="Visão Diretor">
+                            <field name="date"/>
+                            <field name="total_weighted_forecast"/>
+                            <field name="avg_ticket"/>
+                            <field name="avg_roi"/>
+                        </group>
+                        <group string="Cirurgias">
+                            <field name="surgery_forecast_count"/>
+                            <field name="total_surgeries_value"/>
+                        </group>
+                        <group string="Recovery Loop">
+                            <field name="recovered_revenue"/>
+                            <field name="recovery_rate"/>
+                        </group>
+                        <group string="Produtividade">
+                            <field name="avg_response_time"/>
+                            <field name="avg_conversion_rate"/>
+                        </group>
+                    </group>
+                    <group string="Transferências (Orientadora B)">
+                        <group>
+                            <field name="transferred_leads_count"/>
+                            <field name="transferred_closure_rate"/>
+                        </group>
+                    </group>
+                    <group string="Pareto de Motivos de Perda">
+                        <field name="loss_reason_pareto" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_crm_iomr_snapshot" model="ir.actions.act_window">
+        <field name="name">Snapshots de KPIs</field>
+        <field name="res_model">crm.iomr.snapshot</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

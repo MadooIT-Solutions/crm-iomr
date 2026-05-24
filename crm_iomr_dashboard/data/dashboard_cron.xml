@@ -8,6 +8,17 @@
             <field name="code">model.action_generate_weekly_snapshot()</field>
             <field name="interval_number">1</field>
             <field name="interval_type">weeks</field>
+            <field name="nextcall" eval="(DateTime.now() + relativedelta(weekday=0, hour=8, minute=0, second=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record forcecreate="True" id="ir_cron_crm_productivity_sla" model="ir.cron">
+            <field name="name">CRM: Atualizar Métricas de Produtividade</field>
+            <field name="model_id" ref="model_crm_productivity_sla"/>
+            <field name="state">code</field>
+            <field name="code">model.update_productivity_metrics()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
             <field name="active" eval="True"/>
         </record>
 

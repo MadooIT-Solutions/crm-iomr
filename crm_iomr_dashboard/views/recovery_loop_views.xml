@@ -9,8 +9,41 @@
                 <field name="lost_date"/>
                 <field name="recovery_start_date"/>
                 <field name="recovery_value"/>
+                <field name="recovered_value"/>
                 <field name="state" widget="badge" decoration-info="state == 'active'" decoration-success="state == 'recovered'"/>
             </list>
+        </field>
+    </record>
+
+    <record id="view_crm_recovery_loop_form" model="ir.ui.view">
+        <field name="name">crm.recovery.loop.form</field>
+        <field name="model">crm.recovery.loop</field>
+        <field name="arch" type="xml">
+            <form string="Recovery Loop">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="lead_id"/>
+                            <field name="state" widget="badge"/>
+                            <field name="lost_date"/>
+                            <field name="recovery_start_date"/>
+                        </group>
+                        <group>
+                            <field name="recovery_value"/>
+                            <field name="recovered_date" invisible="state != 'recovered'"/>
+                            <field name="recovered_value" invisible="state != 'recovered'"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_mark_recovered" string="Marcar Recuperado"
+                            type="object" class="btn-success"
+                            invisible="state != 'active'"/>
+                    <button name="action_mark_failed" string="Marcar Perda Definitiva"
+                            type="object" class="btn-danger"
+                            invisible="state != 'active'"/>
+                </footer>
+            </form>
         </field>
     </record>
 

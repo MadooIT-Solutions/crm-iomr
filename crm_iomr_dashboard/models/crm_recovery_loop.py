@@ -5,10 +5,13 @@ from datetime import timedelta
 class CrmRecoveryLoop(models.Model):
     _name = 'crm.recovery.loop'
     _description = 'Loop de Recuperação de Leads'
+    _rec_name = 'lead_id'
 
     lead_id = fields.Many2one('crm.lead', string="Lead Original", required=True)
     lost_date = fields.Date(string="Data da Perda")
     recovery_start_date = fields.Date(string="Início da Recuperação")
+    recovered_date = fields.Date(string="Data da Recuperação")
+    recovered_value = fields.Monetary(string="Valor Recuperado", currency_field='currency_id')
     state = fields.Selection([
         ('draft', 'Aguardando 30 Dias'),
         ('active', 'Em Recuperação'),
@@ -25,14 +28,26 @@ class CrmRecoveryLoop(models.Model):
         lost_leads = self.env['crm.lead'].search([
             ('active', '=', False),
             ('probability', '=', 0),
-            ('write_date', '<=', limit_date)
+            ('date_closed', '<=', limit_date),
         ])
         for lead in lost_leads:
             exists = self.search([('lead_id', '=', lead.id)])
             if not exists:
                 self.create({
                     'lead_id': lead.id,
-                    'lost_date': lead.write_date.date(),
+                    'lost_date': fields.Date.to_date(lead.date_closed or lead.write_date),
                     'recovery_start_date': fields.Date.today(),
-                    'state': 'active'
+                    'state': 'active',
                 })
+
+    def action_mark_recovered(self):
+        self.ensure_one()
+        lead = self.lead_id
+        self.write({
+            'state': 'recovered',
+            'recovered_date': fields.Date.today(),
+            'recovered_value': lead.expected_revenue if lead.probability == 100 else 0,
+        })
+
+    def action_mark_failed(self):
+        self.write({'state': 'failed'})

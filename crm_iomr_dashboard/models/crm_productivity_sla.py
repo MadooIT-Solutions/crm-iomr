@@ -4,6 +4,8 @@ from odoo import models, fields, api
 class CrmProductivitySla(models.Model):
     _name = 'crm.productivity.sla'
     _description = 'Análise de Produtividade e SLA'
+    _rec_name = 'user_id'
+    _order = 'create_date desc'
 
     user_id = fields.Many2one('res.users', string="Vendedor/SDR")
     period = fields.Char(string="Período")
@@ -12,7 +14,10 @@ class CrmProductivitySla(models.Model):
     overdue_activities_count = fields.Integer(string="Atividades em Atraso")
 
     def update_productivity_metrics(self):
-        users = self.env['res.users'].search([])
+        today = fields.Date.today()
+        current_period = today.strftime('%m/%Y')
+        users = self.env['res.users'].search([('share', '=', False)])
+
         for user in users:
             leads = self.env['crm.lead'].search([('user_id', '=', user.id)])
             sql_leads = leads.filtered(lambda l: l.is_sql)
@@ -22,13 +27,24 @@ class CrmProductivitySla(models.Model):
 
             overdue = self.env['mail.activity'].search_count([
                 ('user_id', '=', user.id),
-                ('date_deadline', '<', fields.Date.today())
+                ('date_deadline', '<', today),
             ])
 
-            self.create({
-                'user_id': user.id,
-                'period': fields.Date.today().strftime('%m/%Y'),
-                'avg_response_time': avg_resp,
-                'conversion_rate': conv_rate,
-                'overdue_activities_count': overdue
-            })
+            existing = self.search([
+                ('user_id', '=', user.id),
+                ('period', '=', current_period),
+            ])
+            if existing:
+                existing.write({
+                    'avg_response_time': avg_resp,
+                    'conversion_rate': conv_rate,
+                    'overdue_activities_count': overdue,
+                })
+            else:
+                self.create({
+                    'user_id': user.id,
+                    'period': current_period,
+                    'avg_response_time': avg_resp,
+                    'conversion_rate': conv_rate,
+                    'overdue_activities_count': overdue,
+                })

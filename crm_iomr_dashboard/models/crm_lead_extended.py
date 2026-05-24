@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from datetime import timedelta
 
 
 class CrmLead(models.Model):
@@ -26,6 +27,11 @@ class CrmLead(models.Model):
     first_response_date = fields.Datetime(string="Primeira Resposta")
     response_time_hours = fields.Float(string="Tempo de Resposta (Horas)", compute="_compute_response_time", store=True)
 
+    # Recovery Loop / Transferência entre OCs
+    transferred_from_id = fields.Many2one('res.users', string="Transferido de (OC)", index=True)
+    transferred_date = fields.Datetime(string="Data da Transferência")
+    inactivity_days = fields.Integer(string="Dias Inativos Antes da Transferência", compute="_compute_inactivity_days", store=True)
+
     @api.depends('expected_revenue', 'probability')
     def _compute_weighted_forecast(self):
         for lead in self:
@@ -47,3 +53,12 @@ class CrmLead(models.Model):
                 lead.response_time_hours = diff.total_seconds() / 3600
             else:
                 lead.response_time_hours = 0.0
+
+    @api.depends('transferred_date', 'write_date')
+    def _compute_inactivity_days(self):
+        for lead in self:
+            if lead.transferred_date and lead.write_date:
+                delta = lead.write_date - lead.transferred_date
+                lead.inactivity_days = delta.days
+            else:
+                lead.inactivity_days = 0
