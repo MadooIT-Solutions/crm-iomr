@@ -19,7 +19,7 @@
 #    If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
-from . import crm_lead
 from . import crm_lead_rotation
+from . import crm_lead
 from . import res_partner
 from . import res_config_settings
