@@ -20,6 +20,6 @@
 #
 ################################################################################
 from . import crm_lead
-from . import crm_rotation_service
+from . import crm_lead_rotation
 from . import res_partner
 from . import res_config_settings

@@ -1,20 +1,19 @@
  <odoo>
      <data>
 
-  <!-- Lista de histórico de rotação -->
-        <record id="crm_lead_rotation_list" model="ir.ui.view">
-            <field name="name">crm.lead.rotation.tree</field>
+  <record id="crm_lead_rotation_list" model="ir.ui.view">
+            <field name="name">crm.lead.rotation.list</field>
             <field name="model">crm.lead.rotation</field>
-            <field name="type">tree</field>
+            <field name="type">list</field>
             <field name="arch" type="xml">
-                <tree>
+                <list>
                     <field name="date_rotation"/>
                     <field name="user_from_id"/>
                     <field name="user_to_id"/>
                     <field name="rotation_type"/>
                     <field name="days_with_seller"/>
                     <field name="rotation_sequence"/>
-                </tree>
+                </list>
             </field>
         </record>
 
