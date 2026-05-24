@@ -1,26 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data noupdate="1">
-        <record id="ir_cron_crm_iomr_snapshot" model="ir.cron">
+        <record forcecreate="True" id="ir_cron_crm_iomr_snapshot" model="ir.cron">
             <field name="name">CRM: Gerar Snapshot Semanal KPI</field>
             <field name="model_id" ref="model_crm_iomr_snapshot"/>
             <field name="state">code</field>
             <field name="code">model.action_generate_weekly_snapshot()</field>
             <field name="interval_number">1</field>
             <field name="interval_type">weeks</field>
-            <field name="numbercall">-1</field>
-            <field name="nextcall" eval="(datetime.now() + relativedelta(weekday=0, hour=8, minute=0, second=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
             <field name="active" eval="True"/>
         </record>
 
-        <record id="ir_cron_crm_recovery_check" model="ir.cron">
+        <record forcecreate="True" id="ir_cron_crm_recovery_check" model="ir.cron">
             <field name="name">CRM: Verificar Leads para Recovery Loop</field>
             <field name="model_id" ref="model_crm_recovery_loop"/>
             <field name="state">code</field>
             <field name="code">model.check_leads_for_recovery()</field>
             <field name="interval_number">1</field>
             <field name="interval_type">days</field>
-            <field name="numbercall">-1</field>
             <field name="active" eval="True"/>
         </record>
     </data>

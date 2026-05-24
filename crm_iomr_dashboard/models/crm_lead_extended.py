@@ -5,8 +5,8 @@ class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
     # Forecast e Saúde Financeira
-    weighted_forecast = fields.Monetary(string="Forecast Ponderado", compute="_compute_weighted_forecast", store=True)
-    acquisition_cost = fields.Monetary(string="Custo de Aquisição")
+    weighted_forecast = fields.Monetary(string="Forecast Ponderado", currency_field='company_currency', compute="_compute_weighted_forecast", store=True)
+    acquisition_cost = fields.Monetary(string="Custo de Aquisição", currency_field='company_currency')
     roi_value = fields.Float(string="ROI (%)", compute="_compute_roi", store=True)
 
     # Dados de Cirurgia (Manual)
@@ -17,7 +17,7 @@ class CrmLead(models.Model):
         ('glaucoma', 'Glaucoma'),
         ('outros', 'Outros')
     ], string="Tipo de Cirurgia")
-    surgery_value = fields.Monetary(string="Valor da Cirurgia")
+    surgery_value = fields.Monetary(string="Valor da Cirurgia", currency_field='company_currency')
     surgery_date = fields.Date(string="Data da Cirurgia")
 
     # Produtividade

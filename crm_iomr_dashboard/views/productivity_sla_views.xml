@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="view_crm_productivity_sla_tree" model="ir.ui.view">
-        <name>crm.productivity.sla.tree</name>
-        <model>crm.productivity.sla</model>
-        <arch type="xml">
-            <tree string="Produtividade &amp; SLA">
+        <field name="name">crm.productivity.sla.tree</field>
+        <field name="model">crm.productivity.sla</field>
+        <field name="arch" type="xml">
+            <list string="Produtividade &amp; SLA">
                 <field name="user_id"/>
                 <field name="period"/>
                 <field name="avg_response_time" widget="float_time"/>
                 <field name="conversion_rate" widget="percentage"/>
                 <field name="overdue_activities_count" decoration-danger="overdue_activities_count > 0"/>
-            </tree>
-        </arch>
+            </list>
+        </field>
     </record>
 
     <record id="action_crm_productivity_sla" model="ir.actions.act_window">
-        <name>Produtividade &amp; SLA</name>
-        <res_model>crm.productivity.sla</res_model>
-        <view_mode>tree,graph</view_mode>
+        <field name="name">Produtividade &amp; SLA</field>
+        <field name="res_model">crm.productivity.sla</field>
+        <field name="view_mode">list,graph</field>
     </record>
 </odoo>

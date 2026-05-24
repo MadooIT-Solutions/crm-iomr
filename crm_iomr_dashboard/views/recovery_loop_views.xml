@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_crm_recovery_loop_tree" model="ir.ui.view">
-        <name>crm.recovery.loop.tree</name>
-        <model>crm.recovery.loop</model>
-        <arch type="xml">
-            <tree string="Recovery Loop">
+    <record id="view_crm_recovery_loop_list" model="ir.ui.view">
+        <field name="name">crm.recovery.loop.list</field>
+        <field name="model">crm.recovery.loop</field>
+        <field name="arch" type="xml">
+            <list string="Recovery Loop">
                 <field name="lead_id"/>
                 <field name="lost_date"/>
                 <field name="recovery_start_date"/>
                 <field name="recovery_value"/>
                 <field name="state" widget="badge" decoration-info="state == 'active'" decoration-success="state == 'recovered'"/>
-            </tree>
-        </arch>
+            </list>
+        </field>
     </record>
 
     <record id="action_crm_recovery_loop" model="ir.actions.act_window">
-        <name>Recovery Loop</name>
-        <res_model>crm.recovery.loop</res_model>
-        <view_mode>tree,form</view_mode>
+        <field name="name">Recovery Loop</field>
+        <field name="res_model">crm.recovery.loop</field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>

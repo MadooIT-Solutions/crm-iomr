@@ -8,7 +8,7 @@
     <menuitem id="menu_crm_iomr_director"
               name="Visão Diretor (Forecast)"
               parent="menu_crm_iomr_root"
-              action="crm_dashboard.crm_dashboard_action"
+              action="crm.crm_lead_action_forecast"
               sequence="10"/>
 
     <menuitem id="menu_crm_iomr_recovery"
