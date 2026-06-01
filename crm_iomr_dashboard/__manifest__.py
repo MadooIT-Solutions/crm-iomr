@@ -29,7 +29,7 @@
     'company': 'Madooit IT Solutions',
     'maintainer': 'Madooit IT Solutions',
     'website': "https://www.madooit.com",
-    'depends': ['crm', 'sale_management', 'hr', 'mail_gateway_whatsapp'],
+    'depends': ['crm', 'crm_dashboard', 'sale_management', 'hr'],
     'data': ['security/ir.model.access.csv',
              'data/crm_stage_data.xml',
              'data/dashboard_cron.xml',

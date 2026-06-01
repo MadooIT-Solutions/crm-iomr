@@ -8,8 +8,8 @@
                 <field name="lead_id"/>
                 <field name="lost_date"/>
                 <field name="recovery_start_date"/>
-                <field name="recovery_value"/>
-                <field name="recovered_value"/>
+                <field name="recovery_value" sum="valemrec"/>
+                <field name="recovered_value" sum="valrec"/>
                 <field name="state" widget="badge" decoration-info="state == 'active'" decoration-success="state == 'recovered'"/>
             </list>
         </field>
@@ -30,8 +30,8 @@
                         </group>
                         <group>
                             <field name="recovery_value"/>
-                            <field name="recovered_date" invisible="state != 'recovered'"/>
-                            <field name="recovered_value" invisible="state != 'recovered'"/>
+                            <field name="recovered_date" invisible="state != 'recovered'" />
+                            <field name="recovered_value" invisible="state != 'recovered'" />
                         </group>
                     </group>
                 </sheet>
