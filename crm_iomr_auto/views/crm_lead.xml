@@ -8,9 +8,9 @@
             <xpath expr="//div[@id='probability']" position="after">
                 <group>
                     <group>
-                        <field name="referred_partner" widget="many2many_tags"/>
-                        <field name="convenio"/>
-                        <field name="doctor" string="Médico"/>
+                        <field name="referred_partner" widget="many2many_tags" create="0"/>
+                        <field name="convenio" create="0"/>
+                        <field name="doctor" string="Médico" create="0"/>
                     </group>
                     <group>
                         <field name="expected_revenue" string="Orçamento"/>
@@ -47,6 +47,7 @@
                     <field name="rotation_count" widget="statinfo"/>
                 </button>
             </xpath>
+
 
             <xpath expr="//group[group[@name='lead_partner']]" position="inside">
                 <group string="Informações de Rotação"
