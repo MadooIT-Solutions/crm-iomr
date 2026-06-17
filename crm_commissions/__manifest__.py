@@ -1,0 +1,43 @@
+# Copyright 2026 IOMR - Rodrigo
+# License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
+{
+    "name": "CRM Commissions IOMR",
+    "version": "18.0.1.0.0",
+    "author": "IOMR, Odoo Community Association (OCA)",
+    "category": "Sales/Commission",
+    "license": "AGPL-3",
+    "depends": [
+        "commission_oca",
+        "sale_commission_oca",
+        "crm",
+        "sale_management",
+        "portal",
+        "account",
+        "crm_iomr_auto",
+    ],
+    "website": "https://github.com/OCA/commission",
+    "maintainers": ["rodrigo-iomr"],
+    "data": [
+        "security/crm_commission_security.xml",
+        "security/ir.model.access.csv",
+        "data/crm_commission_data.xml",
+        "views/crm_commission_views.xml",
+        "views/dashboard_templates.xml",
+        "views/menu_views.xml",
+        "views/res_partner_views.xml",
+        "views/crm_lead_views.xml",
+        "views/sale_order_views.xml",
+        "views/portal_templates.xml",
+    ],
+    "demo": [
+        "demo/crm_commission_demo.xml",
+    ],
+    "assets": {
+        "web.assets_frontend": [
+            "crm_commissions/static/src/css/portal_commission.css",
+        ],
+    },
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+}

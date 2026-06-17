@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="view_partner_form_crm_commission" model="ir.ui.view">
+        <field name="name">res.partner.form.crm.commission</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="priority" eval="20" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='agent']" position="after">
+                <field name="agent" invisible="1" />
+            </xpath>
+            <page name="agent_information" position="after">
+                <page
+                    name="crm_commission"
+                    string="CRM Comissões"
+                    groups="crm_commissions.group_crm_commission_user"
+                    invisible="type_partner not in ('orientadora', 'sdr', 'coordenadora')"
+                >
+                    <group>
+                        <field name="crm_team_id" />
+                        <field name="sdr_agent_ids" widget="many2many_tags" />
+                        <field name="is_crm_target" />
+                    </group>
+                    <group string="Metas Mensais" invisible="not target_ids">
+                        <field name="target_ids" nolabel="1">
+                            <list>
+                                <field name="target_date" />
+                                <field name="target_amount" widget="monetary" />
+                                <field name="achieved_amount" widget="monetary" />
+                                <field name="performance_pct" widget="progressbar" />
+                                <field name="is_crm_score" />
+                                <field name="state" />
+                            </list>
+                        </field>
+                    </group>
+                    <group string="Bônus Trimestrais" invisible="not quarterly_bonus_ids">
+                        <field name="quarterly_bonus_ids" nolabel="1">
+                            <list>
+                                <field name="quarter" />
+                                <field name="year" />
+                                <field name="total_target" widget="monetary" />
+                                <field name="quarterly_pct" widget="progressbar" />
+                                <field name="state" />
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="group_crm_commission_user" model="res.groups">
+        <field name="name">CRM Commission User</field>
+        <field name="category_id" ref="base.module_category_sales_sales" />
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
+    </record>
+    <record id="group_crm_commission_manager" model="res.groups">
+        <field name="name">CRM Commission Manager</field>
+        <field name="category_id" ref="base.module_category_sales_sales" />
+        <field name="implied_ids" eval="[(4, ref('group_crm_commission_user'))]" />
+    </record>
+    <record id="group_crm_commission_orientadora" model="res.groups">
+        <field name="name">Orientadora</field>
+        <field name="category_id" ref="base.module_category_sales_sales" />
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
+    </record>
+    <record id="group_crm_commission_sdr" model="res.groups">
+        <field name="name">SDR</field>
+        <field name="category_id" ref="base.module_category_sales_sales" />
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
+    </record>
+    <record id="group_crm_commission_doctor" model="res.groups">
+        <field name="name">Doctor (Portal)</field>
+        <field name="category_id" ref="base.module_category_sales_sales" />
+        <field name="implied_ids" eval="[(4, ref('base.group_portal'))]" />
+    </record>
+    <record id="base.user_admin" model="res.users">
+        <field name="groups_id" eval="[(4, ref('group_crm_commission_manager'))]" />
+    </record>
+    <record id="base.group_system" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_crm_commission_manager'))]" />
+    </record>
+
+    <!-- Record rules -->
+    <record id="rule_crm_target_own_only" model="ir.rule">
+        <field name="name">CRM Target: own only (orientadora)</field>
+        <field name="model_id" ref="model_crm_commission_target" />
+        <field name="domain_force">[('agent_id.user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_crm_commission_orientadora'))]" />
+    </record>
+
+    <!-- Portal/Doctor: can only see their own leads -->
+    <record id="rule_crm_lead_doctor_own" model="ir.rule">
+        <field name="name">crm.lead: doctor own only</field>
+        <field name="model_id" ref="model_crm_lead" />
+        <field name="domain_force">[('doctor_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('group_crm_commission_doctor'))]" />
+    </record>
+
+    <!-- Portal/Doctor: can only see their own settlements -->
+    <record id="rule_commission_settlement_doctor_own" model="ir.rule">
+        <field name="name">commission.settlement: doctor own only</field>
+        <field name="model_id" ref="model_commission_settlement" />
+        <field name="domain_force">[('agent_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('group_crm_commission_doctor'))]" />
+    </record>
+</odoo>

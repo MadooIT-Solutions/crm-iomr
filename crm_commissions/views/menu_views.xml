@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <menuitem
+        id="menu_crm_commission_root"
+        name="Comissões"
+        parent="crm.crm_menu_root"
+        sequence="50"
+        groups="group_crm_commission_user"
+    />
+    <record id="action_crm_commission_dashboard" model="ir.actions.act_url">
+        <field name="name">Dashboard</field>
+        <field name="url">/dashboard/commission</field>
+        <field name="target">self</field>
+    </record>
+    <menuitem
+        id="menu_crm_commission_dashboard"
+        name="Dashboard"
+        parent="menu_crm_commission_root"
+        action="action_crm_commission_dashboard"
+        sequence="5"
+    />
+    <menuitem
+        id="menu_crm_commission_targets"
+        name="Metas Mensais"
+        parent="menu_crm_commission_root"
+        action="action_crm_commission_target"
+        sequence="10"
+    />
+    <menuitem
+        id="menu_crm_quarterly_bonus"
+        name="Bônus Trimestrais"
+        parent="menu_crm_commission_root"
+        action="action_crm_quarterly_bonus"
+        sequence="30"
+        groups="group_crm_commission_manager"
+    />
+    <menuitem
+        id="menu_crm_lios_config"
+        name="Config. Comissão LIOs"
+        parent="menu_crm_commission_root"
+        action="commission_oca.action_commission"
+        sequence="40"
+        groups="group_crm_commission_manager"
+    />
+</odoo>

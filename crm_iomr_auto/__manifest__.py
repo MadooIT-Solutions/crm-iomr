@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ################################################################################
 #
 #    Madooit IT Solutions.
@@ -20,28 +19,29 @@
 #
 ################################################################################
 {
-    'name': "CRM IOMR Automations",
-    'version': '18.0.1.0.0',
-    'category': 'Extra Tools',
-    'summary': """Custom triggers to CRM""",
-    'description': """Custom triggers to CRM""",
-    'author': 'Rodrigo A. Madureira',
-    'company': 'Madooit IT Solutions',
-    'maintainer': 'Madooit IT Solutions',
-    'website': "https://www.madooit.com",
-    'depends': ['crm', 'sale_management','hr'],
-    'data': ['security/ir.model.access.csv',
-             'security/crm_lead_rotation_sdr_wizard_security.xml',
-             'views/crm_lead.xml',
-             'views/crm_lead_rotation.xml',
-             'views/res_partner.xml',
-             'views/res_config_settings.xml',
-             'wizards/crm_lead_rotation_sdr_wizard.xml',
-             'data/crm_rotation_cron.xml',
-             ],
+    "name": "CRM IOMR Automations",
+    "version": "18.0.1.0.0",
+    "category": "Extra Tools",
+    "summary": """Custom triggers to CRM""",
+    "description": """Custom triggers to CRM""",
+    "author": "Rodrigo A. Madureira",
+    "company": "Madooit IT Solutions",
+    "maintainer": "Madooit IT Solutions",
+    "website": "https://www.madooit.com",
+    "depends": ["crm", "sale_management", "hr"],
+    "data": [
+        "security/ir.model.access.csv",
+        "security/crm_lead_rotation_sdr_wizard_security.xml",
+        "views/crm_lead.xml",
+        "views/crm_lead_rotation.xml",
+        "views/res_partner.xml",
+        "views/res_config_settings.xml",
+        "wizards/crm_lead_rotation_sdr_wizard.xml",
+        "data/crm_rotation_cron.xml",
+    ],
     #'images': ['static/description/banner.png'],
-    'license': 'AGPL-3',
-    'installable': True,
-    'application': False,
-    'auto_install': False,
+    "license": "AGPL-3",
+    "installable": True,
+    "application": False,
+    "auto_install": False,
 }

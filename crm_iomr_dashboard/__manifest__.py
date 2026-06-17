@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ################################################################################
 #
 #    Madooit IT Solutions.
@@ -20,28 +19,29 @@
 #
 ################################################################################
 {
-    'name': "CRM IOMR Dashboards",
-    'version': '18.0.1.0.0',
-    'category': 'Extra Tools',
-    'summary': """Custom Dashboards to CRM""",
-    'description': """Custom Dashboards to CRM""",
-    'author': 'Rodrigo A. Madureira',
-    'company': 'Madooit IT Solutions',
-    'maintainer': 'Madooit IT Solutions',
-    'website': "https://www.madooit.com",
-    'depends': ['crm', 'crm_dashboard', 'sale_management', 'hr'],
-    'data': ['security/ir.model.access.csv',
-             'data/crm_stage_data.xml',
-             'data/dashboard_cron.xml',
-             'views/crm_lead_views.xml',
-             'views/recovery_loop_views.xml',
-             'views/productivity_sla_views.xml',
-             'views/crm_iomr_snapshot_views.xml',
-             'views/crm_iomr_dashboards_menus.xml',
-             ],
+    "name": "CRM IOMR Dashboards",
+    "version": "18.0.1.0.0",
+    "category": "Extra Tools",
+    "summary": """Custom Dashboards to CRM""",
+    "description": """Custom Dashboards to CRM""",
+    "author": "Rodrigo A. Madureira",
+    "company": "Madooit IT Solutions",
+    "maintainer": "Madooit IT Solutions",
+    "website": "https://www.madooit.com",
+    "depends": ["crm", "crm_dashboard", "sale_management", "hr"],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/crm_stage_data.xml",
+        "data/dashboard_cron.xml",
+        "views/crm_lead_views.xml",
+        "views/recovery_loop_views.xml",
+        "views/productivity_sla_views.xml",
+        "views/crm_iomr_snapshot_views.xml",
+        "views/crm_iomr_dashboards_menus.xml",
+    ],
     #'images': ['static/description/banner.png'],
-    'license': 'AGPL-3',
-    'installable': True,
-    'application': False,
-    'auto_install': False,
+    "license": "AGPL-3",
+    "installable": True,
+    "application": False,
+    "auto_install": False,
 }

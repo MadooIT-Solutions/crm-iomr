@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <record id="crm_commission_target_tree" model="ir.ui.view">
+        <field name="name">crm.commission.target.list</field>
+        <field name="model">crm.commission.target</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="agent_id" />
+                <field name="target_date" />
+                <field name="target_amount" widget="monetary" />
+                <field name="achieved_amount" widget="monetary" />
+                <field name="performance_pct" widget="progressbar" />
+                <field name="is_crm_score" widget="progressbar" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+
+    <record id="crm_commission_target_form" model="ir.ui.view">
+        <field name="name">crm.commission.target.form</field>
+        <field name="model">crm.commission.target</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="agent_id" />
+                            <field name="target_date" />
+                        </group>
+                        <group>
+                            <field name="target_amount" widget="monetary" />
+                            <field name="achieved_amount" widget="monetary" />
+                            <field name="quarterly_target_amount" widget="monetary" />
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="performance_pct" widget="progressbar" />
+                            <field name="is_crm_score" />
+                            <field name="is_crm_ok" />
+                        </group>
+                        <group>
+                            <field name="state" />
+                            <field name="quarter" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="crm_commission_target_search" model="ir.ui.view">
+        <field name="name">crm.commission.target.search</field>
+        <field name="model">crm.commission.target</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="agent_id" />
+                <field name="target_date" />
+                <filter
+                    name="this_month"
+                    string="Este mês"
+                    domain="[('target_date', '>=', time.strftime('%%Y-%%m-01'))]"
+                />
+                <separator />
+                <group expand="1" string="Group By">
+                    <filter name="group_agent" string="Vendedor" context="{'group_by': 'agent_id'}" />
+                    <filter name="group_quarter" string="Trimestre" context="{'group_by': 'quarter'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_crm_commission_target" model="ir.actions.act_window">
+        <field name="name">Metas Mensais</field>
+        <field name="res_model">crm.commission.target</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="crm_commission_target_search" />
+    </record>
+
+    <record id="crm_quarterly_bonus_tree" model="ir.ui.view">
+        <field name="name">crm.commission.quarterly.bonus.list</field>
+        <field name="model">crm.commission.quarterly.bonus</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="agent_id" />
+                <field name="quarter" />
+                <field name="year" />
+                <field name="total_target" widget="monetary" />
+                <field name="total_achieved" widget="monetary" />
+                <field name="quarterly_pct" widget="progressbar" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+
+    <record id="crm_quarterly_bonus_form" model="ir.ui.view">
+        <field name="name">crm.commission.quarterly.bonus.form</field>
+        <field name="model">crm.commission.quarterly.bonus</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="agent_id" />
+                        <field name="quarter" />
+                        <field name="year" />
+                    </group>
+                    <group>
+                        <field name="total_target" widget="monetary" />
+                        <field name="total_achieved" widget="monetary" />
+                        <field name="quarterly_pct" widget="progressbar" />
+                    </group>
+                    <group string="Monthly breakdown">
+                        <field name="monthly_targets" nolabel="1">
+                            <list>
+                                <field name="target_date" />
+                                <field name="target_amount" />
+                                <field name="achieved_amount" />
+                                <field name="performance_pct" />
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_crm_quarterly_bonus" model="ir.actions.act_window">
+        <field name="name">Bônus Trimestrais</field>
+        <field name="res_model">crm.commission.quarterly.bonus</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Extend commission form to add progressive rates -->
+    <record id="commission_form_inherit_progressive" model="ir.ui.view">
+        <field name="name">commission.form.inherit.progressive</field>
+        <field name="model">commission</field>
+        <field name="inherit_id" ref="commission_oca.commission_form" />
+        <field name="arch" type="xml">
+            <field name="commission_type" position="after">
+                <field name="is_crm_bonus" invisible="commission_type != 'progressive'" />
+                <field name="is_crm_penalty" invisible="commission_type != 'progressive'" />
+                <field name="min_margin" invisible="commission_type != 'progressive'" />
+                <field name="max_discount" invisible="commission_type != 'progressive'" />
+            </field>
+            <field name="section_ids" position="after">
+                <field
+                    name="progressive_line_ids"
+                    invisible="commission_type != 'progressive'"
+                    nolabel="1"
+                    colspan="4"
+                >
+                    <list editable="bottom">
+                        <field name="sequence" />
+                        <field name="percent_from" />
+                        <field name="percent_to" />
+                        <field name="commission_percent" />
+                    </list>
+                </field>
+            </field>
+        </field>
+    </record>
+</odoo>

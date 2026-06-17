@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="sale_order_form_inherit_commission" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.commission</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="orientadora_id" groups="crm_commissions.group_crm_commission_user" />
+                <field name="sdr_id" groups="crm_commissions.group_crm_commission_user" />
+                <field name="doctor_id" groups="crm_commissions.group_crm_commission_user" />
+            </field>
+            <xpath expr="//field[@name='note']" position="after">
+                <group name="crm_commission_info" groups="crm_commissions.group_crm_commission_manager">
+                    <field name="is_crm_score" widget="progressbar" />
+                    <field name="margin_percent" />
+                    <field name="discount_approved" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

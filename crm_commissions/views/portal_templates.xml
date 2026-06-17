@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="portal_commission_opportunities" name="My Commission Opportunities" inherit_id="portal.portal_my_home">
+<xpath expr="//div[@id='portal_common_category']" position="inside">
+<t t-call="portal.portal_docs_entry" t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
+<t t-set="title">Minhas Oportunidades e Comissões</t>
+<t t-set="text">Visualize suas oportunidades e comissões vinculadas.</t>
+<t t-set="url" t-value="'/my/opportunities'"/>
+<t t-set="config_card" t-value="True"/>
+</t>
+</xpath>
+</template>
+
+<template id="portal_my_opportunities_list" name="My Opportunities List">
+<t t-call="portal.portal_layout">
+<t t-set="breadcrumbs">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="/my">Home</a></li>
+<li class="breadcrumb-item active">Minhas Oportunidades e Comissões</li>
+</ol>
+</t>
+
+<div class="row mb-4">
+<div class="col-12">
+<h3>Oportunidades em Aberto</h3>
+</div>
+</div>
+<div class="row mb-4">
+<div class="col-12">
+<t t-if="not open_opportunities">
+<p class="text-muted">Nenhuma oportunidade em aberto no momento.</p>
+</t>
+<t t-if="open_opportunities">
+<table class="table table-striped">
+<thead>
+<tr>
+<th>Oportunidade</th>
+<th>Expectativa</th>
+<th>Probabilidade</th>
+<th>Estágio</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="open_opportunities" t-as="opp">
+<td><a t-attf-href="/my/opportunity/#{opp.id}"><t t-esc="opp.name"/></a></td>
+<td><t t-esc="opp.expected_revenue"/></td>
+<td><t t-esc="opp.probability"/>%</td>
+<td><t t-esc="opp.stage_id.name"/></td>
+</tr>
+</tbody>
+</table>
+</t>
+</div>
+</div>
+
+<div class="row mb-4">
+<div class="col-12">
+<h3>Minhas Comissões</h3>
+</div>
+</div>
+<div class="row">
+<div class="col-12">
+<t t-if="not settlements">
+<p class="text-muted">Nenhuma comissão registrada no momento.</p>
+</t>
+<t t-if="settlements">
+<table class="table table-striped">
+<thead>
+<tr>
+<th>Comissão</th>
+<th>Período</th>
+<th>Valor</th>
+<th>Estado</th>
+<th>Pedido</th>
+<th>Status Pagamento</th>
+</tr>
+</thead>
+<tbody>
+<t t-foreach="settlements" t-as="s">
+<t t-foreach="s['lines']" t-as="line_data">
+<tr>
+<td><t t-esc="s['settlement'].name or ''"/></td>
+<td><t t-esc="s['settlement'].date_from"/> a <t t-esc="s['settlement'].date_to"/></td>
+<td><t t-esc="line_data['line'].settled_amount"/></td>
+<td>
+<t t-if="s['settlement'].state == 'settled'">Liquidado</t>
+<t t-if="s['settlement'].state == 'invoiced'">Faturado</t>
+<t t-if="s['settlement'].state == 'except_invoice'">Exceção</t>
+<t t-if="s['settlement'].state == 'cancel'">Cancelado</t>
+</td>
+<td><t t-esc="line_data['order_name']"/></td>
+<td>
+<t t-if="line_data['invoice_state'] == 'posted'">
+<t t-if="line_data['payment_state'] == 'paid'">Pago</t>
+<t t-if="line_data['payment_state'] == 'in_payment'">Em Pagamento</t>
+<t t-if="line_data['payment_state'] == 'not_paid'">Não Pago</t>
+<t t-if="line_data['payment_state'] == 'partial'">Parcial</t>
+<t t-if="line_data['payment_state'] == 'reversed'">Estornado</t>
+<t t-else=""><t t-esc="line_data['payment_state']"/></t>
+</t>
+<t t-if="line_data['invoice_state'] != 'posted'">
+<span class="text-muted">-</span>
+</t>
+</td>
+</tr>
+</t>
+</t>
+</tbody>
+</table>
+</t>
+</div>
+</div>
+</t>
+</template>
+
+<template id="portal_my_opportunity_detail" name="Opportunity Detail">
+<t t-call="portal.portal_layout">
+<t t-set="breadcrumbs">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="/my">Home</a></li>
+<li class="breadcrumb-item"><a href="/my/opportunities">Minhas Oportunidades</a></li>
+<li class="breadcrumb-item active"><t t-esc="lead.name"/></li>
+</ol>
+</t>
+<div class="row">
+<div class="col-12">
+<h3><t t-esc="lead.name"/></h3>
+</div>
+</div>
+<div class="row mt-4">
+<div class="col-md-6">
+<table class="table">
+<tr>
+<th>Expectativa</th>
+<td><t t-esc="lead.expected_revenue"/></td>
+</tr>
+<tr>
+<th>Probabilidade</th>
+<td><t t-esc="lead.probability"/>%</td>
+</tr>
+<tr>
+<th>Estágio</th>
+<td><t t-esc="lead.stage_id.name"/></td>
+</tr>
+<tr>
+<th>Orientadora</th>
+<td><t t-esc="lead.orientadora_id.name or '-'"/></td>
+</tr>
+<tr>
+<th>SDR</th>
+<td><t t-esc="lead.sdr_id.name or '-'"/></td>
+</tr>
+<tr>
+<th>Coordenadora</th>
+<td><t t-esc="lead.coordinator_id.name or '-'"/></td>
+</tr>
+</table>
+</div>
+</div>
+</t>
+</template>
+</odoo>

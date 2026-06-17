@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo noupdate="1">
+    <record id="commission_progressive_lios" model="commission">
+        <field name="name">Comissão Progressiva LIOs</field>
+        <field name="commission_type">progressive</field>
+        <field name="amount_base_type">gross_amount</field>
+        <field name="is_crm_bonus">0.25</field>
+        <field name="is_crm_penalty">0.25</field>
+        <field name="min_margin">35.0</field>
+        <field name="max_discount">5.0</field>
+    </record>
+
+    <record id="progressive_line_1" model="commission.progressive.line">
+        <field name="commission_id" ref="commission_progressive_lios" />
+        <field name="sequence">10</field>
+        <field name="percent_from">0.0</field>
+        <field name="percent_to">50.0</field>
+        <field name="commission_percent">0.25</field>
+    </record>
+    <record id="progressive_line_2" model="commission.progressive.line">
+        <field name="commission_id" ref="commission_progressive_lios" />
+        <field name="sequence">20</field>
+        <field name="percent_from">51.0</field>
+        <field name="percent_to">99.0</field>
+        <field name="commission_percent">0.45</field>
+    </record>
+    <record id="progressive_line_3" model="commission.progressive.line">
+        <field name="commission_id" ref="commission_progressive_lios" />
+        <field name="sequence">30</field>
+        <field name="percent_from">100.0</field>
+        <field name="percent_to">100.0</field>
+        <field name="commission_percent">0.75</field>
+    </record>
+    <record id="progressive_line_4" model="commission.progressive.line">
+        <field name="commission_id" ref="commission_progressive_lios" />
+        <field name="sequence">40</field>
+        <field name="percent_from">101.0</field>
+        <field name="percent_to">120.0</field>
+        <field name="commission_percent">1.25</field>
+    </record>
+    <record id="progressive_line_5" model="commission.progressive.line">
+        <field name="commission_id" ref="commission_progressive_lios" />
+        <field name="sequence">50</field>
+        <field name="percent_from">120.01</field>
+        <field name="percent_to">999.0</field>
+        <field name="commission_percent">1.75</field>
+    </record>
+</odoo>

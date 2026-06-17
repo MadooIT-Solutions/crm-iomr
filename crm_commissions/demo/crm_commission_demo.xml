@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="res_partner_coordenadora_demo" model="res.partner">
+        <field name="name">Maria Coordenadora</field>
+        <field name="type_partner">coordenadora</field>
+        <field name="agent" eval="1" />
+        <field name="agent_type">coordenadora</field>
+        <field name="commission_id" ref="crm_commissions.commission_progressive_lios" />
+        <field name="settlement">monthly</field>
+        <field name="email">maria@example.com</field>
+    </record>
+    <record id="res_partner_orientadora_demo" model="res.partner">
+        <field name="name">Ana Orientadora</field>
+        <field name="type_partner">orientadora</field>
+        <field name="agent" eval="1" />
+        <field name="agent_type">orientadora</field>
+        <field name="commission_id" ref="crm_commissions.commission_progressive_lios" />
+        <field name="settlement">monthly</field>
+        <field name="email">ana@example.com</field>
+    </record>
+    <record id="res_partner_sdr_demo" model="res.partner">
+        <field name="name">Julia SDR</field>
+        <field name="type_partner">sdr</field>
+        <field name="agent" eval="1" />
+        <field name="agent_type">sdr</field>
+        <field name="settlement">monthly</field>
+        <field name="email">julia@example.com</field>
+    </record>
+    <record id="res_partner_doctor_demo" model="res.partner">
+        <field name="name">Dr. Carlos Médico</field>
+        <field name="type_partner">doctorint</field>
+        <field name="email">carlos.medico@example.com</field>
+    </record>
+</odoo>
