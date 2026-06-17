@@ -66,7 +66,7 @@
     <field name="model">crm.lead</field>
     <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
     <field name="arch" type="xml">
-      <xpath expr="//field[@id='contact_name']" position="after">
+      <xpath expr="//list" position="inside">
         <field name="referred_partner"/>
         <field name="convenio" />
         <field name="doctor" string="Médico"/>
