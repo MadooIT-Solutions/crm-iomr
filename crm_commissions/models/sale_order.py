@@ -7,16 +7,6 @@ from odoo import api, fields, models
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    orientadora_id = fields.Many2one(
-        "res.partner",
-        string="Orientadora",
-        domain=[("type_partner", "=", "orientadora")],
-    )
-    sdr_id = fields.Many2one(
-        "res.partner",
-        string="SDR",
-        domain=[("type_partner", "=", "sdr")],
-    )
     doctor_id = fields.Many2one(
         "res.partner",
         string="Doctor/Médico",

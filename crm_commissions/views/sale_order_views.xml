@@ -8,8 +8,6 @@
         <field name="inherit_id" ref="sale.view_order_form" />
         <field name="arch" type="xml">
             <field name="partner_id" position="after">
-                <field name="orientadora_id" groups="crm_commissions.group_crm_commission_user" />
-                <field name="sdr_id" groups="crm_commissions.group_crm_commission_user" />
                 <field name="doctor_id" groups="crm_commissions.group_crm_commission_user" />
             </field>
             <xpath expr="//field[@name='note']" position="after">

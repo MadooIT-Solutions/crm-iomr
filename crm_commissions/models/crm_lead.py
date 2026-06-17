@@ -7,6 +7,12 @@ from odoo import api, fields, models
 class CrmLead(models.Model):
     _inherit = "crm.lead"
 
+    def _prepare_opportunity_quotation_context(self):
+        ctx = super()._prepare_opportunity_quotation_context()
+        if self.doctor_id:
+            ctx["default_doctor_id"] = self.doctor_id.id
+        return ctx
+
     orientadora_id = fields.Many2one(
         "res.partner",
         string="Orientadora",

@@ -17,10 +17,10 @@ class CommissionLineMixin(models.AbstractModel):
             )
             target = False
             is_crm_ok = True
-            if order and hasattr(order, "orientadora_id") and order.orientadora_id:
+            if order and order.opportunity_id and order.opportunity_id.orientadora_id:
                 target = self.env["crm.commission.target"].search(
                     [
-                        ("agent_id", "=", order.orientadora_id.id),
+                        ("agent_id", "=", order.opportunity_id.orientadora_id.id),
                         ("state", "=", "in_progress"),
                     ],
                     order="target_date desc",

@@ -12,4 +12,16 @@
             </xpath>
         </field>
     </record>
+     <record id="res_partner_iomr_auto_list" model="ir.ui.view">
+        <field name="name">res.partner.iomr.auto.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='company_id']" position="after">
+                <group>
+                     <field name="type_partner" string="Tipo de contato"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
 </odoo>
