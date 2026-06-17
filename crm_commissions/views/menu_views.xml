@@ -12,7 +12,7 @@
     <record id="action_crm_commission_dashboard" model="ir.actions.act_url">
         <field name="name">Dashboard</field>
         <field name="url">/dashboard/commission</field>
-        <field name="target">self</field>
+        <field name="target">new</field>
     </record>
     <menuitem
         id="menu_crm_commission_dashboard"
