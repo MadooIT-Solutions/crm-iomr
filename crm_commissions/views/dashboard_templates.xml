@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="commission_dashboard" name="Commission Dashboard">
+<t t-call="portal.portal_layout">
+<t t-set="breadcrumbs">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="/">Home</a></li>
+<li class="breadcrumb-item active">Dashboard de Comissões</li>
+</ol>
+</t>
+
+<div class="row mb-4">
+<div class="col-12">
+<h3>Dashboard de Comissões</h3>
+<p class="text-muted">Bem-vindo(a), <t t-esc="partner.name"/></p>
+</div>
+</div>
+
+<div class="row mb-4">
+<div class="col-md-3">
+<div class="card text-bg-primary">
+<div class="card-body">
+<h5 class="card-title">Meta do Mês</h5>
+<h3><t t-esc="current_target and current_target.target_amount or 0.0"/></h3>
+<p class="card-text">
+Atingido: <t t-esc="current_target and current_target.achieved_amount or 0.0"/>
+</p>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-bg-success">
+<div class="card-body">
+<h5 class="card-title">Performance</h5>
+<h3><t t-esc="'%d' % (current_target and current_target.performance_pct or 0)"/>%</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-bg-warning">
+<div class="card-body">
+<h5 class="card-title">Falta para Meta</h5>
+<h3>
+<t t-if="current_target">
+<t t-esc="max(0, current_target.target_amount - current_target.achieved_amount)"/>
+</t>
+<t t-if="not current_target">
+0.0
+</t>
+</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-bg-info">
+<div class="card-body">
+<h5 class="card-title">Comissão do Período</h5>
+<h3><t t-esc="current_commission_total"/></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row mb-4">
+<div class="col-12">
+<h4>Progresso da Meta</h4>
+<t t-if="current_target">
+<div class="progress" style="height: 30px;">
+<div
+class="progress-bar"
+t-attf-class="progress-bar #{'bg-success' if current_target.performance_pct >= 100 else 'bg-info' if current_target.performance_pct >= 50 else 'bg-warning' if current_target.performance_pct >= 25 else 'bg-danger'}"
+role="progressbar"
+t-attf-aria-valuenow="{{ current_target.performance_pct }}"
+t-attf-style="width: {{ min(current_target.performance_pct, 100) }}%;"
+t-esc="'%d' % current_target.performance_pct"/>%
+</div>
+</t>
+<t t-if="not current_target">
+<p class="text-muted">Nenhuma meta configurada para este mês.</p>
+</t>
+</div>
+</div>
+
+<div class="row mb-4">
+<div class="col-lg-6">
+<h4>Comissões Pendentes</h4>
+<t t-if="settlements">
+<table class="table table-sm table-striped">
+<thead>
+<tr>
+<th>Período</th>
+<th>Valor</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="settlements" t-as="s">
+<td><t t-esc="s.date_from"/> a <t t-esc="s.date_to"/></td>
+<td><t t-esc="s.total"/></td>
+<td>
+<t t-if="s.state == 'settled'">A Liquidar</t>
+<t t-if="s.state == 'invoiced'">Faturado</t>
+<t t-if="s.state == 'cancel'">Cancelado</t>
+</td>
+</tr>
+</tbody>
+</table>
+</t>
+<t t-if="not settlements">
+<p class="text-muted">Nenhuma comissão registrada.</p>
+</t>
+
+<div class="row mt-3">
+<div class="col-6">
+<div class="card text-bg-light">
+<div class="card-body">
+<h6>A Liquidar</h6>
+<h4><t t-esc="pending_total"/></h4>
+</div>
+</div>
+</div>
+<div class="col-6">
+<div class="card text-bg-light">
+<div class="card-body">
+<h6>Faturado</h6>
+<h4><t t-esc="invoiced_total"/></h4>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-lg-6">
+<h4>Trimestre Atual</h4>
+<div class="progress mb-3" style="height: 25px;">
+<div
+class="progress-bar bg-info"
+role="progressbar"
+t-attf-style="width: {{ min(quarterly_pct, 100) }}%;"
+t-esc="'%d' % quarterly_pct"/>%
+</div>
+<table class="table table-sm">
+<tr>
+<th>Meta Trimestral</th>
+<td><t t-esc="quarterly_total_target"/></td>
+</tr>
+<tr>
+<th>Atingido</th>
+<td><t t-esc="quarterly_total_achieved"/></td>
+</tr>
+<tr>
+<th>Performance</th>
+<td><t t-esc="'%d' % quarterly_pct"/>%</td>
+</tr>
+</table>
+
+<h4 class="mt-4">Bônus Trimestrais</h4>
+<t t-if="quarterly_bonus">
+<table class="table table-sm table-striped">
+<thead>
+<tr>
+<th>Trimestre</th>
+<th>Performance</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="quarterly_bonus" t-as="qb">
+<td><t t-esc="qb.name"/></td>
+<td><t t-esc="'%d' % qb.quarterly_pct"/>%</td>
+<td>
+<t t-if="qb.state == 'pending'">Pendente</t>
+<t t-if="qb.state == 'recovered'">Recuperado</t>
+<t t-if="qb.state == 'lost'">Perdido</t>
+</td>
+</tr>
+</tbody>
+</table>
+</t>
+<t t-if="not quarterly_bonus">
+<p class="text-muted">Nenhum bônus trimestral.</p>
+</t>
+</div>
+</div>
+
+<div class="row mt-4">
+<div class="col-lg-8">
+<h4>Pipeline de Oportunidades</h4>
+<t t-if="open_leads">
+<p class="text-muted">
+Receita ponderada total: <strong><t t-esc="pipeline_total"/></strong>
+</p>
+<table class="table table-striped">
+<thead>
+<tr>
+<th>Oportunidade</th>
+<th>Cliente</th>
+<th>Receita Esperada</th>
+<th>Prob.</th>
+<th>Ponderado</th>
+<th>Estágio</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="open_leads" t-as="lead">
+<td><t t-esc="lead.name"/></td>
+<td><t t-esc="lead.partner_id.name or '-'"/></td>
+<td><t t-esc="lead.expected_revenue"/></td>
+<td><t t-esc="lead.probability"/>%</td>
+<td><t t-esc="lead.expected_revenue * lead.probability / 100.0"/></td>
+<td><t t-esc="lead.stage_id.name"/></td>
+</tr>
+</tbody>
+</table>
+</t>
+<t t-if="not open_leads">
+<p class="text-muted">Nenhuma oportunidade em aberto.</p>
+</t>
+</div>
+
+<div class="col-lg-4">
+<h4>Prévia de Recebimento</h4>
+<div class="card text-bg-light mb-3">
+<div class="card-body">
+<h6>Comissão do Período (Pedidos)</h6>
+<h3><t t-esc="current_commission_total"/></h3>
+</div>
+</div>
+<div class="card text-bg-light mb-3">
+<div class="card-body">
+<h6>Comissão Estimada (Pipeline)</h6>
+<h3><t t-esc="estimated_pipeline_commission"/></h3>
+<p class="card-text">
+<small>Baseado na receita ponderada do pipeline</small>
+</p>
+</div>
+</div>
+<div class="card text-bg-light">
+<div class="card-body">
+<h6>Total a Receber (Liquidado)</h6>
+<h3><t t-esc="pending_total"/></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row mt-4">
+<div class="col-12">
+<h4>Pedidos do Mês</h4>
+<t t-if="recent_orders">
+<table class="table table-striped">
+<thead>
+<tr>
+<th>Pedido</th>
+<th>Cliente</th>
+<th>Data</th>
+<th>Valor</th>
+<th>Comissão</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="recent_orders" t-as="order">
+<td><t t-esc="order.name"/></td>
+<td><t t-esc="order.partner_id.name"/></td>
+<td><t t-esc="order.date_order"/></td>
+<td><t t-esc="order.amount_total"/></td>
+<td><t t-esc="order.commission_total"/></td>
+<td>
+<t t-if="order.state == 'sale'">Em Andamento</t>
+<t t-if="order.state == 'done'">Concluído</t>
+</td>
+</tr>
+</tbody>
+</table>
+</t>
+<t t-if="not recent_orders">
+<p class="text-muted">Nenhum pedido no período.</p>
+</t>
+</div>
+</div>
+</t>
+</template>
+</odoo>
