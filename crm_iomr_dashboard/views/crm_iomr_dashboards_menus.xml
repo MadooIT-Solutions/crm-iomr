@@ -2,28 +2,28 @@
 <odoo>
     <menuitem id="menu_crm_iomr_director"
               name="Visão Diretor (Forecast)"
-              parent="crm.crm_dashboard_menu"
+              parent="crm_dashboard.crm_dashboard_menu"
               groups="sales_team.group_sale_manager"
               action="crm.crm_lead_action_forecast"
               sequence="10"/>
 
     <menuitem id="menu_crm_iomr_recovery"
               name="Recovery Loop"
-              parent="crm.crm_dashboard_menu"
+              parent="crm_dashboard.crm_dashboard_menu"
               groups="sales_team.group_sale_manager"
               action="action_crm_recovery_loop"
               sequence="20"/>
 
     <menuitem id="menu_crm_iomr_productivity"
               name="Produtividade &amp; SLA"
-              parent="crm.crm_dashboard_menu"
+              parent="crm_dashboard.crm_dashboard_menu"
               groups="sales_team.group_sale_manager"
               action="action_crm_productivity_sla"
               sequence="30"/>
 
     <menuitem id="menu_crm_iomr_snapshots"
               name="Snapshots de KPIs"
-              parent="crm.crm_dashboard_menu"
+              parent="crm_dashboard.crm_dashboard_menu"
               groups="sales_team.group_sale_manager"
               action="action_crm_iomr_snapshot"
               sequence="40"/>
