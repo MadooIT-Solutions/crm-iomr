@@ -17,15 +17,26 @@ class CommissionLineMixin(models.AbstractModel):
             )
             target = False
             is_crm_ok = True
-            if order and order.opportunity_id and order.opportunity_id.orientadora_id:
-                target = self.env["crm.commission.target"].search(
-                    [
-                        ("agent_id", "=", order.opportunity_id.orientadora_id.id),
-                        ("state", "=", "in_progress"),
-                    ],
-                    order="target_date desc",
-                    limit=1,
-                )
+            if order and order.opportunity_id and order.opportunity_id.user_id:
+                partner = order.opportunity_id.user_id.partner_id
+                agent = partner if partner.type_partner == "orientadora" else False
+                if not agent and partner.type_partner == "sdr":
+                    agent = self.env["res.partner"].search(
+                        [
+                            ("type_partner", "=", "orientadora"),
+                            ("sdr_agent_ids", "in", partner.id),
+                        ],
+                        limit=1,
+                    )
+                if agent:
+                    target = self.env["crm.commission.target"].search(
+                        [
+                            ("agent_id", "=", agent.id),
+                            ("state", "=", "in_progress"),
+                        ],
+                        order="target_date desc",
+                        limit=1,
+                    )
             if "is_crm_ok" in self.env.context:
                 is_crm_ok = self.env.context.get("is_crm_ok", True)
             performance_pct = target.performance_pct if target else 100.0

@@ -9,33 +9,10 @@ class CrmLead(models.Model):
 
     def _prepare_opportunity_quotation_context(self):
         ctx = super()._prepare_opportunity_quotation_context()
-        if self.doctor_id:
-            ctx["default_doctor_id"] = self.doctor_id.id
+        if self.doctor:
+            ctx["default_doctor_id"] = self.doctor.id
         return ctx
 
-    orientadora_id = fields.Many2one(
-        "res.partner",
-        string="Orientadora",
-        domain=[("type_partner", "=", "orientadora")],
-        tracking=True,
-    )
-    sdr_id = fields.Many2one(
-        "res.partner",
-        string="SDR (Pré-orientadora)",
-        domain=[("type_partner", "=", "sdr")],
-        tracking=True,
-    )
-    coordinator_id = fields.Many2one(
-        "res.partner",
-        string="Coordenadora",
-        domain=[("type_partner", "=", "coordenadora")],
-    )
-    doctor_id = fields.Many2one(
-        "res.partner",
-        string="Doctor/Médico",
-        domain=[("type_partner", "in", ("doctorint", "doctorext"))],
-        tracking=True,
-    )
     is_crm_score = fields.Float(
         string="IS-CRM score",
         default=100.0,

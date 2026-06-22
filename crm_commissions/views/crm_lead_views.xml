@@ -11,10 +11,7 @@
                 <page name="crm_commission" string="CRM Comissão">
                     <group>
                         <group string="Equipe Comercial">
-                            <field name="orientadora_id" />
-                            <field name="sdr_id" />
-                            <field name="doctor_id" />
-                            <field name="coordinator_id" />
+                            <field name="doctor" invisible="1" />
                         </group>
                         <group string="Comissão">
                             <field name="is_crm_score" widget="progressbar" />
@@ -35,9 +32,7 @@
         <field name="inherit_id" ref="crm.view_crm_case_leads_filter" />
         <field name="arch" type="xml">
             <field name="user_id" position="after">
-                <field name="orientadora_id" />
-                <field name="sdr_id" />
-                <field name="doctor_id" />
+                <field name="doctor" />
             </field>
         </field>
     </record>
@@ -47,9 +42,7 @@
         <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter" />
         <field name="arch" type="xml">
             <field name="user_id" position="after">
-                <field name="orientadora_id" />
-                <field name="sdr_id" />
-                <field name="doctor_id" />
+                <field name="doctor" />
             </field>
         </field>
     </record>

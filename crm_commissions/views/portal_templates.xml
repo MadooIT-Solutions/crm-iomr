@@ -20,6 +20,16 @@
 </ol>
 </t>
 
+<div class="row mb-3">
+<div class="col-12">
+<h5 class="text-muted mb-2">Resumo por Estágio</h5>
+<div class="d-flex flex-wrap gap-2">
+<t t-raw="summary_cards_html"/>
+<t t-raw="total_card_html"/>
+</div>
+</div>
+</div>
+
 <div class="row mb-4">
 <div class="col-12">
 <h3>Oportunidades em Aberto</h3>
@@ -31,24 +41,7 @@
 <p class="text-muted">Nenhuma oportunidade em aberto no momento.</p>
 </t>
 <t t-if="open_opportunities">
-<table class="table table-striped">
-<thead>
-<tr>
-<th>Oportunidade</th>
-<th>Expectativa</th>
-<th>Probabilidade</th>
-<th>Estágio</th>
-</tr>
-</thead>
-<tbody>
-<tr t-foreach="open_opportunities" t-as="opp">
-<td><a t-attf-href="/my/opportunity/#{opp.id}"><t t-esc="opp.name"/></a></td>
-<td><t t-esc="opp.expected_revenue"/></td>
-<td><t t-esc="opp.probability"/>%</td>
-<td><t t-esc="opp.stage_id.name"/></td>
-</tr>
-</tbody>
-</table>
+<t t-raw="accordion_html"/>
 </t>
 </div>
 </div>
@@ -142,18 +135,7 @@
 <th>Estágio</th>
 <td><t t-esc="lead.stage_id.name"/></td>
 </tr>
-<tr>
-<th>Orientadora</th>
-<td><t t-esc="lead.orientadora_id.name or '-'"/></td>
-</tr>
-<tr>
-<th>SDR</th>
-<td><t t-esc="lead.sdr_id.name or '-'"/></td>
-</tr>
-<tr>
-<th>Coordenadora</th>
-<td><t t-esc="lead.coordinator_id.name or '-'"/></td>
-</tr>
+
 </table>
 </div>
 </div>
