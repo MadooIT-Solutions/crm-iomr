@@ -18,5 +18,4 @@ class ResPartner(models.Model):
         string="Tipo de Contato",
         default="others",
     )
-    prontuario = fields.Char(
-        string="Prontuario", )
+    prontuario = fields.Char(string="Prontuario", )
