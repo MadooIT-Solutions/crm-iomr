@@ -58,3 +58,27 @@ class CrmLead(models.Model):
     def action_validate_discount(self):
         self.ensure_one()
         self.discount_approved = True
+
+    def action_claim_whatsapp_conversation(self):
+        self.ensure_one()
+        channel = self.whatsapp_channel_id
+        if not channel:
+            return
+        current_partner = self.env.user.partner_id
+        if not any(
+            member.partner_id == current_partner
+            for member in channel.channel_member_ids
+        ):
+            self.env["discuss.channel.member"].sudo().create(
+                {
+                    "partner_id": current_partner.id,
+                    "channel_id": channel.id,
+                    "is_pinned": False,
+                    "unpin_dt": False,
+                }
+            )
+        return {
+            "type": "ir.actions.client",
+            "tag": "mail.action_discuss",
+            "params": {"active_id": f"discuss.channel_{channel.id}"},
+        }
