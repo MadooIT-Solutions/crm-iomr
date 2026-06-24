@@ -7,8 +7,8 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='company_type']" position="after">
                 <group>
-                     <field name="type_partner" string="Tipo de contato" required="1"/>
-                     <field name="prontuario"/>
+                    <field name="type_partner" string="Tipo de contato" required="1"/>
+                    <field name="prontuario"/>
                 </group>
             </xpath>
         </field>
