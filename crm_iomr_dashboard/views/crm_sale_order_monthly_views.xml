@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_crm_sale_order_monthly_form" model="ir.ui.view">
+        <field name="name">crm.sale.order.monthly.form</field>
+        <field name="model">crm.sale.order.monthly</field>
+        <field name="arch" type="xml">
+            <form string="Pedidos do Mês">
+                <sheet>
+                    <div class="alert alert-info" role="alert" style="margin-bottom: 15px;">
+                        Dados referentes ao mês atual.
+                    </div>
+                    <group>
+                        <group string="Pedidos Faturados">
+                            <field name="invoiced_count"/>
+                            <field name="invoiced_total" widget="monetary"/>
+                            <button name="action_view_invoiced_orders"
+                                    string="Ver Pedidos Faturados"
+                                    type="object"
+                                    class="btn-primary btn-sm"/>
+                        </group>
+                        <group string="Pedidos Confirmados Não Faturados">
+                            <field name="uninvoiced_count"/>
+                            <field name="uninvoiced_total" widget="monetary"/>
+                            <button name="action_view_uninvoiced_orders"
+                                    string="Ver Pedidos Não Faturados"
+                                    type="object"
+                                    class="btn-primary btn-sm"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_crm_sale_order_monthly_tree" model="ir.ui.view">
+        <field name="name">crm.sale.order.monthly.tree</field>
+        <field name="model">crm.sale.order.monthly</field>
+        <field name="arch" type="xml">
+            <list string="Pedidos do Mês">
+                <field name="month"/>
+                <field name="invoiced_count"/>
+                <field name="invoiced_total" sum="Total"/>
+                <field name="uninvoiced_count"/>
+                <field name="uninvoiced_total" sum="Total"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_crm_sale_order_monthly" model="ir.actions.server">
+        <field name="name">Pedidos do Mês</field>
+        <field name="model_id" ref="model_crm_sale_order_monthly"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_dashboard()</field>
+    </record>
+</odoo>
