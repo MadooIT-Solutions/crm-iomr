@@ -28,6 +28,23 @@ class CrmLeadRotation(models.Model):
     notes = fields.Text(string="Observações")
 
     @api.model
+    def action_rotation_report(self):
+        domain = []
+        if not self.env.user.has_group("sales_team.group_sale_manager"):
+            domain = [("user_from_id", "=", self.env.user.id)]
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Histórico de Rotações",
+            "res_model": "crm.lead.rotation",
+            "view_mode": "tree,form",
+            "domain": domain,
+            "context": dict(
+                self.env.context,
+                search_default_group_by_user_from_id=1,
+            ),
+        }
+
+    @api.model
     def check_rotation_rules(self):
         """
         Verifica e aplica regras de rotação para todas as oportunidades
