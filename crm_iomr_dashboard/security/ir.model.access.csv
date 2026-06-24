@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_crm_iomr_snapshot,crm.iomr.snapshot,model_crm_iomr_snapshot,sales_team.group_sale_manager,1,1,1,1
 access_crm_recovery_loop,crm.recovery.loop,model_crm_recovery_loop,sales_team.group_sale_manager,1,1,1,1
 access_crm_productivity_sla,crm.productivity.sla,model_crm_productivity_sla,sales_team.group_sale_manager,1,1,1,1
+access_crm_sale_order_monthly,crm.sale.order.monthly,model_crm_sale_order_monthly,sales_team.group_sale_manager,1,1,1,1

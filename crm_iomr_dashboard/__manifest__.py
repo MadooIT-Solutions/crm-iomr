@@ -37,6 +37,7 @@
         "views/recovery_loop_views.xml",
         "views/productivity_sla_views.xml",
         "views/crm_iomr_snapshot_views.xml",
+        "views/crm_sale_order_monthly_views.xml",
         "views/crm_iomr_dashboards_menus.xml",
     ],
     #'images': ['static/description/banner.png'],

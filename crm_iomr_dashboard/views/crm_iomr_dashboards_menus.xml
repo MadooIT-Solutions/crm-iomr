@@ -27,4 +27,11 @@
               groups="sales_team.group_sale_manager"
               action="action_crm_iomr_snapshot"
               sequence="40"/>
+
+    <menuitem id="menu_crm_sale_order_monthly"
+              name="Pedidos do Mês"
+              parent="crm_dashboard.crm_dashboard_menu"
+              groups="sales_team.group_sale_manager"
+              action="action_crm_sale_order_monthly"
+              sequence="50"/>
 </odoo>
