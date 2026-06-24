@@ -20,7 +20,9 @@
         </group>
       </xpath>
       <xpath expr="//field[@name='phone']" position="after">
-        <field name="prontuario"/>
+        <group>
+          <field name="prontuario"/>
+        </group>
       </xpath>
       <xpath expr="//page[@name='lead']" position="after">
         <page name="import" string="Dados de Importação">

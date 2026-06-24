@@ -13,7 +13,7 @@ class CRMLead(models.Model):
     campaign_id = fields.Many2one(tracking=True)
     medium_id = fields.Many2one(tracking=True)
     source_id = fields.Many2one(tracking=True)
-    prontuario = fields.Char(string="Prontuário", related='partner_id.prontuario', readonly=True)
+    prontuario = fields.Char(string="Prontuário", related='partner_id.prontuario', readonly=False)
     referred_partner = fields.Many2many(
         "res.partner",
         relation="crmlead_rel_res_partner",
