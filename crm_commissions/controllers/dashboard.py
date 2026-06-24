@@ -121,6 +121,17 @@ class CommissionDashboard(http.Controller):
                 }
             )
 
+        # Invoiced / Uninvoiced breakdown
+        domain_invoiced = domain_orders + [("invoice_status", "=", "invoiced")]
+        invoiced_month_orders = request.env["sale.order"].search(domain_invoiced)
+        invoiced_month_total = sum(invoiced_month_orders.mapped("amount_total"))
+        invoiced_month_count = len(invoiced_month_orders)
+
+        domain_uninvoiced = domain_orders + [("invoice_status", "=", "to invoice")]
+        uninvoiced_month_orders = request.env["sale.order"].search(domain_uninvoiced)
+        uninvoiced_month_total = sum(uninvoiced_month_orders.mapped("amount_total"))
+        uninvoiced_month_count = len(uninvoiced_month_orders)
+
         order_data = []
         for order in recent_orders:
             order_data.append(
@@ -131,6 +142,29 @@ class CommissionDashboard(http.Controller):
                     "amount_total_fmt": _fmt(order.amount_total),
                     "commission_total_fmt": _fmt(order.commission_total),
                     "state": order.state,
+                    "invoice_status": order.invoice_status,
+                }
+            )
+
+        invoiced_order_data = []
+        for order in invoiced_month_orders:
+            invoiced_order_data.append(
+                {
+                    "name": order.name,
+                    "partner_name": order.sudo().partner_id.name,
+                    "date_order": order.date_order,
+                    "amount_total_fmt": _fmt(order.amount_total),
+                }
+            )
+
+        uninvoiced_order_data = []
+        for order in uninvoiced_month_orders:
+            uninvoiced_order_data.append(
+                {
+                    "name": order.name,
+                    "partner_name": order.sudo().partner_id.name,
+                    "date_order": order.date_order,
+                    "amount_total_fmt": _fmt(order.amount_total),
                 }
             )
 
@@ -154,5 +188,11 @@ class CommissionDashboard(http.Controller):
                 "order_data": order_data,
                 "settlement_data": settlement_data,
                 "quarterly_bonus": quarterly_bonus,
+                "invoiced_month_total_fmt": _fmt(invoiced_month_total),
+                "invoiced_month_count": invoiced_month_count,
+                "uninvoiced_month_total_fmt": _fmt(uninvoiced_month_total),
+                "uninvoiced_month_count": uninvoiced_month_count,
+                "invoiced_order_data": invoiced_order_data,
+                "uninvoiced_order_data": uninvoiced_order_data,
             },
         )

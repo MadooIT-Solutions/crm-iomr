@@ -243,8 +243,39 @@ t-esc="'%d' % quarterly_pct"/>%
 <div class="row mt-4">
 <div class="col-12">
 <h4>Pedidos do Mês</h4>
+</div>
+</div>
+
+<div class="row mb-4">
+<div class="col-md-6">
+<div class="card text-bg-success">
+<div class="card-body">
+<h5 class="card-title">Pedidos Faturados</h5>
+<h3><t t-esc="invoiced_month_total_fmt"/></h3>
+<p class="card-text">
+<t t-esc="invoiced_month_count"/> pedido(s) faturado(s)
+</p>
+</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="card text-bg-warning">
+<div class="card-body">
+<h5 class="card-title">Pedidos Confirmados Não Faturados</h5>
+<h3><t t-esc="uninvoiced_month_total_fmt"/></h3>
+<p class="card-text">
+<t t-esc="uninvoiced_month_count"/> pedido(s) não faturado(s)
+</p>
+</div>
+</div>
+</div>
+</div>
+
 <t t-if="order_data">
-<table class="table table-striped">
+<div class="row mb-3">
+<div class="col-12">
+<h5>Todos os Pedidos</h5>
+<table class="table table-sm table-striped">
 <thead>
 <tr>
 <th>Pedido</th>
@@ -252,29 +283,84 @@ t-esc="'%d' % quarterly_pct"/>%
 <th>Data</th>
 <th>Valor</th>
 <th>Comissão</th>
-<th>Estado</th>
+<th>Faturamento</th>
 </tr>
 </thead>
 <tbody>
-                    <tr t-foreach="order_data" t-as="order">
-                        <td><t t-esc="order['name']"/></td>
-                        <td><t t-esc="order['partner_name']"/></td>
-                        <td><t t-esc="order['date_order']"/></td>
-                        <td><t t-esc="order['amount_total_fmt']"/></td>
-                        <td><t t-esc="order['commission_total_fmt']"/></td>
-                        <td>
-                            <t t-if="order['state'] == 'sale'">Em Andamento</t>
-                            <t t-if="order['state'] == 'done'">Concluído</t>
-                        </td>
-                    </tr>
+<tr t-foreach="order_data" t-as="order">
+<td><t t-esc="order['name']"/></td>
+<td><t t-esc="order['partner_name']"/></td>
+<td><t t-esc="order['date_order']"/></td>
+<td><t t-esc="order['amount_total_fmt']"/></td>
+<td><t t-esc="order['commission_total_fmt']"/></td>
+<td>
+<t t-if="order['invoice_status'] == 'invoiced'"><span class="text-success">Faturado</span></t>
+<t t-if="order['invoice_status'] == 'to invoice'"><span class="text-warning">A Faturar</span></t>
+<t t-if="order['invoice_status'] == 'no'"><span class="text-muted">Nada a Faturar</span></t>
+<t t-if="order['invoice_status'] == 'upselling'"><span class="text-info">Upselling</span></t>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</t>
+
+<div class="row">
+<div class="col-lg-6">
+<h5>Faturados</h5>
+<t t-if="invoiced_order_data">
+<table class="table table-sm table-striped">
+<thead>
+<tr>
+<th>Pedido</th>
+<th>Cliente</th>
+<th>Data</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="invoiced_order_data" t-as="o">
+<td><t t-esc="o['name']"/></td>
+<td><t t-esc="o['partner_name']"/></td>
+<td><t t-esc="o['date_order']"/></td>
+<td><t t-esc="o['amount_total_fmt']"/></td>
+</tr>
 </tbody>
 </table>
 </t>
-<t t-if="not order_data">
-<p class="text-muted">Nenhum pedido no período.</p>
+<t t-if="not invoiced_order_data">
+<p class="text-muted">Nenhum pedido faturado.</p>
+</t>
+</div>
+<div class="col-lg-6">
+<h5>Não Faturados</h5>
+<t t-if="uninvoiced_order_data">
+<table class="table table-sm table-striped">
+<thead>
+<tr>
+<th>Pedido</th>
+<th>Cliente</th>
+<th>Data</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr t-foreach="uninvoiced_order_data" t-as="o">
+<td><t t-esc="o['name']"/></td>
+<td><t t-esc="o['partner_name']"/></td>
+<td><t t-esc="o['date_order']"/></td>
+<td><t t-esc="o['amount_total_fmt']"/></td>
+</tr>
+</tbody>
+</table>
+</t>
+<t t-if="not uninvoiced_order_data">
+<p class="text-muted">Nenhum pedido não faturado.</p>
 </t>
 </div>
 </div>
+
 </t>
 </template>
 </odoo>
