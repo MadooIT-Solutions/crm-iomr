@@ -20,8 +20,8 @@
         </group>
       </xpath>
       <xpath expr="//field[@name='phone']" position="after">
-        <field name="mobile"/>
         <group>
+          <field name="mobile"/>
           <field name="prontuario"/>
         </group>
       </xpath>
