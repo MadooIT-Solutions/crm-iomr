@@ -36,7 +36,7 @@ class CrmLeadRotation(models.Model):
             "type": "ir.actions.act_window",
             "name": "Histórico de Rotações",
             "res_model": "crm.lead.rotation",
-            "view_mode": "tree,form",
+            "view_mode": "list,form",
             "domain": domain,
             "context": dict(
                 self.env.context,
