@@ -196,7 +196,25 @@ class CRMLead(models.Model):
         """
         self.ensure_one()
 
-        team = self.team_id or self.user_id.sale_team_id
+        team = self.team_id
+        if not team:
+            # Percorre o histórico de rotações da mais recente para a mais antiga
+            # para determinar a equipe correta da oportunidade
+            for rotation in self.rotation_history_ids.sudo().sorted(
+                "date_rotation", reverse=True
+            ):
+                user = rotation.user_to_id or rotation.user_from_id
+                if user and user.crm_team_ids:
+                    for user_team in user.crm_team_ids:
+                        if user_team.member_ids:
+                            team = user_team
+                            break
+                if team:
+                    break
+            # Fallback para a equipe principal do usuário atual
+            if not team:
+                team = self.user_id.sale_team_id
+
         if not team or not team.member_ids:
             return None
 
