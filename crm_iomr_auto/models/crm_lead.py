@@ -86,9 +86,8 @@ class CRMLead(models.Model):
     )
 
     def _compute_can_rotate(self):
-        is_manager = self.env.user.has_group("sales_team.group_sale_manager")
         for lead in self:
-            lead.can_rotate = is_manager or lead.user_id == self.env.user
+            lead.can_rotate = bool(lead.user_id)
 
     @api.depends("activity_ids")
     def _compute_last_activity_date(self):
@@ -197,7 +196,7 @@ class CRMLead(models.Model):
         """
         self.ensure_one()
 
-        team = self.user_id.sale_team_id
+        team = self.team_id or self.user_id.sale_team_id
         if not team or not team.member_ids:
             return None
 
@@ -231,12 +230,6 @@ class CRMLead(models.Model):
         """
         Ação manual para rotacionar vendedor
         """
-        if not (
-            self.env.user.has_group("sales_team.group_sale_manager")
-            or self.user_id == self.env.user
-        ):
-            raise UserError("Você não pode rotacionar esta oportunidade.")
-
         if not self.user_id:
             raise UserError("Oportunidade não tem vendedor atribuído")
 
