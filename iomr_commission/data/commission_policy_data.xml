@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="policy_2026" model="commission.policy">
+        <field name="name">Política de Comissionamento 2026</field>
+        <field name="date_start">2026-01-01</field>
+        <field name="margin_min_pct">35.0</field>
+        <field name="crm_min_pct">95.0</field>
+        <field name="max_discount_pct">5.0</field>
+        <field name="crm_bonus_rate">0.25</field>
+        <field name="crm_penalty_rate">0.25</field>
+        <field name="active">True</field>
+    </record>
+
+    <!-- 0% a 50% = 0,25% -->
+    <record id="policy_line_1" model="commission.policy.line">
+        <field name="policy_id" ref="policy_2026"/>
+        <field name="sequence">10</field>
+        <field name="delivery_pct_from">0.0</field>
+        <field name="delivery_pct_to">50.0</field>
+        <field name="base_rate">0.25</field>
+    </record>
+
+    <!-- 51% a 80% = 0,45% -->
+    <record id="policy_line_2" model="commission.policy.line">
+        <field name="policy_id" ref="policy_2026"/>
+        <field name="sequence">20</field>
+        <field name="delivery_pct_from">51.0</field>
+        <field name="delivery_pct_to">80.0</field>
+        <field name="base_rate">0.45</field>
+    </record>
+
+    <!-- 81% a 100% = 0,75% -->
+    <record id="policy_line_3" model="commission.policy.line">
+        <field name="policy_id" ref="policy_2026"/>
+        <field name="sequence">30</field>
+        <field name="delivery_pct_from">81.0</field>
+        <field name="delivery_pct_to">100.0</field>
+        <field name="base_rate">0.75</field>
+    </record>
+
+    <!-- 101% a 120% = 1,25% -->
+    <record id="policy_line_4" model="commission.policy.line">
+        <field name="policy_id" ref="policy_2026"/>
+        <field name="sequence">40</field>
+        <field name="delivery_pct_from">101.0</field>
+        <field name="delivery_pct_to">120.0</field>
+        <field name="base_rate">1.25</field>
+    </record>
+
+    <!-- acima de 120% = 1,75% -->
+    <record id="policy_line_5" model="commission.policy.line">
+        <field name="policy_id" ref="policy_2026"/>
+        <field name="sequence">50</field>
+        <field name="delivery_pct_from">120.01</field>
+        <field name="delivery_pct_to">999.0</field>
+        <field name="base_rate">1.75</field>
+    </record>
+</odoo>

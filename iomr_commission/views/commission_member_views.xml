@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="commission_member_tree" model="ir.ui.view">
+        <field name="name">commission.member.tree</field>
+        <field name="model">commission.member</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="member_type"/>
+                <field name="user_id"/>
+                <field name="team_id"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="commission_member_form" model="ir.ui.view">
+        <field name="name">commission.member.form</field>
+        <field name="model">commission.member</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(action_commission_target)d" type="action"
+                                class="oe_stat_button" icon="fa-bullseye">
+                            <div>Metas</div>
+                        </button>
+                        <button name="%(action_commission_result)d" type="action"
+                                class="oe_stat_button" icon="fa-calculator">
+                            <div>Resultados</div>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="member_type"/>
+                            <field name="partner_id"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="color"/>
+                            <field name="team_id"/>
+                        </group>
+                    </group>
+                    <group string="SDR Configuration" invisible="member_type != 'orientadora'">
+                        <field name="sdr_ids" widget="many2many_tags"/>
+                    </group>
+                    <group string="Orientadora" invisible="member_type != 'sdr'">
+                        <field name="orientadora_id"/>
+                    </group>
+                    <notebook>
+                        <page name="targets" string="Targets">
+                            <field name="target_ids">
+                                <list>
+                                    <field name="period_code"/>
+                                    <field name="individual_target_amount"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="results" string="Results">
+                            <field name="result_ids">
+                                <list>
+                                    <field name="period_code"/>
+                                    <field name="commission_base_amount"/>
+                                    <field name="commission_amount"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="commission_member_search" model="ir.ui.view">
+        <field name="name">commission.member.search</field>
+        <field name="model">commission.member</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="member_type"/>
+                <field name="team_id"/>
+                <filter name="orientadora" string="Orientadoras"
+                        domain="[('member_type','=','orientadora')]"/>
+                <filter name="sdr" string="SDRs"
+                        domain="[('member_type','=','sdr')]"/>
+                <filter name="coordenadora" string="Coordenadoras"
+                        domain="[('member_type','=','coordenadora')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_type" string="Type"
+                            context="{'group_by': 'member_type'}"/>
+                    <filter name="group_by_team" string="Team"
+                            context="{'group_by': 'team_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_commission_member" model="ir.actions.act_window">
+        <field name="name">Team Members</field>
+        <field name="res_model">commission.member</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="commission_member_search"/>
+    </record>
+</odoo>

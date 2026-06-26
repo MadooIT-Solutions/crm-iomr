@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="commission_policy_tree" model="ir.ui.view">
+        <field name="name">commission.policy.tree</field>
+        <field name="model">commission.policy</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="margin_min_pct"/>
+                <field name="crm_min_pct"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="commission_policy_form" model="ir.ui.view">
+        <field name="name">commission.policy.form</field>
+        <field name="model">commission.policy</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="margin_min_pct" string="Min. Margin (%)"/>
+                            <field name="crm_min_pct" string="IS-CRM Min. (%)"/>
+                            <field name="max_discount_pct" string="Max. Discount (%)"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="crm_bonus_rate" string="CRM Bonus Rate (%)"/>
+                        </group>
+                        <group>
+                            <field name="crm_penalty_rate" string="CRM Penalty Rate (%)"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="rate_bands" string="Rate Bands">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="delivery_pct_from"/>
+                                    <field name="delivery_pct_to"/>
+                                    <field name="base_rate"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_policy" model="ir.actions.act_window">
+        <field name="name">Commission Policies</field>
+        <field name="res_model">commission.policy</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

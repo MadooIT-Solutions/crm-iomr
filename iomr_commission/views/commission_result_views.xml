@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="commission_result_tree" model="ir.ui.view">
+        <field name="name">commission.result.tree</field>
+        <field name="model">commission.result</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="member_id"/>
+                <field name="period_code"/>
+                <field name="target_amount"/>
+                <field name="commission_base_amount"/>
+                <field name="delivery_pct" widget="progressbar"/>
+                <field name="range_label"/>
+                <field name="final_rate"/>
+                <field name="commission_amount"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="commission_result_form" model="ir.ui.view">
+        <field name="name">commission.result.form</field>
+        <field name="model">commission.result</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_calculate" string="Calculate" type="object"
+                            states="draft" class="btn-primary"/>
+                    <button name="action_approve" string="Approve" type="object"
+                            states="calculated" class="btn-success"/>
+                    <button name="action_pay" string="Pay" type="object"
+                            states="approved" class="btn-success"/>
+                    <button name="action_draft" string="Reset to Draft" type="object"
+                            states="calculated,approved,paid"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="member_id"/>
+                            <field name="period_code"/>
+                            <field name="policy_id"/>
+                            <field name="target_id"/>
+                        </group>
+                        <group>
+                            <field name="target_amount"/>
+                            <field name="lio_sales_amount"/>
+                            <field name="hospital_sales_amount"/>
+                        </group>
+                    </group>
+                    <group string="Commission Calculation">
+                        <group>
+                            <field name="commission_base_amount"/>
+                            <field name="delivery_pct" widget="progressbar"/>
+                            <field name="range_label"/>
+                        </group>
+                        <group>
+                            <field name="base_rate"/>
+                            <field name="crm_bonus_rate"/>
+                            <field name="final_rate"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="is_crm_score"/>
+                            <field name="is_crm_ok"/>
+                        </group>
+                        <group>
+                            <field name="commission_amount"/>
+                            <field name="quarter_recovery_amount"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="commission_result_search" model="ir.ui.view">
+        <field name="name">commission.result.search</field>
+        <field name="model">commission.result</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <field name="period_code"/>
+                <field name="state"/>
+                <filter name="calculated" string="Calculated"
+                        domain="[('state','=','calculated')]"/>
+                <filter name="approved" string="Approved"
+                        domain="[('state','=','approved')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_member" string="Member"
+                            context="{'group_by': 'member_id'}"/>
+                    <filter name="group_by_period" string="Period"
+                            context="{'group_by': 'period_code'}"/>
+                    <filter name="group_by_state" string="State"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_commission_result" model="ir.actions.act_window">
+        <field name="name">Commission Results</field>
+        <field name="res_model">commission.result</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="commission_result_search"/>
+    </record>
+
+    <!-- Recovery Views -->
+    <record id="commission_recovery_tree" model="ir.ui.view">
+        <field name="name">commission.recovery.tree</field>
+        <field name="model">commission.recovery</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="member_id"/>
+                <field name="quarter"/>
+                <field name="year"/>
+                <field name="quarter_target_amount"/>
+                <field name="quarter_sales_amount"/>
+                <field name="quarter_delivery_pct" widget="progressbar"/>
+                <field name="recovery_amount"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="commission_recovery_form" model="ir.ui.view">
+        <field name="name">commission.recovery.form</field>
+        <field name="model">commission.recovery</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="member_id"/>
+                            <field name="quarter"/>
+                            <field name="year"/>
+                        </group>
+                        <group>
+                            <field name="quarter_target_amount"/>
+                            <field name="quarter_sales_amount"/>
+                            <field name="quarter_delivery_pct" widget="progressbar"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="expected_commission_amount"/>
+                            <field name="calculated_commission_amount"/>
+                        </group>
+                        <group>
+                            <field name="recovery_amount"/>
+                            <field name="state"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

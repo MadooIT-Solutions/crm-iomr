@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="commission_target_tree" model="ir.ui.view">
+        <field name="name">commission.target.tree</field>
+        <field name="model">commission.target</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="member_id"/>
+                <field name="period_code"/>
+                <field name="individual_target_amount"/>
+                <field name="team_target_amount"/>
+                <field name="state"/>
+                <field name="origin_type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="commission_target_form" model="ir.ui.view">
+        <field name="name">commission.target.form</field>
+        <field name="model">commission.target</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="member_id"/>
+                            <field name="year"/>
+                            <field name="month"/>
+                            <field name="period_code" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="individual_target_amount"/>
+                            <field name="team_target_amount"/>
+                            <field name="origin_type"/>
+                            <field name="state"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="commission_target_search" model="ir.ui.view">
+        <field name="name">commission.target.search</field>
+        <field name="model">commission.target</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <field name="period_code"/>
+                <filter name="in_progress" string="In Progress"
+                        domain="[('state','=','in_progress')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_member" string="Member"
+                            context="{'group_by': 'member_id'}"/>
+                    <filter name="group_by_period" string="Period"
+                            context="{'group_by': 'period_code'}"/>
+                    <filter name="group_by_state" string="State"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_commission_target" model="ir.actions.act_window">
+        <field name="name">Targets</field>
+        <field name="res_model">commission.target</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="commission_target_search"/>
+    </record>
+</odoo>

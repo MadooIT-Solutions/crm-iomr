@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="commission_sale_tree" model="ir.ui.view">
+        <field name="name">commission.sale.tree</field>
+        <field name="model">commission.sale</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="patient_name"/>
+                <field name="owner_member_id"/>
+                <field name="sale_category"/>
+                <field name="status"/>
+                <field name="hospital_net_amount"/>
+                <field name="lio_upgrade_amount"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="commission_sale_form" model="ir.ui.view">
+        <field name="name">commission.sale.form</field>
+        <field name="model">commission.sale</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object"
+                            states="draft" class="btn-primary"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            states="draft,confirmed"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date"/>
+                            <field name="period_code" readonly="1"/>
+                            <field name="owner_member_id"/>
+                        </group>
+                        <group>
+                            <field name="patient_name"/>
+                            <field name="surgery_type"/>
+                            <field name="sale_category"/>
+                        </group>
+                    </group>
+                    <group string="Financials">
+                        <group>
+                            <field name="hospital_gross_amount"/>
+                            <field name="hospital_tax_pct"/>
+                            <field name="hospital_cost_pct"/>
+                            <field name="hospital_net_amount" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="medical_fee_amount"/>
+                            <field name="lio_package_amount"/>
+                            <field name="lio_upgrade_amount"/>
+                            <field name="has_lio_upgrade" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Validation">
+                        <group>
+                            <field name="crm_pct"/>
+                            <field name="margin_pct" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="discount_pct"/>
+                            <field name="discount_approved"/>
+                        </group>
+                    </group>
+                    <group string="Lens Commission" name="lens_group"
+                           invisible="not is_lens_sale">
+                        <field name="is_lens_sale"/>
+                        <field name="lens_type" invisible="not is_lens_sale"/>
+                        <field name="lens_commission_type"
+                                invisible="lens_type == 'rigid'"/>
+                    </group>
+                    <notebook>
+                        <page name="details" string="Detail Lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="line_type"/>
+                                    <field name="amount"/>
+                                    <field name="eligible_for_commission"/>
+                                    <field name="exclusion_reason"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <group string="Notes">
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="commission_sale_search" model="ir.ui.view">
+        <field name="name">commission.sale.search</field>
+        <field name="model">commission.sale</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_name"/>
+                <field name="owner_member_id"/>
+                <field name="period_code"/>
+                <field name="sale_category"/>
+                <field name="status"/>
+                <filter name="this_month" string="This Month"
+                        domain="[('period_code','=',time.strftime('%%Y-%%m'))]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_owner" string="Owner"
+                            context="{'group_by': 'owner_member_id'}"/>
+                    <filter name="group_by_period" string="Period"
+                            context="{'group_by': 'period_code'}"/>
+                    <filter name="group_by_category" string="Category"
+                            context="{'group_by': 'sale_category'}"/>
+                    <filter name="group_by_status" string="Status"
+                            context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_commission_sale" model="ir.actions.act_window">
+        <field name="name">Sales</field>
+        <field name="res_model">commission.sale</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="commission_sale_search"/>
+    </record>
+</odoo>

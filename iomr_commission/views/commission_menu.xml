@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem id="menu_commission_root"
+              name="Comissionamento"
+              sequence="90"
+              web_icon="iomr_commission,static/description/icon.png"/>
+
+    <menuitem id="menu_commission_dashboard"
+              name="Dashboard"
+              parent="menu_commission_root"
+              sequence="10"/>
+
+    <menuitem id="menu_commission_sales"
+              name="Vendas"
+              parent="menu_commission_root"
+              action="action_commission_sale"
+              sequence="20"/>
+
+    <menuitem id="menu_commission_targets"
+              name="Metas"
+              parent="menu_commission_root"
+              action="action_commission_target"
+              sequence="30"/>
+
+    <menuitem id="menu_commission_results"
+              name="Resultados"
+              parent="menu_commission_root"
+              action="action_commission_result"
+              sequence="40"/>
+
+    <menuitem id="menu_commission_quarter"
+              name="Recuperação Trimestral"
+              parent="menu_commission_root"
+              action="action_commission_recovery"
+              sequence="50"/>
+
+    <menuitem id="menu_commission_team"
+              name="Equipe"
+              parent="menu_commission_root"
+              action="action_commission_member"
+              sequence="60"/>
+
+    <menuitem id="menu_commission_policy"
+              name="Política"
+              parent="menu_commission_root"
+              action="action_commission_policy"
+              sequence="70"
+              groups="iomr_commission.group_commission_manager"/>
+
+    <menuitem id="menu_commission_config"
+              name="Configurações"
+              parent="menu_commission_root"
+              sequence="80"
+              groups="iomr_commission.group_commission_manager"/>
+
+    <!-- Recovery action -->
+    <record id="action_commission_recovery" model="ir.actions.act_window">
+        <field name="name">Quarter Recovery</field>
+        <field name="res_model">commission.recovery</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
