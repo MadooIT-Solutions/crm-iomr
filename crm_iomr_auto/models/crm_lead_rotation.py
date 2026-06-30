@@ -25,6 +25,9 @@ class CrmLeadRotation(models.Model):
     date_rotation = fields.Datetime(
         string="Data da Rotação", default=fields.Datetime.now
     )
+    contact_name = fields.Char(string="Nome do Contato")
+    prontuario = fields.Char(string="Prontuário")
+    stage_id = fields.Many2one("crm.stage", string="Status da Oportunidade")
     notes = fields.Text(string="Observações")
 
     @api.model

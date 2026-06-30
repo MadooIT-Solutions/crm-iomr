@@ -132,6 +132,9 @@ class CRMLead(models.Model):
                             "rotation_sequence": lead.rotation_count + 1,
                             "rotation_type": vals.get("rotation_type", "manual"),
                             "days_with_seller": lead.days_with_current_seller,
+                            "contact_name": lead.contact_name,
+                            "prontuario": lead.prontuario,
+                            "stage_id": lead.stage_id.id,
                         }
                     )
                     vals["rotation_count"] = lead.rotation_count + 1
