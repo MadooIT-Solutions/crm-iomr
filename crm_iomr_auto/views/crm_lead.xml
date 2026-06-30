@@ -21,8 +21,7 @@
       </xpath>
       <xpath expr="//field[@name='phone']" position="after">
         <group>
-          <field name="phone" invisible="1"/>
-          <field name="mobile"/>
+          <field name="mobile" widget="phone"/>
           <field name="prontuario"/>
         </group>
       </xpath>
