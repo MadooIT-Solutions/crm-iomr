@@ -25,13 +25,13 @@
             <form>
                 <header>
                     <button name="action_calculate" string="Calculate" type="object"
-                            states="draft" class="btn-primary"/>
+                            invisible="state != 'draft'" class="btn-primary"/>
                     <button name="action_approve" string="Approve" type="object"
-                            states="calculated" class="btn-success"/>
+                            invisible="state != 'calculated'" class="btn-success"/>
                     <button name="action_pay" string="Pay" type="object"
-                            states="approved" class="btn-success"/>
+                            invisible="state != 'approved'" class="btn-success"/>
                     <button name="action_draft" string="Reset to Draft" type="object"
-                            states="calculated,approved,paid"/>
+                            invisible="state not in ('calculated', 'approved', 'paid')"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
