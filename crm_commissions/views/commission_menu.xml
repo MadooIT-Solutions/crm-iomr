@@ -3,8 +3,7 @@
     <!-- Main Menu -->
     <menuitem id="menu_commission_root"
               name="Comissionamento"
-              sequence="90"
-              web_icon="iomr_commission,static/description/icon.png"/>
+              sequence="90"/>
 
     <menuitem id="menu_commission_dashboard"
               name="Dashboard"
@@ -46,13 +45,13 @@
               parent="menu_commission_root"
               action="action_commission_policy"
               sequence="70"
-              groups="iomr_commission.group_commission_manager"/>
+              groups="crm_commissions.group_commission_manager"/>
 
     <menuitem id="menu_commission_config"
               name="Configurações"
               parent="menu_commission_root"
               sequence="80"
-              groups="iomr_commission.group_commission_manager"/>
+              groups="crm_commissions.group_commission_manager"/>
 
     <!-- Recovery action -->
     <record id="action_commission_recovery" model="ir.actions.act_window">
