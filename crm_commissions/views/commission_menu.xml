@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Recovery action (defined before menus that reference it) -->
+    <record id="action_commission_recovery" model="ir.actions.act_window">
+        <field name="name">Quarter Recovery</field>
+        <field name="res_model">commission.recovery</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
     <!-- Main Menu -->
     <menuitem id="menu_commission_root"
               name="Comissionamento"
@@ -52,11 +59,4 @@
               parent="menu_commission_root"
               sequence="80"
               groups="crm_commissions.group_commission_manager"/>
-
-    <!-- Recovery action -->
-    <record id="action_commission_recovery" model="ir.actions.act_window">
-        <field name="name">Quarter Recovery</field>
-        <field name="res_model">commission.recovery</field>
-        <field name="view_mode">tree,form</field>
-    </record>
 </odoo>
