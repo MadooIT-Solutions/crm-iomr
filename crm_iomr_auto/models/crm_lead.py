@@ -275,3 +275,13 @@ class CRMLead(models.Model):
         self.write({"user_id": next_seller.id})
         return True
 
+
+class SaleOrder(models.Model):
+    _inherit = "sale.order"
+
+    prontuario = fields.Char(
+        string="Prontuário",
+        related="partner_id.prontuario",
+        readonly=False,
+    )
+

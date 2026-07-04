@@ -1,7 +1,7 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import _, api, models
 from odoo.exceptions import AccessError
 
 
@@ -19,13 +19,3 @@ class ProductProduct(models.Model):
                 )
             )
         return super().create(vals_list)
-
-
-class SaleOrder(models.Model):
-    _inherit = "sale.order"
-
-    prontuario = fields.Char(
-        string="Prontuário",
-        related="partner_id.prontuario",
-        readonly=False,
-    )
