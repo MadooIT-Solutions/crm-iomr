@@ -11,8 +11,11 @@
         "crm",
         "mail_gateway_whatsapp_chatter",
         "crm_iomr_auto",
+        "crm_commissions",
     ],
-    "data": [],
+    "data": [
+        "security/crm_iomr_whatsapp_security.xml",
+    ],
     "license": "AGPL-3",
     "installable": True,
     "application": False,
