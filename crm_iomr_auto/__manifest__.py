@@ -35,7 +35,6 @@
         "views/crm_lead.xml",
         "views/crm_lead_rotation.xml",
         "views/res_partner.xml",
-        "views/sale_order.xml",
         "views/res_config_settings.xml",
         "wizards/crm_lead_rotation_sdr_wizard.xml",
         "data/crm_rotation_cron.xml",

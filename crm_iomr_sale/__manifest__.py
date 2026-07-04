@@ -8,10 +8,13 @@
     "license": "AGPL-3",
     "depends": [
         "sale_management",
+        "crm_iomr_auto",
     ],
     "website": "https://github.com/OCA/sale-workflow",
     "maintainers": ["rodrigo-iomr"],
-    "data": [],
+    "data": [
+        "views/sale_order_views.xml",
+    ],
     "installable": True,
     "application": False,
     "auto_install": False,
