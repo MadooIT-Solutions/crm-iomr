@@ -31,12 +31,12 @@
         "views/crm_lead_views.xml",
         "views/sale_order_views.xml",
         "views/portal_templates.xml",
-        "views/commission_menu.xml",
         "views/commission_member_views.xml",
         "views/commission_policy_views.xml",
         "views/commission_target_views.xml",
         "views/commission_sale_views.xml",
         "views/commission_result_views.xml",
+        "views/commission_menu.xml",
     ],
     "demo": [
         "demo/crm_commission_demo.xml",
