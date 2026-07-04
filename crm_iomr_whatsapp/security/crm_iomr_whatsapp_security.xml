@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Add model access for SDR to mail.whatsapp.conversation -->
+    <record id="access_mail_whatsapp_conversation_sdr" model="ir.model.access">
+        <field name="name">mail.whatsapp.conversation.sdr</field>
+        <field name="model_id" ref="mail_gateway_whatsapp_messages.model_mail_whatsapp_conversation"/>
+        <field name="group_id" ref="crm_commissions.group_crm_commission_sdr"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="access_whatsapp_assign_wizard_sdr" model="ir.model.access">
+        <field name="name">whatsapp.assign.wizard.sdr</field>
+        <field name="model_id" ref="mail_gateway_whatsapp_messages.model_whatsapp_assign_conversation_wizard"/>
+        <field name="group_id" ref="crm_commissions.group_crm_commission_sdr"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <!-- Add SDR group to WhatsApp menus (keeping original groups) -->
+    <record id="mail_gateway_whatsapp_messages.menu_mail_whatsapp_messages_root" model="ir.ui.menu">
+        <field name="groups_id" eval="[
+            (4, ref('crm_commissions.group_crm_commission_sdr')),
+        ]"/>
+    </record>
+
+    <record id="mail_gateway_whatsapp_messages.menu_mail_whatsapp_conversations" model="ir.ui.menu">
+        <field name="groups_id" eval="[
+            (4, ref('crm_commissions.group_crm_commission_sdr')),
+        ]"/>
+    </record>
+
+    <record id="mail_gateway_whatsapp_messages.menu_mail_whatsapp_conversations_unassigned" model="ir.ui.menu">
+        <field name="groups_id" eval="[
+            (4, ref('crm_commissions.group_crm_commission_sdr')),
+        ]"/>
+    </record>
+</odoo>
