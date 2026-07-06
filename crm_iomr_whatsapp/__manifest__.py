@@ -10,6 +10,7 @@
     "depends": [
         "crm",
         "mail_gateway_whatsapp_chatter",
+        "mail_gateway_whatsapp_messages",
         "crm_iomr_auto",
         "crm_commissions",
     ],
