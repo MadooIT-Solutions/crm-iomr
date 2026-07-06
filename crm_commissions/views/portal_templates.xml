@@ -3,8 +3,8 @@
 <template id="portal_commission_opportunities" name="My Commission Opportunities" inherit_id="portal.portal_my_home">
 <xpath expr="//div[@id='portal_common_category']" position="inside">
 <t t-call="portal.portal_docs_entry" t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
-<t t-set="title">Minhas Oportunidades e Comissões</t>
-<t t-set="text">Visualize suas oportunidades e comissões vinculadas.</t>
+<t t-set="title">Minhas Oportunidades e Repasses</t>
+<t t-set="text">Visualize suas oportunidades e repasses vinculados.</t>
 <t t-set="url" t-value="'/my/opportunities'"/>
 <t t-set="config_card" t-value="True"/>
 </t>
@@ -16,10 +16,11 @@
 <t t-set="breadcrumbs">
 <ol class="breadcrumb">
 <li class="breadcrumb-item"><a href="/my">Home</a></li>
-<li class="breadcrumb-item active">Minhas Oportunidades e Comissões</li>
+<li class="breadcrumb-item active">Minhas Oportunidades e Repasses</li>
 </ol>
 </t>
 
+<div class="o_portal_doctor">
 <div class="row mb-3">
 <div class="col-12">
 <h5 class="text-muted mb-2">Resumo por Estágio</h5>
@@ -48,19 +49,19 @@
 
 <div class="row mb-4">
 <div class="col-12">
-<h3>Minhas Comissões</h3>
+<h3>Meus Repasses</h3>
 </div>
 </div>
 <div class="row">
 <div class="col-12">
 <t t-if="not settlements">
-<p class="text-muted">Nenhuma comissão registrada no momento.</p>
+<p class="text-muted">Nenhum repasse registrado no momento.</p>
 </t>
 <t t-if="settlements">
 <table class="table table-striped">
 <thead>
 <tr>
-<th>Comissão</th>
+<th>Repasse</th>
 <th>Período</th>
 <th>Valor</th>
 <th>Estado</th>
@@ -103,6 +104,7 @@
 </t>
 </div>
 </div>
+</div>
 </t>
 </template>
 
@@ -115,6 +117,7 @@
 <li class="breadcrumb-item active"><t t-esc="lead.name"/></li>
 </ol>
 </t>
+<div class="o_portal_doctor">
 <div class="row">
 <div class="col-12">
 <h3><t t-esc="lead.name"/></h3>
@@ -137,6 +140,7 @@
 </tr>
 
 </table>
+</div>
 </div>
 </div>
 </t>

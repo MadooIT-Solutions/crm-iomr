@@ -122,7 +122,7 @@ class CustomerPortal(http.Controller):
                 "<thead><tr>"
                 "<th>Oportunidade</th><th>Paciente</th>"
                 "<th>Data da Indica\u00e7\u00e3o</th><th>Indica\u00e7\u00e3o</th>"
-                "<th>Expectativa</th><th>Comiss\u00e3o</th>"
+                "<th>Expectativa</th><th>Repasse</th>"
                 "</tr></thead><tbody>%s</tbody></table></details>"
                 % (group["stage_name"], group["count"], rows)
             )

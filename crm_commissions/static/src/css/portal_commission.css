@@ -6,3 +6,42 @@
 .o_portal_commission_card:hover {
   transform: translateY(-2px);
 }
+
+.o_portal_doctor h1,
+.o_portal_doctor h2,
+.o_portal_doctor h3,
+.o_portal_doctor h4,
+.o_portal_doctor h5,
+.o_portal_doctor h6,
+.o_portal_doctor th,
+.o_portal_doctor td,
+.o_portal_doctor p,
+.o_portal_doctor span,
+.o_portal_doctor a,
+.o_portal_doctor li,
+.o_portal_doctor label,
+.o_portal_doctor .card-title,
+.o_portal_doctor .card-text,
+.o_portal_doctor .fw-bold,
+.o_portal_doctor .small,
+.o_portal_doctor .text-muted,
+.o_portal_doctor .badge,
+.o_portal_doctor summary {
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.o_portal_doctor h3 {
+  font-size: 16px;
+}
+
+.o_portal_doctor h4,
+.o_portal_doctor h5,
+.o_portal_doctor h6 {
+  font-size: 14px;
+}
+
+.o_portal_doctor .card-title,
+.o_portal_doctor .card-text {
+  font-size: 12px;
+}
