@@ -12,11 +12,6 @@
             <field name="category_id" ref="base.module_category_sales_sales"/>
         </record>
 
-        <record id="group_commission_sdr" model="res.groups">
-            <field name="name">SDR</field>
-            <field name="category_id" ref="base.module_category_sales_sales"/>
-        </record>
-
         <record id="group_commission_coordinator" model="res.groups">
             <field name="name">Commission Coordinator</field>
             <field name="category_id" ref="base.module_category_sales_sales"/>

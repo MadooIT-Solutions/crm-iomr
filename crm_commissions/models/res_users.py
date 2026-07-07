@@ -1,8 +1,85 @@
-from odoo import models
+from odoo import api, fields, models
 
 
 class ResUsers(models.Model):
     _inherit = "res.users"
+
+    crm_role = fields.Selection(
+        selection=[
+            ("sdr", "SDR"),
+            ("orientadora", "Orientadora"),
+            ("coordenadora", "Coordenadora"),
+            ("commission_user", "CRM Commission User"),
+            ("manager", "Commission Manager"),
+            ("doctor", "Doctor (Portal)"),
+            ("readonly", "Visualização Total (CRM/Vendas)"),
+        ],
+        string="Função CRM",
+        compute="_compute_crm_role",
+        inverse="_inverse_crm_role",
+    )
+
+    @api.depends("groups_id")
+    def _compute_crm_role(self):
+        for user in self:
+            if user.has_group("crm_commissions.group_crm_commission_manager"):
+                user.crm_role = "manager"
+            elif user.has_group("crm_commissions.group_crm_commission_orientadora"):
+                user.crm_role = "orientadora"
+            elif user.has_group("crm_commissions.group_crm_commission_sdr"):
+                user.crm_role = "sdr"
+            elif user.has_group("crm_commissions.group_crm_commission_user"):
+                user.crm_role = "commission_user"
+            elif user.has_group("crm_commissions.group_crm_commission_doctor"):
+                user.crm_role = "doctor"
+            elif user.has_group("crm_commissions.group_crm_readonly"):
+                user.crm_role = "readonly"
+            else:
+                user.crm_role = False
+
+    def _inverse_crm_role(self):
+        crm_groups_xml_ids = [
+            "crm_commissions.group_crm_commission_user",
+            "crm_commissions.group_crm_commission_manager",
+            "crm_commissions.group_crm_commission_orientadora",
+            "crm_commissions.group_crm_commission_sdr",
+            "crm_commissions.group_crm_commission_doctor",
+            "crm_commissions.group_crm_readonly",
+            "crm_commissions.group_commission_manager",
+            "crm_commissions.group_commission_orientadora",
+            "crm_commissions.group_commission_coordinator",
+        ]
+        role_group_map = {
+            "sdr": ["crm_commissions.group_crm_commission_sdr"],
+            "orientadora": [
+                "crm_commissions.group_crm_commission_orientadora",
+                "crm_commissions.group_commission_orientadora",
+            ],
+            "coordenadora": ["crm_commissions.group_commission_coordinator"],
+            "commission_user": ["crm_commissions.group_crm_commission_user"],
+            "manager": [
+                "crm_commissions.group_crm_commission_manager",
+                "crm_commissions.group_commission_manager",
+            ],
+            "doctor": ["crm_commissions.group_crm_commission_doctor"],
+            "readonly": ["crm_commissions.group_crm_readonly"],
+        }
+        for user in self:
+            if not user.crm_role:
+                continue
+            groups_to_remove = []
+            for xml_id in crm_groups_xml_ids:
+                group = self.env.ref(xml_id, raise_if_not_found=False)
+                if group:
+                    groups_to_remove.append(group.id)
+            user.write({"groups_id": [(3, gid) for gid in groups_to_remove]})
+            groups_to_add = []
+            for xml_id in role_group_map.get(user.crm_role, []):
+                group = self.env.ref(xml_id, raise_if_not_found=False)
+                if group:
+                    groups_to_add.append(group.id)
+            if groups_to_add:
+                user.write({"groups_id": [(4, gid) for gid in groups_to_add]})
 
     def write(self, vals):
         if "groups_id" in vals and isinstance(vals["groups_id"], list):

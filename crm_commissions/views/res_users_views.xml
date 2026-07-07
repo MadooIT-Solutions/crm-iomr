@@ -8,6 +8,9 @@
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="type_partner"/>
             </xpath>
+            <xpath expr="//field[@name='groups_id']" position="before">
+                <field name="crm_role" widget="selection"/>
+            </xpath>
         </field>
     </record>
 </odoo>
