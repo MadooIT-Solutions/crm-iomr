@@ -1,3 +1,5 @@
+from lxml import etree
+
 from odoo import api, fields, models
 
 
@@ -136,8 +138,16 @@ class ResGroups(models.Model):
     _inherit = "res.groups"
 
     @api.model
-    def get_groups_by_application(self):
-        res = super().get_groups_by_application()
+    def _update_user_groups_view(self):
+        super()._update_user_groups_view()
+
+        if self._context.get('install_filename') or self._context.get('_force_unlink'):
+            return
+
+        view = self.env.ref('base.user_groups_view', raise_if_not_found=False)
+        if not (view and view._name == 'ir.ui.view'):
+            return
+
         managed_xml_ids = {
             "crm_commissions.group_crm_commission_user",
             "crm_commissions.group_crm_commission_manager",
@@ -149,16 +159,39 @@ class ResGroups(models.Model):
             "crm_commissions.group_commission_orientadora",
             "crm_commissions.group_commission_coordinator",
         }
-        managed_groups = self.env["res.groups"]
+
+        managed_group_ids = set()
         for xml_id in managed_xml_ids:
             group = self.env.ref(xml_id, raise_if_not_found=False)
             if group:
-                managed_groups |= group
-        if not managed_groups:
-            return res
-        new_res = []
-        for app, kind, gs, category_name in res:
-            filtered = gs - managed_groups
-            if filtered:
-                new_res.append((app, kind, filtered, category_name))
-        return new_res
+                managed_group_ids.add(group.id)
+
+        if not managed_group_ids:
+            return
+
+        tree = etree.fromstring(view.arch)
+
+        modified = False
+        for field_elem in list(tree.iter('field')):
+            name = field_elem.get('name', '')
+            if name.startswith('in_group_'):
+                try:
+                    gid = int(name[9:])
+                    if gid in managed_group_ids:
+                        field_elem.getparent().remove(field_elem)
+                        modified = True
+                except ValueError:
+                    pass
+            elif name.startswith('sel_groups_'):
+                try:
+                    ids = [int(v) for v in name[11:].split('_')]
+                    if any(gid in managed_group_ids for gid in ids):
+                        field_elem.getparent().remove(field_elem)
+                        modified = True
+                except ValueError:
+                    pass
+
+        if modified:
+            xml_content = etree.tostring(tree, pretty_print=True, encoding="unicode")
+            if xml_content != view.arch:
+                view.with_context(lang=None).write({'arch': xml_content})
