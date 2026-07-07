@@ -1,6 +1,16 @@
 from odoo import api, fields, models
 
 
+class MailGateway(models.Model):
+    _inherit = "mail.gateway"
+
+    sdr_user_id = fields.Many2one(
+        "res.users",
+        string="SDR Responsável",
+        help="Usuário SDR responsável pelo gerenciamento das conversas do WhatsApp",
+    )
+
+
 class CrmLead(models.Model):
     _inherit = "crm.lead"
 
