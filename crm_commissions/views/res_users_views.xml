@@ -13,6 +13,9 @@
                     <field name="crm_role" widget="selection"/>
                 </group>
             </xpath>
+            <xpath expr="//page[@name='access_rights']/field[@name='groups_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
         </field>
     </record>
 </odoo>
