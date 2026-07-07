@@ -16,6 +16,7 @@
     ],
     "data": [
         "security/crm_iomr_whatsapp_security.xml",
+        "views/mail_gateway.xml",
     ],
     "license": "AGPL-3",
     "installable": True,

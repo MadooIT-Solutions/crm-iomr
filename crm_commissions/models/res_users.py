@@ -13,6 +13,8 @@ class ResUsers(models.Model):
             ("manager", "Commission Manager"),
             ("doctor", "Doctor (Portal)"),
             ("readonly", "Visualização Total (CRM/Vendas)"),
+            ("salesman", "Vendedor"),
+            ("sale_manager", "Gerente de Vendas"),
         ],
         string="Função CRM",
         compute="_compute_crm_role",
@@ -34,6 +36,10 @@ class ResUsers(models.Model):
                 user.crm_role = "doctor"
             elif user.has_group("crm_commissions.group_crm_readonly"):
                 user.crm_role = "readonly"
+            elif user.has_group("sales_team.group_sale_manager"):
+                user.crm_role = "sale_manager"
+            elif user.has_group("sales_team.group_sale_salesman"):
+                user.crm_role = "salesman"
             else:
                 user.crm_role = False
 
@@ -48,6 +54,8 @@ class ResUsers(models.Model):
             "crm_commissions.group_commission_manager",
             "crm_commissions.group_commission_orientadora",
             "crm_commissions.group_commission_coordinator",
+            "sales_team.group_sale_salesman",
+            "sales_team.group_sale_manager",
         ]
         role_group_map = {
             "sdr": ["crm_commissions.group_crm_commission_sdr"],
@@ -63,6 +71,8 @@ class ResUsers(models.Model):
             ],
             "doctor": ["crm_commissions.group_crm_commission_doctor"],
             "readonly": ["crm_commissions.group_crm_readonly"],
+            "salesman": ["sales_team.group_sale_salesman"],
+            "sale_manager": ["sales_team.group_sale_manager"],
         }
         for user in self:
             if not user.crm_role:
