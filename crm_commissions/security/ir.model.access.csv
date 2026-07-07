@@ -4,6 +4,7 @@ access_crm_lead_readonly,crm.lead.readonly,model_crm_lead,group_crm_readonly,1,0
 access_crm_stage_readonly,crm.stage.readonly,crm.model_crm_stage,group_crm_readonly,1,0,0,0
 access_res_partner_readonly,res.partner.readonly,base.model_res_partner,group_crm_readonly,1,0,0,0
 access_res_currency_readonly,res.currency.readonly,base.model_res_currency,group_crm_readonly,1,0,0,0
+access_crm_tag_readonly,crm.tag.readonly,sales_team.model_crm_tag,group_crm_readonly,1,0,0,0
 access_crm_commission_target_user,access_crm_commission_target_user,model_crm_commission_target,group_crm_commission_user,1,1,1,0
 access_crm_commission_target_manager,access_crm_commission_target_manager,model_crm_commission_target,group_crm_commission_manager,1,1,1,1
 access_crm_commission_quarterly_bonus_user,access_crm_commission_quarterly_bonus_user,model_crm_commission_quarterly_bonus,group_crm_commission_user,1,0,0,0
