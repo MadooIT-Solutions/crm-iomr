@@ -103,17 +103,20 @@ class ResUsers(models.Model):
                 ig_id = self.env.ref("base.group_user").id
                 pg_id = self.env.ref("base.group_portal").id
 
+                commands = list(vals["groups_id"])
                 for user in self:
                     old_ids = set(user.groups_id.ids)
-                    new_ids = self._resolve_groups_commands(old_ids, vals["groups_id"])
+                    new_ids = self._resolve_groups_commands(old_ids, commands)
                     doctor_added = dg_id in new_ids and dg_id not in old_ids
                     doctor_removed = dg_id not in new_ids and dg_id in old_ids
 
                     if doctor_added and ig_id in old_ids:
-                        vals["groups_id"].append((3, ig_id))
+                        commands.append((3, ig_id))
                     elif doctor_removed and ig_id not in new_ids and pg_id in new_ids:
-                        vals["groups_id"].append((3, pg_id))
-                        vals["groups_id"].append((4, ig_id))
+                        commands.append((3, pg_id))
+                        commands.append((4, ig_id))
+
+                vals["groups_id"] = commands
 
         return super().write(vals)
 
