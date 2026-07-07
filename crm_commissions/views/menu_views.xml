@@ -44,4 +44,18 @@
         sequence="40"
         groups="group_crm_commission_manager"
     />
+
+    <!-- Grant CRM and Sales menu access to Visualização Total (read-only) -->
+    <record id="crm.crm_menu_root" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('group_crm_readonly'))]"/>
+    </record>
+    <record id="sale.menu_sale_quotations" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('group_crm_readonly'))]"/>
+    </record>
+    <record id="sale.menu_sale_order" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('group_crm_readonly'))]"/>
+    </record>
+    <record id="sale.res_partner_menu" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('group_crm_readonly'))]"/>
+    </record>
 </odoo>
