@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="mail_gateway_form_view_inherit_iomr">
+        <field name="name">mail.gateway.form (in crm_iomr_whatsapp)</field>
+        <field name="model">mail.gateway</field>
+        <field name="inherit_id" ref="mail_gateway.mail_gateway_form_view"/>
+        <field name="arch" type="xml">
+            <field name="whatsapp_version" position="after">
+                <field name="sdr_user_id"
+                       invisible="gateway_type != 'whatsapp'"
+                       options="{'no_create': True}"/>
+            </field>
+        </field>
+    </record>
+</odoo>
