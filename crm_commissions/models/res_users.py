@@ -46,7 +46,7 @@ class ResUsers(models.Model):
                 user.crm_role = False
 
     def _inverse_crm_role(self):
-        crm_groups_xml_ids = [
+        crm_groups_xml_ids = {
             "crm_commissions.group_crm_commission_user",
             "crm_commissions.group_crm_commission_manager",
             "crm_commissions.group_crm_commission_orientadora",
@@ -58,38 +58,43 @@ class ResUsers(models.Model):
             "crm_commissions.group_commission_coordinator",
             "sales_team.group_sale_salesman",
             "sales_team.group_sale_manager",
-        ]
+        }
         role_group_map = {
-            "sdr": ["crm_commissions.group_crm_commission_sdr"],
-            "orientadora": [
+            "sdr": {"crm_commissions.group_crm_commission_sdr"},
+            "orientadora": {
                 "crm_commissions.group_crm_commission_orientadora",
                 "crm_commissions.group_commission_orientadora",
-            ],
-            "coordenadora": ["crm_commissions.group_commission_coordinator"],
-            "commission_user": ["crm_commissions.group_crm_commission_user"],
-            "manager": [
+            },
+            "coordenadora": {"crm_commissions.group_commission_coordinator"},
+            "commission_user": {"crm_commissions.group_crm_commission_user"},
+            "manager": {
                 "crm_commissions.group_crm_commission_manager",
                 "crm_commissions.group_commission_manager",
-            ],
-            "doctor": ["crm_commissions.group_crm_commission_doctor"],
-            "readonly": ["crm_commissions.group_crm_readonly"],
-            "salesman": ["sales_team.group_sale_salesman"],
-            "sale_manager": ["sales_team.group_sale_manager"],
+            },
+            "doctor": {"crm_commissions.group_crm_commission_doctor"},
+            "readonly": {"crm_commissions.group_crm_readonly"},
+            "salesman": {"sales_team.group_sale_salesman"},
+            "sale_manager": {"sales_team.group_sale_manager"},
         }
         for user in self:
             if not user.crm_role:
                 continue
+            target_xml_ids = role_group_map.get(user.crm_role, set())
+            current_group_ids = set(user.groups_id.ids)
             groups_to_remove = []
-            for xml_id in crm_groups_xml_ids:
-                group = self.env.ref(xml_id, raise_if_not_found=False)
-                if group:
-                    groups_to_remove.append(group.id)
-            user.write({"groups_id": [(3, gid) for gid in groups_to_remove]})
             groups_to_add = []
-            for xml_id in role_group_map.get(user.crm_role, []):
+            for xml_id in target_xml_ids:
                 group = self.env.ref(xml_id, raise_if_not_found=False)
-                if group:
+                if group and group.id not in current_group_ids:
                     groups_to_add.append(group.id)
+            for xml_id in crm_groups_xml_ids:
+                if xml_id in target_xml_ids:
+                    continue
+                group = self.env.ref(xml_id, raise_if_not_found=False)
+                if group and group.id in current_group_ids:
+                    groups_to_remove.append(group.id)
+            if groups_to_remove:
+                user.write({"groups_id": [(3, gid) for gid in groups_to_remove]})
             if groups_to_add:
                 user.write({"groups_id": [(4, gid) for gid in groups_to_add]})
 
