@@ -130,3 +130,35 @@ class ResUsers(models.Model):
             elif cmd[0] == 6:
                 ids = set(cmd[2])
         return ids
+
+
+class ResGroups(models.Model):
+    _inherit = "res.groups"
+
+    @api.model
+    def get_groups_by_application(self):
+        res = super().get_groups_by_application()
+        managed_xml_ids = {
+            "crm_commissions.group_crm_commission_user",
+            "crm_commissions.group_crm_commission_manager",
+            "crm_commissions.group_crm_commission_orientadora",
+            "crm_commissions.group_crm_commission_sdr",
+            "crm_commissions.group_crm_commission_doctor",
+            "crm_commissions.group_crm_readonly",
+            "crm_commissions.group_commission_manager",
+            "crm_commissions.group_commission_orientadora",
+            "crm_commissions.group_commission_coordinator",
+        }
+        managed_groups = self.env["res.groups"]
+        for xml_id in managed_xml_ids:
+            group = self.env.ref(xml_id, raise_if_not_found=False)
+            if group:
+                managed_groups |= group
+        if not managed_groups:
+            return res
+        new_res = []
+        for app, kind, gs, category_name in res:
+            filtered = gs - managed_groups
+            if filtered:
+                new_res.append((app, kind, filtered, category_name))
+        return new_res
