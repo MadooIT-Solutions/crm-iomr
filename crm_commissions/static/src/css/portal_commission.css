@@ -49,7 +49,7 @@
 .o_portal_doctor summary {
   text-transform: uppercase;
   font-size: 12px;
-  color: var(--iomr-text);
+  color: var(--iomr-primary);
 }
 
 .o_portal_doctor h1 {
@@ -725,6 +725,17 @@
   background-color: var(--iomr-silver) !important;
 }
 
+.o_portal h1, .o_portal h2, .o_portal h3, .o_portal h4, .o_portal h5, .o_portal h6,
+.o_portal p, .o_portal span, .o_portal li, .o_portal label,
+.o_portal .card-title, .o_portal .card-text, .o_portal .fw-bold,
+.o_portal .text-muted {
+  color: var(--iomr-primary) !important;
+}
+
+.o_portal .text-muted {
+  opacity: 0.8 !important;
+}
+
 /* Navbar escura no portal */
 .o_portal .navbar.bg-light,
 .o_portal .navbar-light.bg-light {
@@ -744,15 +755,11 @@
 .o_portal .breadcrumb-item,
 .o_portal .breadcrumb-item a,
 .o_portal .breadcrumb-item.active {
-  color: var(--iomr-text) !important;
-}
-
-.o_portal .breadcrumb-item.active {
   color: var(--iomr-primary) !important;
 }
 
 .o_portal .breadcrumb-item + .breadcrumb-item::before {
-  color: var(--iomr-text) !important;
+  color: var(--iomr-primary) !important;
   opacity: 0.5;
 }
 
@@ -765,13 +772,6 @@
 }
 
 /* Esconder menus específicos no portal home para médicos */
-.o_portal_doctor_home a[href*="/my/orders"],
-.o_portal_doctor_home a[href*="/my/invoices"],
-.o_portal_doctor_home a[href*="/my/security"] {
-  display: none !important;
-}
-
-/* Esconder o card inteiro (wrapper) quando o link está oculto */
 .o_portal_doctor_home a[href*="/my/orders"],
 .o_portal_doctor_home a[href*="/my/invoices"],
 .o_portal_doctor_home a[href*="/my/security"] {
@@ -819,9 +819,9 @@
 }
 
 .o_portal_doctor_home .o_portal_index_card a .opacity-75 {
-  color: var(--iomr-text) !important;
+  color: var(--iomr-primary) !important;
   font-size: 12px;
-  opacity: 1 !important;
+  opacity: 0.85 !important;
 }
 
 /* Details/Summary acordeão */
