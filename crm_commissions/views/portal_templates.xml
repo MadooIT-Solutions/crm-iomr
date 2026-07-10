@@ -56,17 +56,17 @@
 <h5 class="text-muted mb-2">Ganhos e Não Faturados</h5>
 <div class="d-flex flex-wrap gap-2">
 <div class="card o_portal_commission_card" style="min-width:160px">
-<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">
+<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">
 <div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total Ganhos</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="ganhos_total_fmt"/></span></div>
 </div></div>
 <div class="card o_portal_commission_card" style="min-width:160px">
-<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">
+<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">
 <div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Faturado</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="faturado_total_fmt"/></span></div>
 </div></div>
 <div class="card o_portal_commission_card" style="min-width:160px">
-<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">
+<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">
 <div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Não Faturado</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="nao_faturado_total_fmt"/></span></div>
 </div></div>
