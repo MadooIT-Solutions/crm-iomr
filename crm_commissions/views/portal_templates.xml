@@ -151,6 +151,7 @@
 <thead>
 <tr>
 <th>Pedido</th>
+<th>Paciente</th>
 <th>Data do Pedido</th>
 <th>Oportunidade (CRM)</th>
 <th>Repasse</th>
@@ -159,6 +160,7 @@
 <tbody>
 <tr t-foreach="uninvoiced_orders_data" t-as="uo">
 <td><t t-esc="uo['order_name']"/></td>
+<td><t t-esc="uo['partner_name']"/></td>
 <td><t t-esc="uo['order_date']"/></td>
 <td><t t-esc="uo['opportunity_name']"/></td>
 <td>R$ <t t-esc="uo['commission_fmt']"/></td>

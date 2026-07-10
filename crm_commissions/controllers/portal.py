@@ -243,6 +243,7 @@ class CustomerPortal(http.Controller):
             )
             uninvoiced_orders_data.append({
                 "order_name": order.name,
+                "partner_name": order.partner_id.sudo().name or "-",
                 "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
                 "opportunity_name": opportunity.name if opportunity else "-",
                 "commission_fmt": "{:,.2f}".format(
