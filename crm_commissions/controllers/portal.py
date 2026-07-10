@@ -224,7 +224,7 @@ class CustomerPortal(http.Controller):
                 "order_name": order.name,
                 "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
                 "product_name": agent_line.object_id.product_id.display_name or "",
-                "amount": agent_line.amount,
+                "amount": "{:,.2f}".format(agent_line.amount or 0.0),
             })
 
         uninvoiced_orders = request.env["sale.order"].search([
