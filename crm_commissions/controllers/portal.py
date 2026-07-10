@@ -203,6 +203,30 @@ class CustomerPortal(http.Controller):
                 )
             settlement_data.append(info)
 
+        settled_order_names = set()
+        for s in settlement_data:
+            for line_data in s["lines"]:
+                if line_data["order_name"]:
+                    for name in line_data["order_name"].split(", "):
+                        settled_order_names.add(name.strip())
+
+        pending_agents = request.env["sale.order.line.agent"].search([
+            ("agent_id", "=", partner.id),
+            ("object_id.order_id.state", "=", "sale"),
+        ])
+
+        pending_data = []
+        for agent_line in pending_agents:
+            order = agent_line.object_id.order_id
+            if order.name in settled_order_names:
+                continue
+            pending_data.append({
+                "order_name": order.name,
+                "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
+                "product_name": agent_line.object_id.product_id.display_name or "",
+                "amount": agent_line.amount,
+            })
+
         ganhos_total = 0.0
         faturado_total = 0.0
         nao_faturado_total = 0.0
@@ -217,6 +241,11 @@ class CustomerPortal(http.Controller):
                 elif state == "settled":
                     nao_faturado_total += val
 
+        for pd in pending_data:
+            amt = pd["amount"] or 0.0
+            ganhos_total += amt
+            nao_faturado_total += amt
+
         ganhos_total_fmt = "{:,.2f}".format(ganhos_total)
         faturado_total_fmt = "{:,.2f}".format(faturado_total)
         nao_faturado_total_fmt = "{:,.2f}".format(nao_faturado_total)
@@ -229,6 +258,7 @@ class CustomerPortal(http.Controller):
                 "total_card_html": total_card_html,
                 "accordion_html": accordion_html,
                 "settlements": settlement_data,
+                "pending_data": pending_data,
                 "ganhos_total_fmt": ganhos_total_fmt,
                 "faturado_total_fmt": faturado_total_fmt,
                 "nao_faturado_total_fmt": nao_faturado_total_fmt,
