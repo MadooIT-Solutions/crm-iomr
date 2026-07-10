@@ -4,6 +4,7 @@ from odoo.http import request
 
 
 class CustomerPortal(http.Controller):
+
     @http.route(
         ["/my/opportunities", "/my/opportunities/page/<int:page>"],
         type="http",
@@ -66,7 +67,11 @@ class CustomerPortal(http.Controller):
                 {
                     "id": opp.id,
                     "name": opp.name,
+                    "stage_name": stage_name,
                     "partner_name": opp.sudo().partner_id.name or "-",
+                    "email_from": opp.email_from or "",
+                    "phone": opp.phone or "",
+                    "mobile": opp.mobile or "",
                     "date_str": opp.create_date.strftime("%d/%m/%Y")
                     if opp.create_date
                     else "-",
@@ -80,7 +85,32 @@ class CustomerPortal(http.Controller):
                         * (opp.commission_percent or commission_rate)
                         / 100.0
                     ),
-                    "url": "/my/opportunity/%d" % opp.id,
+                    "probability": opp.probability or 0,
+                    "priority": opp.priority or "",
+                    "date_deadline": opp.date_deadline.strftime("%d/%m/%Y")
+                    if opp.date_deadline
+                    else "",
+                    "user_name": opp.user_id.sudo().name or "",
+                    "team_name": opp.team_id.sudo().name or "",
+                    "source_name": opp.source_id.sudo().name or "",
+                    "campaign_name": opp.campaign_id.sudo().name or "",
+                    "tag_names": ", ".join(opp.tag_ids.mapped("name")) or "",
+                    "street": opp.street or "",
+                    "street2": opp.street2 or "",
+                    "city": opp.city or "",
+                    "state_name": opp.state_id.sudo().name or "",
+                    "zip": opp.zip or "",
+                    "create_date": opp.create_date.strftime("%d/%m/%Y %H:%M")
+                    if opp.create_date
+                    else "",
+                    "date_open": opp.date_open.strftime("%d/%m/%Y")
+                    if opp.date_open
+                    else "",
+                    "commission_percent": opp.commission_percent or 0,
+                    "discount_percent": opp.discount_percent or 0,
+                    "margin_percent": opp.margin_percent or 0,
+                    "is_crm_score": opp.is_crm_score or 0,
+                    "description": opp.description or "",
                 }
                 for opp in opps
             ]
@@ -113,12 +143,11 @@ class CustomerPortal(http.Controller):
             for d in group["data"]:
                 rows += (
                     "<tr>"
-                    '<td><a href="%s">%s</a></td>'
+                    "<td>%s</td>"
                     "<td>%s</td><td>%s</td><td>%s</td>"
                     "<td>R$ %s</td><td>R$ %s</td>"
                     "</tr>"
                     % (
-                        d["url"],
                         d["name"],
                         d["partner_name"],
                         d["date_str"],
@@ -174,6 +203,24 @@ class CustomerPortal(http.Controller):
                 )
             settlement_data.append(info)
 
+        ganhos_total = 0.0
+        faturado_total = 0.0
+        nao_faturado_total = 0.0
+        for s in settlement_data:
+            state = s["settlement"].state
+            for line_data in s["lines"]:
+                val = line_data["line"].settled_amount or 0.0
+                if state != "cancel":
+                    ganhos_total += val
+                if state == "invoiced" and line_data["payment_state"] == "paid":
+                    faturado_total += val
+                elif state == "settled":
+                    nao_faturado_total += val
+
+        ganhos_total_fmt = "{:,.2f}".format(ganhos_total)
+        faturado_total_fmt = "{:,.2f}".format(faturado_total)
+        nao_faturado_total_fmt = "{:,.2f}".format(nao_faturado_total)
+
         return request.render(
             "crm_commissions.portal_my_opportunities_list",
             {
@@ -182,6 +229,9 @@ class CustomerPortal(http.Controller):
                 "total_card_html": total_card_html,
                 "accordion_html": accordion_html,
                 "settlements": settlement_data,
+                "ganhos_total_fmt": ganhos_total_fmt,
+                "faturado_total_fmt": faturado_total_fmt,
+                "nao_faturado_total_fmt": nao_faturado_total_fmt,
             },
         )
 
@@ -192,16 +242,7 @@ class CustomerPortal(http.Controller):
         website=True,
     )
     def my_opportunity_detail(self, lead_id, **kw):
-        partner = request.env.user.partner_id
-        if partner.type_partner not in ("doctorint", "doctorext"):
-            return request.redirect("/my")
-        lead = request.env["crm.lead"].browse(lead_id)
-        if lead.doctor.id != partner.id:
-            return request.redirect("/my")
-        return request.render(
-            "crm_commissions.portal_my_opportunity_detail",
-            {"lead": lead},
-        )
+        return request.redirect("/my/opportunities")
 
     @http.route(
         ["/my/repasse-rules"],

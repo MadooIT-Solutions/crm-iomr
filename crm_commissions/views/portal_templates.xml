@@ -30,12 +30,7 @@
 <t t-set="url" t-value="'/my/repasse-rules'"/>
 <t t-set="config_card" t-value="True"/>
 </t>
-<t t-call="portal.portal_docs_entry" t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
-<t t-set="title">Planilha de Repasses</t>
-<t t-set="text">Baixe a planilha original com as regras de repasse.</t>
-<t t-set="url" t-value="'/my/repasse-rules/download'"/>
-<t t-set="config_card" t-value="True"/>
-</t>
+
 </xpath>
 </template>
 
@@ -59,6 +54,29 @@
 </div>
 </div>
 
+<div class="row mb-3">
+<div class="col-12">
+<h5 class="text-muted mb-2">Ganhos e Não Faturados</h5>
+<div class="d-flex flex-wrap gap-2">
+<div class="card o_portal_commission_card" style="min-width:160px">
+<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">
+<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total Ganhos</div>
+<div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="ganhos_total_fmt"/></span></div>
+</div></div>
+<div class="card o_portal_commission_card" style="min-width:160px">
+<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">
+<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Faturado</div>
+<div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="faturado_total_fmt"/></span></div>
+</div></div>
+<div class="card o_portal_commission_card" style="min-width:160px">
+<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">
+<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Não Faturado</div>
+<div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="nao_faturado_total_fmt"/></span></div>
+</div></div>
+</div>
+</div>
+</div>
+
 <div class="row mb-4">
 <div class="col-12">
 <h3>Oportunidades em Aberto</h3>
@@ -69,9 +87,9 @@
 <t t-if="not open_opportunities">
 <p class="text-muted">Nenhuma oportunidade em aberto no momento.</p>
 </t>
-<t t-if="open_opportunities">
-<t t-raw="accordion_html"/>
-</t>
+    <t t-if="open_opportunities">
+        <t t-raw="accordion_html"/>
+    </t>
 </div>
 </div>
 
@@ -130,44 +148,6 @@
 </tbody>
 </table>
 </t>
-</div>
-</div>
-</div>
-</t>
-</template>
-
-<template id="portal_my_opportunity_detail" name="Opportunity Detail">
-<t t-call="portal.portal_layout">
-<t t-set="breadcrumbs">
-<ol class="breadcrumb">
-<li class="breadcrumb-item"><a href="/my">Home</a></li>
-<li class="breadcrumb-item"><a href="/my/opportunities">Minhas Oportunidades</a></li>
-<li class="breadcrumb-item active"><t t-esc="lead.name"/></li>
-</ol>
-</t>
-<div class="o_portal_doctor">
-<div class="row">
-<div class="col-12">
-<h3><t t-esc="lead.name"/></h3>
-</div>
-</div>
-<div class="row mt-4">
-<div class="col-md-6">
-<table class="table">
-<tr>
-<th>Expectativa</th>
-<td><t t-esc="lead.expected_revenue"/></td>
-</tr>
-<tr>
-<th>Probabilidade</th>
-<td><t t-esc="lead.probability"/>%</td>
-</tr>
-<tr>
-<th>Estágio</th>
-<td><t t-esc="lead.stage_id.name"/></td>
-</tr>
-
-</table>
 </div>
 </div>
 </div>
