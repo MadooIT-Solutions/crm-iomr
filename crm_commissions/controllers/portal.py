@@ -244,11 +244,7 @@ class CustomerPortal(http.Controller):
             uninvoiced_orders_data.append({
                 "order_name": order.name,
                 "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
-                "partner_name": order.partner_id.sudo().name or "-",
                 "opportunity_name": opportunity.name if opportunity else "-",
-                "referred_names": ", ".join(opportunity.sudo().referred_partner.mapped("name")) if opportunity else "-",
-                "amount_total": order.amount_total or 0.0,
-                "amount_total_fmt": "{:,.2f}".format(order.amount_total or 0.0),
                 "commission_fmt": "{:,.2f}".format(
                     (order.amount_total or 0.0) * comm_pct / 100.0
                 ),
