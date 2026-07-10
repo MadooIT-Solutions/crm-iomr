@@ -25,13 +25,17 @@ class CustomerPortal(http.Controller):
 
         commission_rate = partner.commission_id.fix_qty or 0.0
 
-        stages = open_opportunities.mapped("stage_id").sorted("sequence")
+        follow_up = request.env["crm.stage"].search([("name", "=", "Follow-up")], limit=1)
+        negociacao = request.env["crm.stage"].search([("name", "=", "Negociação")], limit=1)
+        wanted_stages = [s for s in (follow_up, negociacao) if s]
+        wanted_stages.sort(key=lambda s: s.sequence)
+
         opportunities_by_stage = []
         total_opps = 0
         total_commission_val = 0.0
         summary_cards_html = ""
-        for stage in stages:
-            opps = open_opportunities.filtered(lambda l: l.stage_id == stage)
+        for stage in wanted_stages:
+            opps = open_opportunities.filtered(lambda l, s=stage: l.stage_id == s)
             stage_name = stage.sudo().name
             stage_count = len(opps)
             stage_commission = sum(
@@ -43,11 +47,11 @@ class CustomerPortal(http.Controller):
             total_commission_val += stage_commission
             summary_cards_html += (
                 '<div class="card o_portal_commission_card" style="min-width:160px">'
-                '<div class="card-body py-3 px-3 text-center">'
-                '<div class="fw-bold small text-uppercase mb-1" style="color:#dadada">%s</div>'
+                '<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">'
+                '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">%s</div>'
                 "<div>"
-                '<span class="badge bg-secondary me-1">%d</span>'
-                '<span class="ms-1 small fw-bold" style="color:#8EBAA6">R$ %s</span>'
+                '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">%d</span>'
+                '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ %s</span>'
                 "</div></div></div>"
                 % (stage_name, stage_count, "{:,.2f}".format(stage_commission))
             )
@@ -190,4 +194,84 @@ class CustomerPortal(http.Controller):
         return request.render(
             "crm_commissions.portal_my_opportunity_detail",
             {"lead": lead},
+        )
+
+    @http.route(
+        ["/my/repasse-rules"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def repasse_rules(self, **kw):
+        groups = [
+            {
+                "name": "Consulta",
+                "rows": [
+                    {"tipo": "Honorário", "convenio": "Particular", "repasse": "60%", "base": "Receita Líquida", "equacao": "[preço consulta - impostos - taxa cartão] x 60%", "obs": "Taxa cartão varia conforme forma de pgto. Impostos: 16,33%"},
+                    {"tipo": "Honorário", "convenio": "Convênios", "repasse": "60%", "base": "Receita Líquida", "equacao": "[preço consulta - impostos] x 60%", "obs": "Impostos: 16,33%"},
+                    {"tipo": "Honorário", "convenio": "Unimed*", "repasse": "60%", "base": "Receita Líquida", "equacao": "[preço consulta - impostos - taxas] x 60%", "obs": "Impostos: 27,5% | Taxas: 2,50%"},
+                    {"tipo": "Honorário", "convenio": "Humana", "repasse": "R$ 35,00", "base": "Valor Fixo", "equacao": "Não se aplica", "obs": "-"},
+                ],
+            },
+            {
+                "name": "Exames realizados por médico",
+                "rows": [
+                    {"tipo": "Honorário + Taxa", "convenio": "Particular", "repasse": "50%", "base": "Receita Líquida", "equacao": "[preço exame - impostos - taxa cartão] x 50%", "obs": "Taxa cartão varia. Impostos: 11,73%"},
+                    {"tipo": "Honorário + Taxa", "convenio": "Convênios", "repasse": "50%", "base": "Receita Líquida", "equacao": "[preço exame - impostos] x 50%", "obs": "Impostos: 11,73%"},
+                    {"tipo": "Honorário + Taxa", "convenio": "Unimed*", "repasse": "50%", "base": "Receita Líquida", "equacao": "[preço exame - impostos - taxas] x 50%", "obs": "Impostos: 27,5% | Taxas: 2,50%"},
+                    {"tipo": "Honorário + Taxa", "convenio": "Humana", "repasse": "Tabela", "base": "Tabela Humana", "equacao": "Não se aplica", "obs": "Baseada no valor líquido que o médico recebe da Unimed."},
+                ],
+            },
+            {
+                "name": "Exames realizados por técnico",
+                "rows": [
+                    {"tipo": "Honorário + Taxa", "convenio": "Particular", "repasse": "25%", "base": "Receita Líquida", "equacao": "[preço exame - impostos - taxa cartão] x 25%", "obs": "Taxa cartão varia. Impostos: 11,73%"},
+                    {"tipo": "Honorário + Taxa", "convenio": "Convênios", "repasse": "25%", "base": "Receita Líquida", "equacao": "[preço exame - impostos] x 25%", "obs": "Impostos: 11,73%"},
+                    {"tipo": "Honorário + Taxa", "convenio": "Unimed*", "repasse": "25%", "base": "Receita Líquida", "equacao": "[preço exame - impostos - taxas] x 25%", "obs": "Impostos: 27,5% | Taxas: 2,50%"},
+                    {"tipo": "Honorário + Taxa", "convenio": "Humana", "repasse": "-", "base": "N/A", "equacao": "Não se aplica", "obs": "Não gera repasse."},
+                ],
+            },
+            {
+                "name": "Lente de contato",
+                "rows": [
+                    {"tipo": "Rígidas e Gelatinosas", "convenio": "Particular", "repasse": "20%", "base": "Receita Bruta", "equacao": "preço de venda da lente x 20%", "obs": "-"},
+                ],
+            },
+            {
+                "name": "Cirurgia (honorário)",
+                "rows": [
+                    {"tipo": "Honorário", "convenio": "Particular", "repasse": "100%", "base": "Receita Líquida", "equacao": "[preço honorário - impostos - taxa cartão] x 100%", "obs": "Taxa cartão varia. Impostos: 11,73%"},
+                    {"tipo": "Honorário", "convenio": "Convênios", "repasse": "100%", "base": "Receita Líquida", "equacao": "[preço honorário - impostos] x 100%", "obs": "Impostos: 11,73%"},
+                    {"tipo": "Honorário", "convenio": "Unimed", "repasse": "-", "base": "Receita Líquida", "equacao": "[preço honorário - impostos - taxas] x % de repasse", "obs": "-"},
+                    {"tipo": "Honorário", "convenio": "Humana", "repasse": "Tabela", "base": "Tabela Humana", "equacao": "Não se aplica", "obs": "Baseada no valor líquido que o médico recebe da Unimed."},
+                ],
+            },
+            {
+                "name": "LIO (Lente Intraocular)",
+                "rows": [
+                    {"tipo": "Trifocal Tórica", "convenio": "Particular", "repasse": "R$ 1.900,00", "base": "Valor Fixo", "equacao": "N/A", "obs": "Desconto comercial também aplicado ao repasse."},
+                    {"tipo": "Trifocal", "convenio": "Particular", "repasse": "R$ 1.700,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Foco Estendido Tórica", "convenio": "Particular", "repasse": "R$ 1.900,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Foco Estendido", "convenio": "Particular", "repasse": "R$ 1.700,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Monofocal Plus Tórica", "convenio": "Particular", "repasse": "R$ 1.400,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Monofocal Plus", "convenio": "Particular", "repasse": "R$ 1.400,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Bifocal", "convenio": "Particular", "repasse": "R$ 1.400,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Tórica", "convenio": "Particular", "repasse": "R$ 1.400,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Asférica", "convenio": "Particular", "repasse": "R$ 1.100,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Esférica", "convenio": "Particular", "repasse": "R$ 645,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "SA60AT", "convenio": "Particular", "repasse": "R$ 250,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                    {"tipo": "Una MFA5", "convenio": "Particular", "repasse": "R$ 180,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                ],
+            },
+            {
+                "name": "Cola Orgânica",
+                "rows": [
+                    {"tipo": "Cola Orgânica", "convenio": "Particular", "repasse": "R$ 200,00", "base": "Valor Fixo", "equacao": "N/A", "obs": ""},
+                ],
+            },
+        ]
+
+        return request.render(
+            "crm_commissions.portal_repasse_rules",
+            {"groups": groups},
         )
