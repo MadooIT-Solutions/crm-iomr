@@ -81,15 +81,19 @@ class CustomerPortal(http.Controller):
                 }
             )
 
+        total_commission_fmt = "{:,.2f}".format(total_commission_val)
         total_card_html = (
             '<div class="card o_portal_commission_card" style="min-width:160px">'
-            '<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%%, #7EAE96 100%%);border-radius:12px">'
+            '<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">'
             '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total</div>'
             "<div>"
-            '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">%%d</span>'
-            '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ %%s</span>'
+            '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">'
+            + str(total_opps)
+            + '</span>'
+            '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ '
+            + total_commission_fmt
+            + "</span>"
             "</div></div></div>"
-            % (total_opps, "{:,.2f}".format(total_commission_val))
         )
 
         accordion_html = ""
