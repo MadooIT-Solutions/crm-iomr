@@ -7,7 +7,7 @@
     <t t-set="portal_service_category_enable" t-value="False"/>
     <t t-set="portal_vendor_category_enable" t-value="False"/>
   </xpath>
-  <xpath expr="//a[@href='/my/security']/.." position="replace"/>
+  <xpath expr="//div[@id='portal_common_category']/t[2]" position="replace"/>
   <xpath expr="//div[hasclass('o_portal_my_home')]" position="inside">
     <script>document.getElementById('wrapwrap').classList.add('o_portal_doctor_home')</script>
   </xpath>
