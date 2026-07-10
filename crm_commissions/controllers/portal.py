@@ -222,10 +222,13 @@ class CustomerPortal(http.Controller):
             if order.name in settled_order_names:
                 continue
             order_id = order.id
+            opportunity = order.opportunity_id
             if order_id not in pending_by_order:
                 pending_by_order[order_id] = {
                     "order_name": order.name,
+                    "partner_name": order.sudo().partner_id.name or "-",
                     "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
+                    "opportunity_name": opportunity.name if opportunity else "-",
                     "amount": 0.0,
                 }
             pending_by_order[order_id]["amount"] += agent_line.amount or 0.0

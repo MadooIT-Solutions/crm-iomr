@@ -105,14 +105,18 @@
 <thead>
 <tr>
 <th>Pedido</th>
+<th>Cliente</th>
 <th>Data</th>
+<th>Oportunidade</th>
 <th>Valor</th>
 </tr>
 </thead>
 <tbody>
 <tr t-foreach="pending_data" t-as="pd">
 <td><t t-esc="pd['order_name']"/></td>
+<td><t t-esc="pd['partner_name']"/></td>
 <td><t t-esc="pd['order_date']"/></td>
+<td><t t-esc="pd['opportunity_name']"/></td>
 <td>R$ <t t-esc="pd['amount_fmt']"/></td>
 </tr>
 </tbody>
