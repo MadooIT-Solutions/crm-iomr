@@ -1,10 +1,30 @@
-.o_portal_commission_card {
-  border-radius: 8px;
-  transition: transform 0.2s;
+/* ========================================
+   IOMR PORTAL DE MÉDICOS - Tema Institucional
+   Cores baseadas em www.iomr.com.br
+   ======================================== */
+
+:root {
+  --iomr-primary: #8EBAA6;
+  --iomr-primary-medium: #749888;
+  --iomr-primary-dark: #3B5239;
+  --iomr-silver: #3E3F41;
+  --iomr-light-silver: #6A6D70;
+  --iomr-dark: #2A2A2A;
+  --iomr-white: #FFFFFF;
+  --iomr-text: #dadada;
+  --iomr-gradient: linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);
+  --iomr-gradient-reverse: linear-gradient(90deg, #7EAE96 0%, #A4D4C0 100%);
+  --iomr-outline: #7EAE96;
+  --iomr-font: 'Nunito Sans', sans-serif;
 }
 
-.o_portal_commission_card:hover {
-  transform: translateY(-2px);
+.o_portal_doctor {
+  background-color: var(--iomr-silver);
+  min-height: 400px;
+  padding: 20px;
+  border-radius: 8px;
+  color: var(--iomr-white);
+  font-family: var(--iomr-font);
 }
 
 .o_portal_doctor h1,
@@ -29,9 +49,21 @@
 .o_portal_doctor summary {
   text-transform: uppercase;
   font-size: 12px;
+  color: var(--iomr-text);
+}
+
+.o_portal_doctor h1 {
+  color: var(--iomr-white);
+  font-size: 22px;
+}
+
+.o_portal_doctor h2 {
+  color: var(--iomr-white);
+  font-size: 18px;
 }
 
 .o_portal_doctor h3 {
+  color: var(--iomr-primary);
   font-size: 16px;
 }
 
@@ -39,9 +71,624 @@
 .o_portal_doctor h5,
 .o_portal_doctor h6 {
   font-size: 14px;
+  color: var(--iomr-white);
 }
 
 .o_portal_doctor .card-title,
 .o_portal_doctor .card-text {
   font-size: 12px;
+}
+
+.o_portal_doctor a {
+  color: var(--iomr-primary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.o_portal_doctor a:hover {
+  color: var(--iomr-primary-medium);
+}
+
+.o_portal_doctor .text-muted {
+  color: var(--iomr-text) !important;
+  opacity: 0.8;
+}
+
+.o_portal_commission_card {
+  background-color: var(--iomr-dark);
+  border: 1px solid var(--iomr-light-silver);
+  border-radius: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  color: var(--iomr-white);
+}
+
+.o_portal_commission_card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.o_portal_commission_card .card-body {
+  padding: 1.25rem;
+}
+
+.o_portal_commission_card .card-title {
+  color: var(--iomr-primary);
+}
+
+/* Tabelas */
+.o_portal_doctor .table {
+  color: var(--iomr-white);
+  background-color: var(--iomr-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.o_portal_doctor .table th {
+  background-color: var(--iomr-primary-dark);
+  color: var(--iomr-white);
+  border-color: var(--iomr-light-silver);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.o_portal_doctor .table td {
+  border-color: var(--iomr-light-silver);
+  color: var(--iomr-white);
+  vertical-align: middle;
+}
+
+.o_portal_doctor .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.o_portal_doctor .table-striped tbody tr:nth-of-type(even) {
+  background-color: transparent;
+}
+
+.o_portal_doctor .table-striped tbody tr:hover {
+  background-color: rgba(142, 186, 166, 0.08);
+}
+
+/* Accordion */
+.o_portal_doctor .accordion-item {
+  background-color: var(--iomr-dark);
+  border: 1px solid var(--iomr-light-silver);
+  border-radius: 8px !important;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.o_portal_doctor .accordion-button {
+  background-color: var(--iomr-dark);
+  color: var(--iomr-white);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+  box-shadow: none;
+  border: none;
+}
+
+.o_portal_doctor .accordion-button:not(.collapsed) {
+  background-color: var(--iomr-primary-dark);
+  color: var(--iomr-white);
+}
+
+.o_portal_doctor .accordion-button::after {
+  filter: invert(0.8);
+}
+
+.o_portal_doctor .accordion-body {
+  background-color: rgba(0, 0, 0, 0.15);
+  color: var(--iomr-text);
+}
+
+/* Badges */
+.o_portal_doctor .badge {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.o_portal_doctor .badge.bg-primary,
+.o_portal_doctor .badge.text-bg-primary {
+  background: var(--iomr-gradient) !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .badge.bg-success,
+.o_portal_doctor .badge.text-bg-success {
+  background-color: var(--iomr-primary) !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .badge.bg-warning,
+.o_portal_doctor .badge.text-bg-warning {
+  background-color: #D4A373 !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .badge.bg-danger,
+.o_portal_doctor .badge.text-bg-danger {
+  background-color: #C14A4A !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .badge.bg-info,
+.o_portal_doctor .badge.text-bg-info {
+  background-color: var(--iomr-primary-medium) !important;
+  color: var(--iomr-white) !important;
+}
+
+/* Botões */
+.o_portal_doctor .btn {
+  border-radius: 12px;
+  font-family: var(--iomr-font);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 9px 25px;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.o_portal_doctor .btn-primary {
+  background: var(--iomr-gradient);
+  color: var(--iomr-white);
+  border: none;
+}
+
+.o_portal_doctor .btn-primary:hover {
+  background: var(--iomr-gradient-reverse);
+  color: var(--iomr-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.o_portal_doctor .btn-outline-primary {
+  background-color: transparent;
+  border: 2px solid var(--iomr-outline);
+  color: var(--iomr-white);
+}
+
+.o_portal_doctor .btn-outline-primary:hover {
+  background-color: var(--iomr-outline);
+  color: var(--iomr-white);
+  transform: translateY(-2px);
+}
+
+.o_portal_doctor .btn-secondary {
+  background-color: var(--iomr-light-silver);
+  color: var(--iomr-white);
+}
+
+.o_portal_doctor .btn-secondary:hover {
+  background-color: var(--iomr-silver);
+  transform: translateY(-2px);
+}
+
+/* Breadcrumb */
+.o_portal_doctor .breadcrumb {
+  background-color: transparent;
+  padding: 0;
+}
+
+.o_portal_doctor .breadcrumb-item,
+.o_portal_doctor .breadcrumb-item a {
+  color: var(--iomr-text);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.o_portal_doctor .breadcrumb-item.active {
+  color: var(--iomr-primary);
+}
+
+.o_portal_doctor .breadcrumb-item + .breadcrumb-item::before {
+  color: var(--iomr-text);
+  opacity: 0.5;
+}
+
+/* Cards genéricos dentro do portal */
+.o_portal_doctor .card {
+  background-color: var(--iomr-dark);
+  border: 1px solid var(--iomr-light-silver);
+  border-radius: 12px;
+  color: var(--iomr-white);
+}
+
+.o_portal_doctor .card-header {
+  background-color: var(--iomr-primary-dark);
+  border-bottom: 1px solid var(--iomr-light-silver);
+  color: var(--iomr-white);
+}
+
+.o_portal_doctor .card-footer {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid var(--iomr-light-silver);
+}
+
+/* Progress bar */
+.o_portal_doctor .progress {
+  background-color: var(--iomr-light-silver);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.o_portal_doctor .progress-bar {
+  background: var(--iomr-gradient);
+}
+
+/* Alertas */
+.o_portal_doctor .alert {
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.o_portal_doctor .alert-info {
+  background-color: rgba(142, 186, 166, 0.15);
+  color: var(--iomr-primary);
+}
+
+.o_portal_doctor .alert-warning {
+  background-color: rgba(212, 163, 115, 0.15);
+  color: #D4A373;
+}
+
+.o_portal_doctor .alert-danger {
+  background-color: rgba(193, 74, 74, 0.15);
+  color: #C14A4A;
+}
+
+/* List group */
+.o_portal_doctor .list-group-item {
+  background-color: var(--iomr-dark);
+  border-color: var(--iomr-light-silver);
+  color: var(--iomr-white);
+}
+
+/* Dropdown */
+.o_portal_doctor .dropdown-menu {
+  background-color: var(--iomr-dark);
+  border: 1px solid var(--iomr-light-silver);
+}
+
+.o_portal_doctor .dropdown-item {
+  color: var(--iomr-text);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.o_portal_doctor .dropdown-item:hover {
+  background-color: var(--iomr-primary-dark);
+  color: var(--iomr-white);
+}
+
+/* Paginação */
+.o_portal_doctor .page-link {
+  background-color: var(--iomr-dark);
+  border-color: var(--iomr-light-silver);
+  color: var(--iomr-primary);
+  font-size: 12px;
+}
+
+.o_portal_doctor .page-item.active .page-link {
+  background: var(--iomr-gradient);
+  border-color: transparent;
+  color: var(--iomr-white);
+}
+
+/* Modais */
+.o_portal_doctor .modal-content {
+  background-color: var(--iomr-silver);
+  border: 1px solid var(--iomr-light-silver);
+  color: var(--iomr-white);
+}
+
+.o_portal_doctor .modal-header {
+  border-bottom-color: var(--iomr-light-silver);
+}
+
+.o_portal_doctor .modal-footer {
+  border-top-color: var(--iomr-light-silver);
+}
+
+.o_portal_doctor .btn-close {
+  filter: invert(0.8);
+}
+
+/* Forms */
+.o_portal_doctor .form-control,
+.o_portal_doctor .form-select {
+  background-color: var(--iomr-dark);
+  border-color: var(--iomr-light-silver);
+  color: var(--iomr-white);
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.o_portal_doctor .form-control:focus,
+.o_portal_doctor .form-select:focus {
+  background-color: var(--iomr-dark);
+  border-color: var(--iomr-primary);
+  color: var(--iomr-white);
+  box-shadow: 0 0 0 0.2rem rgba(142, 186, 166, 0.25);
+}
+
+.o_portal_doctor .form-label {
+  color: var(--iomr-primary);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Links de navegação do portal */
+.o_portal_doctor .nav-link {
+  color: var(--iomr-text);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.o_portal_doctor .nav-link:hover,
+.o_portal_doctor .nav-link.active {
+  color: var(--iomr-primary);
+}
+
+/* Summary Card styles for doctor portal */
+.o_portal_doctor .o_portal_commission_card .stage-value {
+  color: var(--iomr-primary);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.o_portal_doctor .o_portal_commission_card .stage-label {
+  color: var(--iomr-text);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Core background/border overrides para HTML gerado pelo controller */
+.o_portal_doctor .bg-secondary {
+  background-color: var(--iomr-light-silver) !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .bg-light {
+  background-color: var(--iomr-dark) !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .bg-primary {
+  background: var(--iomr-gradient) !important;
+  color: var(--iomr-white) !important;
+}
+
+.o_portal_doctor .text-primary {
+  color: var(--iomr-primary) !important;
+}
+
+.o_portal_doctor .border-primary {
+  border-color: var(--iomr-primary) !important;
+}
+
+/* Text colors */
+.o_portal_doctor .text-success {
+  color: var(--iomr-primary) !important;
+}
+
+.o_portal_doctor .text-warning {
+  color: #D4A373 !important;
+}
+
+.o_portal_doctor .text-danger {
+  color: #C14A4A !important;
+}
+
+.o_portal_doctor .text-info {
+  color: var(--iomr-primary-medium) !important;
+}
+
+/* ========================================
+   IOMR DASHBOARD DE COMISSÕES
+   ======================================== */
+
+.o_portal_dashboard {
+  background-color: var(--iomr-silver);
+  min-height: 400px;
+  padding: 20px;
+  border-radius: 8px;
+  color: var(--iomr-white);
+  font-family: var(--iomr-font);
+}
+
+.o_portal_dashboard h1,
+.o_portal_dashboard h2,
+.o_portal_dashboard h3,
+.o_portal_dashboard h4,
+.o_portal_dashboard h5,
+.o_portal_dashboard h6 {
+  color: var(--iomr-white);
+}
+
+.o_portal_dashboard h3 {
+  color: var(--iomr-primary);
+}
+
+.o_portal_dashboard .text-muted {
+  color: var(--iomr-text) !important;
+  opacity: 0.8;
+}
+
+.o_portal_dashboard a {
+  color: var(--iomr-primary);
+}
+
+.o_portal_dashboard a:hover {
+  color: var(--iomr-primary-medium);
+}
+
+.o_portal_dashboard .card {
+  background-color: var(--iomr-dark);
+  border: 1px solid var(--iomr-light-silver);
+  border-radius: 12px;
+  color: var(--iomr-white);
+}
+
+.o_portal_dashboard .card.text-bg-primary {
+  background: var(--iomr-gradient) !important;
+  color: var(--iomr-white) !important;
+  border: none;
+}
+
+.o_portal_dashboard .card.text-bg-success {
+  background-color: var(--iomr-primary) !important;
+  color: var(--iomr-white) !important;
+  border: none;
+}
+
+.o_portal_dashboard .card.text-bg-warning {
+  background-color: #D4A373 !important;
+  color: var(--iomr-white) !important;
+  border: none;
+}
+
+.o_portal_dashboard .card.text-bg-info {
+  background-color: var(--iomr-primary-medium) !important;
+  color: var(--iomr-white) !important;
+  border: none;
+}
+
+.o_portal_dashboard .card.text-bg-light {
+  background-color: var(--iomr-dark) !important;
+  color: var(--iomr-white) !important;
+  border: 1px solid var(--iomr-light-silver);
+}
+
+.o_portal_dashboard .card-title {
+  color: var(--iomr-text);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.o_portal_dashboard .table {
+  color: var(--iomr-white);
+  background-color: var(--iomr-dark);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.o_portal_dashboard .table th {
+  background-color: var(--iomr-primary-dark);
+  color: var(--iomr-white);
+  border-color: var(--iomr-light-silver);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.o_portal_dashboard .table td {
+  border-color: var(--iomr-light-silver);
+  color: var(--iomr-white);
+}
+
+.o_portal_dashboard .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.o_portal_dashboard .table-striped tbody tr:hover {
+  background-color: rgba(142, 186, 166, 0.08);
+}
+
+.o_portal_dashboard .progress {
+  background-color: var(--iomr-light-silver);
+  border-radius: 8px;
+}
+
+.o_portal_dashboard .progress-bar {
+  background: var(--iomr-gradient);
+}
+
+.o_portal_dashboard .progress-bar.bg-success {
+  background-color: var(--iomr-primary) !important;
+}
+
+.o_portal_dashboard .progress-bar.bg-info {
+  background-color: var(--iomr-primary-medium) !important;
+}
+
+.o_portal_dashboard .progress-bar.bg-warning {
+  background-color: #D4A373 !important;
+}
+
+.o_portal_dashboard .progress-bar.bg-danger {
+  background-color: #C14A4A !important;
+}
+
+.o_portal_dashboard .text-success {
+  color: var(--iomr-primary) !important;
+}
+
+.o_portal_dashboard .text-warning {
+  color: #D4A373 !important;
+}
+
+.o_portal_dashboard .text-danger {
+  color: #C14A4A !important;
+}
+
+.o_portal_dashboard .text-info {
+  color: var(--iomr-primary-medium) !important;
+}
+
+.o_portal_dashboard .breadcrumb {
+  background-color: transparent;
+  padding: 0;
+}
+
+.o_portal_dashboard .breadcrumb-item,
+.o_portal_dashboard .breadcrumb-item a {
+  color: var(--iomr-text);
+  font-size: 12px;
+}
+
+.o_portal_dashboard .breadcrumb-item.active {
+  color: var(--iomr-primary);
+}
+
+.o_portal_dashboard .breadcrumb-item + .breadcrumb-item::before {
+  color: var(--iomr-text);
+  opacity: 0.5;
+}
+
+/* Details/Summary acordeão */
+.o_portal_doctor details {
+  cursor: pointer;
+}
+
+.o_portal_doctor details summary {
+  background-color: var(--iomr-primary-dark) !important;
+  color: var(--iomr-white);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  padding: 12px 16px !important;
+}
+
+.o_portal_doctor details summary .badge {
+  vertical-align: middle;
+}
+
+.o_portal_doctor details[open] summary {
+  border-radius: 8px 8px 0 0;
 }

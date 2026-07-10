@@ -9,12 +9,13 @@
 </ol>
 </t>
 
-<div class="row mb-4">
-<div class="col-12">
-<h3>Dashboard de Comissões</h3>
-<p class="text-muted">Bem-vindo(a), <t t-esc="partner.name"/></p>
-</div>
-</div>
+    <div class="o_portal_dashboard">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3>Dashboard de Comissões</h3>
+        <p class="text-muted">Bem-vindo(a), <t t-esc="partner.name"/></p>
+      </div>
+    </div>
 
 <div class="row mb-4">
 <div class="col-md-3">
@@ -361,6 +362,8 @@ t-esc="'%d' % quarterly_pct"/>%
 </div>
 </div>
 
+</div>
 </t>
-</template>
+  </template>
 </odoo>
+

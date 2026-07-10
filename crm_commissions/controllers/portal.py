@@ -42,12 +42,12 @@ class CustomerPortal(http.Controller):
             total_opps += stage_count
             total_commission_val += stage_commission
             summary_cards_html += (
-                '<div class="card" style="min-width:160px">'
-                '<div class="card-body py-2 px-3 text-center">'
-                '<div class="fw-bold small">%s</div>'
+                '<div class="card o_portal_commission_card" style="min-width:160px">'
+                '<div class="card-body py-3 px-3 text-center">'
+                '<div class="fw-bold small text-uppercase mb-1" style="color:#dadada">%s</div>'
                 "<div>"
-                '<span class="badge bg-secondary">%d</span>'
-                '<span class="ms-1 small">R$ %s</span>'
+                '<span class="badge bg-secondary me-1">%d</span>'
+                '<span class="ms-1 small fw-bold" style="color:#8EBAA6">R$ %s</span>'
                 "</div></div></div>"
                 % (stage_name, stage_count, "{:,.2f}".format(stage_commission))
             )
@@ -82,12 +82,12 @@ class CustomerPortal(http.Controller):
             )
 
         total_card_html = (
-            '<div class="card border-primary" style="min-width:160px">'
-            '<div class="card-body py-2 px-3 text-center bg-primary text-white">'
-            '<div class="fw-bold small">Total</div>'
+            '<div class="card o_portal_commission_card" style="min-width:160px">'
+            '<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">'
+            '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total</div>'
             "<div>"
-            '<span class="badge bg-light text-primary">%d</span>'
-            '<span class="ms-1 small fw-bold">R$ %s</span>'
+            '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">%d</span>'
+            '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ %s</span>'
             "</div></div></div>"
             % (total_opps, "{:,.2f}".format(total_commission_val))
         )
@@ -114,9 +114,9 @@ class CustomerPortal(http.Controller):
                 )
             accordion_html += (
                 '<details class="mb-3" style="cursor:pointer">'
-                '<summary class="fw-bold py-2 px-3 bg-light rounded">'
+                '<summary class="fw-bold py-2 px-3" style="background-color:#3B5239;color:#ffffff;border-radius:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">'
                 "%s"
-                '<span class="badge bg-secondary ms-2">%d</span>'
+                '<span class="badge ms-2" style="background-color:#6A6D70;color:#ffffff">%d</span>'
                 "</summary>"
                 '<table class="table table-striped mb-0 mt-2">'
                 "<thead><tr>"
