@@ -30,6 +30,12 @@
 <t t-set="url" t-value="'/my/repasse-rules'"/>
 <t t-set="config_card" t-value="True"/>
 </t>
+<t t-call="portal.portal_docs_entry" t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
+<t t-set="title">Planilha de Repasses</t>
+<t t-set="text">Baixe a planilha original com as regras de repasse.</t>
+<t t-set="url" t-value="'/my/repasse-rules/download'"/>
+<t t-set="config_card" t-value="True"/>
+</t>
 </xpath>
 </template>
 

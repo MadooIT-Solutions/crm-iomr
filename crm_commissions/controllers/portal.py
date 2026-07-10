@@ -1,3 +1,4 @@
+import os
 from odoo import http
 from odoo.http import request
 
@@ -281,3 +282,29 @@ class CustomerPortal(http.Controller):
             "crm_commissions.portal_repasse_rules",
             {"groups": groups},
         )
+
+    @http.route(
+        ["/my/repasse-rules/download"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def repasse_rules_download(self, **kw):
+        partner = request.env.user.partner_id
+        if partner.type_partner not in ("doctorint", "doctorext"):
+            return request.redirect("/my")
+        xlsx_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "..",
+            "Regras de Repasse dos Médicos Sócios.xlsx",
+        )
+        if os.path.isfile(xlsx_path):
+            with open(xlsx_path, "rb") as f:
+                content = f.read()
+            headers = [
+                ("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                ("Content-Disposition", "attachment; filename=Regras de Repasse dos Médicos Sócios.xlsx"),
+                ("Content-Length", str(len(content))),
+            ]
+            return request.make_response(content, headers=headers)
+        return request.redirect("/my/repasse-rules")
