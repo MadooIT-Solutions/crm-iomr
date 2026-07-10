@@ -106,7 +106,6 @@
 <tr>
 <th>Pedido</th>
 <th>Data</th>
-<th>Produto</th>
 <th>Valor</th>
 </tr>
 </thead>
@@ -114,8 +113,7 @@
 <tr t-foreach="pending_data" t-as="pd">
 <td><t t-esc="pd['order_name']"/></td>
 <td><t t-esc="pd['order_date']"/></td>
-<td><t t-esc="pd['product_name']"/></td>
-<td>R$ <t t-esc="pd['amount']"/></td>
+<td>R$ <t t-esc="pd['amount_fmt']"/></td>
 </tr>
 </tbody>
 </table>

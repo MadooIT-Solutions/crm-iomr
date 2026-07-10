@@ -216,16 +216,22 @@ class CustomerPortal(http.Controller):
         ])
 
         pending_data = []
+        pending_by_order = {}
         for agent_line in pending_agents:
             order = agent_line.object_id.order_id
             if order.name in settled_order_names:
                 continue
-            pending_data.append({
-                "order_name": order.name,
-                "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
-                "product_name": agent_line.object_id.product_id.display_name or "",
-                "amount": "{:,.2f}".format(agent_line.amount or 0.0),
-            })
+            order_id = order.id
+            if order_id not in pending_by_order:
+                pending_by_order[order_id] = {
+                    "order_name": order.name,
+                    "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
+                    "amount": 0.0,
+                }
+            pending_by_order[order_id]["amount"] += agent_line.amount or 0.0
+        for vals in pending_by_order.values():
+            vals["amount_fmt"] = "{:,.2f}".format(vals["amount"])
+            pending_data.append(vals)
 
         uninvoiced_orders = request.env["sale.order"].search([
             ("doctor_id", "=", partner.id),
@@ -243,7 +249,7 @@ class CustomerPortal(http.Controller):
             )
             uninvoiced_orders_data.append({
                 "order_name": order.name,
-                "partner_name": order.partner_id.sudo().name or "-",
+                "partner_name": order.sudo().partner_id.name or "-",
                 "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
                 "opportunity_name": opportunity.name if opportunity else "-",
                 "commission_fmt": "{:,.2f}".format(
