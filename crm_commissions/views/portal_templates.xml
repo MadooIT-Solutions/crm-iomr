@@ -2,29 +2,25 @@
 <odoo>
 <template id="portal_my_home_doctor_cleanup" name="Portal Home Doctor Cleanup" inherit_id="portal.portal_my_home" priority="100">
   <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
-    <t t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
-      <t t-set="portal_alert_category_enable" t-value="False"/>
-      <t t-set="portal_client_category_enable" t-value="False"/>
-      <t t-set="portal_service_category_enable" t-value="False"/>
-      <t t-set="portal_vendor_category_enable" t-value="False"/>
-    </t>
+    <t t-set="portal_alert_category_enable" t-value="False"/>
+    <t t-set="portal_client_category_enable" t-value="False"/>
+    <t t-set="portal_service_category_enable" t-value="False"/>
+    <t t-set="portal_vendor_category_enable" t-value="False"/>
   </xpath>
   <xpath expr="//div[hasclass('o_portal_my_home')]" position="inside">
-    <t t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
-      <script>document.getElementById('wrapwrap').classList.add('o_portal_doctor_home')</script>
-    </t>
+    <script>document.getElementById('wrapwrap').classList.add('o_portal_doctor_home')</script>
   </xpath>
 </template>
 
 <template id="portal_commission_opportunities" name="My Commission Opportunities" inherit_id="portal.portal_my_home">
 <xpath expr="//div[@id='portal_common_category']" position="inside">
-<t t-call="portal.portal_docs_entry" t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
+<t t-call="portal.portal_docs_entry">
 <t t-set="title">Minhas Oportunidades e Repasses</t>
 <t t-set="text">Visualize suas oportunidades e repasses vinculados.</t>
 <t t-set="url" t-value="'/my/opportunities'"/>
 <t t-set="config_card" t-value="True"/>
 </t>
-<t t-call="portal.portal_docs_entry" t-if="request.env.user.partner_id.type_partner in ('doctorint', 'doctorext')">
+<t t-call="portal.portal_docs_entry">
 <t t-set="title">Tabela de Repasses</t>
 <t t-set="text">Consulte as regras de repasse por tipo de serviço.</t>
 <t t-set="url" t-value="'/my/repasse-rules'"/>

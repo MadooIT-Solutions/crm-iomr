@@ -94,7 +94,7 @@ class CustomerPortal(http.Controller):
                     "team_name": opp.team_id.sudo().name or "",
                     "source_name": opp.source_id.sudo().name or "",
                     "campaign_name": opp.campaign_id.sudo().name or "",
-                    "tag_names": ", ".join(opp.tag_ids.mapped("name")) or "",
+                    "tag_names": ", ".join(opp.sudo().tag_ids.mapped("name")) or "",
                     "street": opp.street or "",
                     "street2": opp.street2 or "",
                     "city": opp.city or "",
