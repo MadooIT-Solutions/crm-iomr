@@ -227,6 +227,33 @@ class CustomerPortal(http.Controller):
                 "amount": agent_line.amount,
             })
 
+        uninvoiced_orders = request.env["sale.order"].search([
+            ("doctor_id", "=", partner.id),
+            ("state", "=", "sale"),
+            ("invoice_status", "=", "to invoice"),
+        ], order="date_order desc")
+
+        uninvoiced_orders_data = []
+        for order in uninvoiced_orders:
+            opportunity = order.opportunity_id
+            comm_pct = (
+                opportunity.commission_percent
+                if opportunity and opportunity.commission_percent
+                else commission_rate
+            )
+            uninvoiced_orders_data.append({
+                "order_name": order.name,
+                "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
+                "partner_name": order.partner_id.sudo().name or "-",
+                "opportunity_name": opportunity.name if opportunity else "-",
+                "referred_names": ", ".join(opportunity.sudo().referred_partner.mapped("name")) if opportunity else "-",
+                "amount_total": order.amount_total or 0.0,
+                "amount_total_fmt": "{:,.2f}".format(order.amount_total or 0.0),
+                "commission_fmt": "{:,.2f}".format(
+                    (order.amount_total or 0.0) * comm_pct / 100.0
+                ),
+            })
+
         ganhos_total = 0.0
         faturado_total = 0.0
         nao_faturado_total = 0.0
@@ -259,6 +286,7 @@ class CustomerPortal(http.Controller):
                 "accordion_html": accordion_html,
                 "settlements": settlement_data,
                 "pending_data": pending_data,
+                "uninvoiced_orders_data": uninvoiced_orders_data,
                 "ganhos_total_fmt": ganhos_total_fmt,
                 "faturado_total_fmt": faturado_total_fmt,
                 "nao_faturado_total_fmt": nao_faturado_total_fmt,
