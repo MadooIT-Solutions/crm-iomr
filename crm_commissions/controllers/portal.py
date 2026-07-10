@@ -210,7 +210,7 @@ class CustomerPortal(http.Controller):
                     for name in line_data["order_name"].split(", "):
                         settled_order_names.add(name.strip())
 
-        pending_agents = request.env["sale.order.line.agent"].search([
+        pending_agents = request.env["sale.order.line.agent"].sudo().search([
             ("agent_id", "=", partner.id),
             ("object_id.order_id.state", "=", "sale"),
         ])
