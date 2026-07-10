@@ -45,15 +45,21 @@ class CustomerPortal(http.Controller):
             )
             total_opps += stage_count
             total_commission_val += stage_commission
+            stage_commission_fmt = "{:,.2f}".format(stage_commission)
             summary_cards_html += (
                 '<div class="card o_portal_commission_card" style="min-width:160px">'
                 '<div class="card-body py-3 px-3 text-center" style="background:linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);border-radius:12px">'
-                '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">%s</div>'
+                '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">'
+                + stage_name
+                + '</div>'
                 "<div>"
-                '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">%d</span>'
-                '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ %s</span>'
+                '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">'
+                + str(stage_count)
+                + '</span>'
+                '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ '
+                + stage_commission_fmt
+                + "</span>"
                 "</div></div></div>"
-                % (stage_name, stage_count, "{:,.2f}".format(stage_commission))
             )
             opportunity_data = [
                 {
