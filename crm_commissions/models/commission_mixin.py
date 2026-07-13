@@ -1,11 +1,16 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import fields, models
 
 
 class CommissionLineMixin(models.AbstractModel):
     _inherit = "commission.line.mixin"
+
+    commission_split_percent = fields.Float(
+        string="Commission Split (%)",
+        default=100.0,
+    )
 
     def _get_commission_amount(self, commission, subtotal, product, quantity):
         self.ensure_one()

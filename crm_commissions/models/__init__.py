@@ -14,3 +14,4 @@ from . import commission_sale
 from . import commission_sale_line
 from . import commission_result
 from . import commission_recovery
+from . import account_move

@@ -20,7 +20,17 @@ class CustomerPortal(http.Controller):
             [
                 ("doctor", "=", partner.id),
                 ("type", "=", "opportunity"),
+                ("probability", ">", 0),
                 ("probability", "<", 100),
+            ],
+            order="create_date desc",
+        )
+
+        lost_opportunities = request.env["crm.lead"].with_context(active_test=False).search(
+            [
+                ("doctor", "=", partner.id),
+                ("type", "=", "opportunity"),
+                ("probability", "=", 0),
             ],
             order="create_date desc",
         )
@@ -50,7 +60,7 @@ class CustomerPortal(http.Controller):
             stage_commission_fmt = "{:,.2f}".format(stage_commission)
             summary_cards_html += (
                 '<div class="card o_portal_commission_card" style="min-width:160px">'
-                '<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">'
+                '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
                 '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">'
                 + stage_name
                 + '</div>'
@@ -125,7 +135,7 @@ class CustomerPortal(http.Controller):
         total_commission_fmt = "{:,.2f}".format(total_commission_val)
         total_card_html = (
             '<div class="card o_portal_commission_card" style="min-width:160px">'
-            '<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">'
+            '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
             '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total</div>'
             "<div>"
             '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">'
@@ -158,7 +168,7 @@ class CustomerPortal(http.Controller):
                 )
             accordion_html += (
                 '<details class="mb-3" style="cursor:pointer">'
-                '<summary class="fw-bold py-2 px-3" style="background-color:#3B5239;color:#ffffff;border-radius:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">'
+                '<summary class="fw-bold py-2 px-3" style="background-color:#8EBAA6;color:#ffffff;border-radius:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">'
                 "%s"
                 '<span class="badge ms-2" style="background-color:#6A6D70;color:#ffffff">%d</span>'
                 "</summary>"
@@ -283,6 +293,22 @@ class CustomerPortal(http.Controller):
         faturado_total_fmt = "{:,.2f}".format(faturado_total)
         nao_faturado_total_fmt = "{:,.2f}".format(nao_faturado_total)
 
+        lost_data = []
+        for opp in lost_opportunities:
+            lost_data.append({
+                "name": opp.name,
+                "partner_name": opp.sudo().partner_id.name or "-",
+                "date_str": opp.create_date.strftime("%d/%m/%Y")
+                if opp.create_date
+                else "-",
+                "referred_names": ", ".join(
+                    opp.sudo().referred_partner.mapped("name")
+                )
+                or "-",
+                "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0),
+                "lost_reason": opp.lost_reason_id.sudo().name or "-",
+            })
+
         return request.render(
             "crm_commissions.portal_my_opportunities_list",
             {
@@ -296,6 +322,7 @@ class CustomerPortal(http.Controller):
                 "ganhos_total_fmt": ganhos_total_fmt,
                 "faturado_total_fmt": faturado_total_fmt,
                 "nao_faturado_total_fmt": nao_faturado_total_fmt,
+                "lost_data": lost_data,
             },
         )
 

@@ -56,17 +56,17 @@
 <h5 class="text-muted mb-2">Ganhos e Não Faturados</h5>
 <div class="d-flex flex-wrap gap-2">
 <div class="card o_portal_commission_card" style="min-width:160px">
-<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">
+<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">
 <div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total Ganhos</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="ganhos_total_fmt"/></span></div>
 </div></div>
 <div class="card o_portal_commission_card" style="min-width:160px">
-<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">
+<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">
 <div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Faturado</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="faturado_total_fmt"/></span></div>
 </div></div>
 <div class="card o_portal_commission_card" style="min-width:160px">
-<div class="card-body py-3 px-3 text-center" style="background-color:#3B5239;border-radius:12px">
+<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">
 <div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Não Faturado</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="nao_faturado_total_fmt"/></span></div>
 </div></div>
@@ -180,32 +180,69 @@
 </tbody>
 </table>
 </t>
-<t t-if="uninvoiced_orders_data">
-<h5 class="text-muted mt-4 mb-2">Pedidos Não Faturados</h5>
-<table class="table table-striped">
-<thead>
-<tr>
-<th>Pedido</th>
-<th>Paciente</th>
-<th>Data do Pedido</th>
-<th>Oportunidade (CRM)</th>
-<th>Repasse</th>
-</tr>
-</thead>
-<tbody>
-<tr t-foreach="uninvoiced_orders_data" t-as="uo">
-<td><t t-esc="uo['order_name']"/></td>
-<td><t t-esc="uo['partner_name']"/></td>
-<td><t t-esc="uo['order_date']"/></td>
-<td><t t-esc="uo['opportunity_name']"/></td>
-<td>R$ <t t-esc="uo['commission_fmt']"/></td>
-</tr>
-</tbody>
-</table>
-</t>
-</div>
-</div>
-</div>
+    <t t-if="uninvoiced_orders_data">
+              <h5 class="text-muted mt-4 mb-2">Pedidos Não Faturados</h5>
+              <table class="table table-striped">
+              <thead>
+                <tr>
+                <th>Pedido</th>
+                <th>Paciente</th>
+                <th>Data do Pedido</th>
+                <th>Oportunidade (CRM)</th>
+                <th>Repasse</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr t-foreach="uninvoiced_orders_data" t-as="uo">
+                <td><t t-esc="uo['order_name']"/></td>
+                <td><t t-esc="uo['partner_name']"/></td>
+                <td><t t-esc="uo['order_date']"/></td>
+                <td><t t-esc="uo['opportunity_name']"/></td>
+                <td>R$ <t t-esc="uo['commission_fmt']"/></td>
+                </tr>
+              </tbody>
+              </table>
+            </t>
+            </div>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-12">
+              <h3>Oportunidades Perdidas</h3>
+            </div>
+          </div>
+          <div class="row mb-4">
+            <div class="col-12">
+              <t t-if="not lost_data">
+                <p class="text-muted">Nenhuma oportunidade perdida.</p>
+              </t>
+              <t t-if="lost_data">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Oportunidade</th>
+                      <th>Paciente</th>
+                      <th>Data da Indicação</th>
+                      <th>Indicação</th>
+                      <th>Expectativa</th>
+                      <th>Motivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr t-foreach="lost_data" t-as="ld">
+                      <td><t t-esc="ld['name']"/></td>
+                      <td><t t-esc="ld['partner_name']"/></td>
+                      <td><t t-esc="ld['date_str']"/></td>
+                      <td><t t-esc="ld['referred_names']"/></td>
+                      <td>R$ <t t-esc="ld['expected_revenue_fmt']"/></td>
+                      <td><t t-esc="ld['lost_reason']"/></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </t>
+            </div>
+          </div>
+          </div>
 </t>
 </template>
 

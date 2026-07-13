@@ -12,6 +12,15 @@ class SaleOrder(models.Model):
         string="Doctor/Médico",
         domain=[("type_partner", "in", ("doctorint", "doctorext"))],
     )
+    referred_partner = fields.Many2many(
+        "res.partner",
+        relation="sale_order_rel_res_partner",
+        column1="order_id",
+        column2="partner_id",
+        string="Indicações",
+        copy=False,
+        domain=[("type_partner", "!=", "convenio")],
+    )
     is_crm_score = fields.Float(
         string="IS-CRM score",
         default=100.0,
@@ -54,13 +63,68 @@ class SaleOrderLine(models.Model):
                 if record.order_id.doctor_id:
                     doctor = record.order_id.doctor_id
                     if doctor.agent and doctor.commission_id:
-                        doctor_already = any(
-                            v[2].get("agent_id") == doctor.id
-                            for v in vals
-                            if len(v) >= 3
+                        referring_doctors = record.order_id.referred_partner.filtered(
+                            lambda p: p.agent and p.commission_id and p.id != doctor.id
                         )
-                        if not doctor_already:
-                            vals.append(
-                                (0, 0, record._prepare_agent_vals(doctor))
+                        if referring_doctors:
+                            doctor_vals = record._prepare_agent_vals(doctor)
+                            doctor_vals["commission_split_percent"] = 50.0
+                            if not any(
+                                v[2].get("agent_id") == doctor.id
+                                for v in vals if len(v) >= 3
+                            ):
+                                vals.append((0, 0, doctor_vals))
+                            for ref_doc in referring_doctors:
+                                ref_vals = record._prepare_agent_vals(ref_doc)
+                                ref_vals["commission_split_percent"] = 50.0
+                                if not any(
+                                    v[2].get("agent_id") == ref_doc.id
+                                    for v in vals if len(v) >= 3
+                                ):
+                                    vals.append((0, 0, ref_vals))
+                        else:
+                            doctor_already = any(
+                                v[2].get("agent_id") == doctor.id
+                                for v in vals
+                                if len(v) >= 3
                             )
+                            if not doctor_already:
+                                vals.append(
+                                    (0, 0, record._prepare_agent_vals(doctor))
+                                )
                 record.agent_ids = vals
+
+    def _prepare_invoice_line(self, **optional_values):
+        vals = super()._prepare_invoice_line(**optional_values)
+        vals["agent_ids"] = [
+            (0, 0, {
+                "agent_id": x.agent_id.id,
+                "commission_id": x.commission_id.id,
+                "commission_split_percent": x.commission_split_percent,
+            })
+            for x in self.agent_ids
+        ]
+        return vals
+
+
+class SaleOrderLineAgent(models.Model):
+    _inherit = "sale.order.line.agent"
+
+    @api.depends(
+        "commission_id",
+        "object_id.price_subtotal",
+        "object_id.product_id",
+        "object_id.product_uom_qty",
+    )
+    def _compute_amount(self):
+        for line in self:
+            order_line = line.object_id
+            amount = line._get_commission_amount(
+                line.commission_id,
+                order_line.price_subtotal,
+                order_line.product_id,
+                order_line.product_uom_qty,
+            )
+            if line.commission_split_percent:
+                amount *= line.commission_split_percent / 100.0
+            line.amount = amount

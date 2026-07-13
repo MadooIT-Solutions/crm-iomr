@@ -11,6 +11,8 @@ class CrmLead(models.Model):
         ctx = super()._prepare_opportunity_quotation_context()
         if self.doctor:
             ctx["default_doctor_id"] = self.doctor.id
+        if self.referred_partner:
+            ctx["default_referred_partner"] = [(4, pid) for pid in self.referred_partner.ids]
         return ctx
 
     is_crm_score = fields.Float(
