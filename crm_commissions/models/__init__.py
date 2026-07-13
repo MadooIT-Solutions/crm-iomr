@@ -1,4 +1,5 @@
 from . import crm_commission_models
+from . import account_move
 from . import res_partner
 from . import res_users
 
@@ -14,4 +15,3 @@ from . import commission_sale
 from . import commission_sale_line
 from . import commission_result
 from . import commission_recovery
-from . import account_move
