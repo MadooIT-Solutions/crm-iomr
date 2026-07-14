@@ -1,0 +1,761 @@
+================================================================================
+                        MANUAIS DO SISTEMA CRM COMISSÕES IOMR
+================================================================================
+
+ÍNDICE:
+  00 - Visão Geral
+  01 - Dashboard
+  02 - Metas Mensais
+  03 - Bônus Trimestrais
+  04 - Configuração de Comissão LIOs
+  05 - Vendas (Comissionamento)
+  06 - Metas (Comissionamento)
+  07 - Resultados (Comissionamento)
+  08 - Recuperação Trimestral
+  09 - Equipe (Comissionamento)
+  10 - Política de Comissionamento
+  11 - Cálculo do IS-CRM
+
+================================================================================
+00 - VISÃO GERAL
+================================================================================
+
+# Manual do Sistema CRM Comissões IOMR
+
+## Visão Geral
+
+O módulo **CRM Comissões IOMR** gerencia o cálculo de comissões da equipe comercial da clínica IOMR, integrando metas mensais, performance por vendas, indicador IS-CRM, bônus trimestrais e portal do médico.
+
+## Estrutura de Menus
+
+O sistema está organizado em dois grupos de menus:
+
+### CRM > Comissões
+| Menu | Descrição |
+|------|-----------|
+| Dashboard | Painel web com resumo de metas, performance e comissões |
+| Metas Mensais | Metas mensais por orientadora (modelo crm.commission.target) |
+| Bônus Trimestrais | Bônus por cumprimento de meta trimestral |
+| Config. Comissão LIOs | Regras de comissão progressiva e parâmetros IS-CRM |
+
+### Comissionamento
+| Menu | Descrição |
+|------|-----------|
+| Dashboard | Painel web de comissionamento |
+| Vendas | Registro manual de cirurgias, LIOs e exames |
+| Metas | Metas individuais/equipe por período |
+| Resultados | Cálculo mensal de comissão por orientadora |
+| Recuperação Trimestral | Recuperação de comissão perdida em trimestres anteriores |
+| Equipe | Cadastro de membros da equipe (orientadoras, SDRs, coordenadoras) |
+| Política | Faixas de taxa de comissionamento por performance |
+| Configurações | Acesso às regras de comissão (commission) |
+
+## Perfis de Usuário
+
+| Perfil | Acesso |
+|--------|--------|
+| Orientadora | Vendas, Metas, Resultados (próprios), Equipe (leitura) |
+| SDR | Acesso limitado a leads |
+| Coordenadora | Visão geral da equipe |
+| Commission Manager | Acesso total a todos os menus e configurações |
+| Commission User | Acesso operacional |
+| Doctor (Médico) | Acesso via portal (/my/opportunities) |
+
+
+================================================================================
+01 - DASHBOARD
+================================================================================
+
+# Dashboard
+
+**Localização:** CRM > Comissões > Dashboard
+
+O Dashboard é uma página web interativa que exibe um resumo executivo das comissões do período atual.
+
+## Como acessar
+
+Vá para o menu **CRM > Comissões > Dashboard**. A página abre em uma visualização web.
+
+## O que é exibido
+
+### 1. Meta do Mês + Realizado + Gap
+- **Valor da meta** definida para o mês atual
+- **Valor realizado** (vendas capturadas no período)
+- **Gap** (diferença entre meta e realizado)
+
+### 2. Barra de Performance
+- Percentual de cumprimento da meta
+- Barra de progresso visual (verde quando >= 100%, laranja/vermelho abaixo)
+
+### 3. Comissões Pendentes
+- Lista de settlements (acordos de comissão) pendentes de processamento
+- Valor total pendente
+
+### 4. Pipeline de Oportunidades
+- Oportunidades em aberto no CRM
+- Receita ponderada (expected_revenue * probability)
+- Estágios do pipeline
+
+### 5. Pedidos do Mês
+- Pedidos faturados vs. não faturados
+- Valores totais por categoria
+
+### 6. Bônus Trimestrais
+- Status dos bônus do trimestre atual
+- Valores recuperados/perdidos
+
+## Campos disponíveis para filtro
+- O dashboard reflete os dados do período atual automaticamente.
+- Para ver outros períodos, utilize os filtros de data nos modelos de origem (Metas, Vendas, Resultados).
+
+
+================================================================================
+02 - METAS MENSAIS
+================================================================================
+
+# Metas Mensais
+
+**Localização:** CRM > Comissões > Metas Mensais
+**Modelo:** crm.commission.target
+
+## Propósito
+
+Registrar as metas mensais de faturamento para cada orientadora. As metas servem como base para:
+- Cálculo de performance mensal (realizado / meta * 100)
+- Cálculo de comissão progressiva
+- Avaliação do IS-CRM
+- Geração de bônus trimestrais
+
+## Campos do Formulário
+
+| Campo | Descrição |
+|-------|-----------|
+| Agent | Orientadora vinculada (domínio: type_partner = orientadora) |
+| Target Date | Mês de referência da meta |
+| Target Amount | Valor da meta mensal em moeda |
+| Quarterly Target | Meta trimestral (calculada automaticamente pela soma das metas do trimestre) |
+| Achieved Amount | Valor realizado (calculado automaticamente a partir dos pedidos do mês) |
+| Performance (%) | Percentual de cumprimento: (realizado / meta) × 100 |
+| IS-CRM Score | Pontuação IS-CRM para o período (0-100%, padrão 100%) |
+| IS-CRM OK | True se IS-CRM Score >= 95% |
+| State | Draft, In Progress, Achieved, Lost |
+
+## Como criar uma meta
+
+1. Vá para **CRM > Comissões > Metas Mensais**
+2. Clique em **Criar**
+3. Selecione a **orientadora**
+4. Defina o **mês** (Target Date)
+5. Informe o **valor da meta** (Target Amount)
+6. Ajuste o **IS-CRM Score** se necessário (padrão 100%)
+7. Salve
+
+## Comportamento
+
+- O campo **Achieved Amount** é automaticamente calculado buscando todos os `sale.order` do mês onde a orientadora é agente.
+- A **Performance** é recalculada automaticamente.
+- O **Quarterly Target** é a soma das metas dos 3 meses do mesmo trimestre.
+- O **IS-CRM Score** pode ser editado manualmente se necessário.
+
+
+================================================================================
+03 - BÔNUS TRIMESTRAIS
+================================================================================
+
+# Bônus Trimestrais
+
+**Localização:** CRM > Comissões > Bônus Trimestrais
+**Modelo:** crm.commission.quarterly.bonus
+**Grupo:** Apenas CRM Commission Manager
+
+## Propósito
+
+Gerenciar o bônus trimestral das orientadoras. Quando a performance acumulada do trimestre atinge 100% ou mais, a orientadora tem direito a recuperar comissões perdidas em meses anteriores onde a meta não foi atingida.
+
+## Campos do Formulário
+
+| Campo | Descrição |
+|-------|-----------|
+| Agent | Orientadora |
+| Quarter | Trimestre de referência (Q1, Q2, Q3, Q4) |
+| Year | Ano |
+| Monthly Targets | Metas mensais que compõem o trimestre |
+| Total Target | Soma das metas do trimestre |
+| Total Achieved | Soma dos valores realizados no trimestre |
+| Quarterly Performance (%) | Total Achieved / Total Target × 100 |
+| Lost Commission Recovered | Valor de comissão perdida que foi recuperada |
+| Bonus Amount | Valor do bônus calculado |
+| State | Pending, Recovered/Paid, Lost |
+
+## Como funciona
+
+1. As metas mensais de cada orientadora são agrupadas por trimestre.
+2. O sistema calcula a **performance trimestral** (total realizado / total meta).
+3. Se a performance >= 100%, a orientadora recupera comissões de meses com performance < 100%.
+4. O valor recuperado é registrado no campo **Lost Commission Recovered**.
+5. O estado muda para **Recovered/Paid** se houver recuperação, ou **Lost** se a performance trimestral ficou abaixo de 100%.
+
+## Fluxo
+
+1. As metas mensais são cadastradas em **CRM > Comissões > Metas Mensais**.
+2. Os resultados mensais são calculados em **Comissionamento > Resultados**.
+3. O bônus trimestral é processado automaticamente ou manualmente ao recalcular resultados.
+
+
+================================================================================
+04 - CONFIGURAÇÃO DE COMISSÃO LIOs
+================================================================================
+
+# Configuração de Comissão LIOs
+
+**Localização:** CRM > Comissões > Config. Comissão LIOs
+**Modelo:** commission (herdado de commission_oca)
+**Grupo:** Apenas CRM Commission Manager
+
+## Propósito
+
+Definir as regras de comissionamento para LIOs (Lentes Intraoculares) e outros produtos, incluindo:
+- Tipo de comissão (fixa, seccionada ou progressiva)
+- Taxas progressivas por faixa de performance
+- Parâmetros do IS-CRM (bônus e penalidade)
+- Margem mínima e desconto máximo
+
+## Campos
+
+| Campo | Descrição |
+|-------|-----------|
+| Name | Nome da regra de comissão |
+| Commission Type | Fixa, Seccionada, **Progressiva por performance** |
+| Progressive Lines | Faixas de taxa progressiva |
+| IS-CRM Bonus (%) | Percentual de bônus quando IS-CRM >= 95% (padrão: 0,25%) |
+| IS-CRM Penalty (%) | Percentual de penalidade quando IS-CRM < 95% (padrão: 0,25%) |
+| Min Margin (%) | Margem mínima para validação da comissão (padrão: 35%) |
+| Max Discount (%) | Desconto máximo sem aprovação gerencial (padrão: 5%) |
+
+### Faixas de Taxa Progressiva (Progressive Lines)
+
+Para cada faixa, defina:
+
+| Campo | Descrição |
+|-------|-----------|
+| Sequence | Ordem de avaliação |
+| Performance From | Início da faixa de performance (%) |
+| Performance To | Fim da faixa de performance (%) |
+| Commission Rate | Taxa de comissão aplicada na faixa (%) |
+
+## Dados Padrão (2026)
+
+| Faixa de Performance | Taxa |
+|---------------------|------|
+| 0% a 50% | 0,25% |
+| 51% a 80% | 0,45% |
+| 81% a 100% | 0,75% |
+| 101% a 120% | 1,25% |
+| Acima de 120% | 1,75% |
+
+IS-CRM: Bônus 0,25% | Penalidade 0,25% | Mínimo 95%
+
+
+================================================================================
+05 - VENDAS (COMISSIONAMENTO)
+================================================================================
+
+# Vendas (Comissionamento)
+
+**Localização:** Comissionamento > Vendas
+**Modelo:** commission.sale
+
+## Propósito
+
+Registrar manualmente cirurgias, vendas de LIOs e exames realizados por cada orientadora. Este cadastro serve como base de cálculo para as comissões mensais.
+
+## Campos do Formulário
+
+### Cabeçalho
+| Campo | Descrição |
+|-------|-----------|
+| Name | Número do registro (gerado automaticamente: COM-ANO-SEQ) |
+| Date | Data da venda |
+| Orientadora | Membro da equipe responsável (tipo orientadora) |
+| Patient Name | Nome do paciente |
+| Surgery Type | Tipo de cirurgia: Catarata, Refrativa, Glaucoma, Vitrectomia, Outros |
+| Sale Category | Categoria: Particular, Convênio, Saúde Toddos, Outras |
+| Status | Rascunho, Confirmado, Faturado, Cancelado |
+
+### Valores Financeiros
+| Campo | Descrição |
+|-------|-----------|
+| LIO Package Amount | Valor do pacote de LIO |
+| LIO Upgrade Amount | Valor do upgrade de LIO |
+| Hospital Gross Amount | Valor bruto hospitalar |
+| Hospital Tax (%) | Percentual de imposto hospitalar |
+| Hospital Cost (%) | Percentual de custo hospitalar |
+| Hospital Net Amount | Valor líquido hospitalar (calculado automaticamente) |
+| Medical Fee Amount | Valor do honorário médico |
+
+### Indicadores
+| Campo | Descrição |
+|-------|-----------|
+| IS-CRM (%) | Score IS-CRM para esta venda (padrão: 100%, editável) |
+| Margin (%) | Margem calculada automaticamente |
+| Discount (%) | Percentual de desconto concedido |
+| Discount Approved | Indica se o desconto foi aprovado |
+
+### Aba de Linhas (Line Items)
+| Campo | Descrição |
+|-------|-----------|
+| Line Type | Tipo: Hospital, Medical Fee, LIO Package, LIO Upgrade |
+| Amount | Valor da linha |
+| Eligible for Commission | Calculado automaticamente (Medical Fee e LIO Package nunca comissionam) |
+| Exclusion Reason | Motivo de exclusão da comissão (se aplicável) |
+
+### Venda de Lentes de Contato
+| Campo | Descrição |
+|-------|-----------|
+| Is Lens Sale | Marcar se é venda de lente de contato |
+| Lens Type | Gelatinous ou Rigid |
+| Lens Commission Type | Com exame (1,5%) ou Sem exame (5%) |
+
+## Como criar uma venda
+
+1. Vá para **Comissionamento > Vendas**
+2. Clique em **Criar**
+3. Preencha a **orientadora**, **paciente**, **data** e **categoria**
+4. Informe os valores financeiros (hospital, LIO, honorários)
+5. Ajuste o **IS-CRM** se necessário
+6. Na aba de linhas, adicione os itens da venda
+7. Clique em **Confirmar** para ativar a venda
+8. Quando faturado, mude o status para **Faturado**
+
+## Regras de Comissionamento
+
+- **Medical Fee** e **LIO Package** nunca geram comissão.
+- A base de comissionamento é calculada a partir dos valores elegíveis.
+- O IS-CRM da venda alimenta a média do período para cálculo de bônus/penalidade.
+
+
+================================================================================
+06 - METAS (COMISSIONAMENTO)
+================================================================================
+
+# Metas (Comissionamento)
+
+**Localização:** Comissionamento > Metas
+**Modelo:** commission.target
+
+## Propósito
+
+Registrar as metas individuais e de equipe para cada membro (orientadora) por período mensal.
+
+## Campos do Formulário
+
+| Campo | Descrição |
+|-------|-----------|
+| Name | Nome (calculado automaticamente) |
+| Member | Membro da equipe (orientadora) |
+| Year | Ano da meta |
+| Month | Mês (1 a 12) |
+| Period Code | Código do período (YYYY-MM, calculado) |
+| Team Target Amount | Meta da equipe para o período |
+| Individual Target Amount | Meta individual da orientadora |
+| Origin Type | Origem: Auto (calculado pelo sistema) ou Manual |
+| State | Draft, In Progress, Achieved, Lost |
+
+## Como criar
+
+1. Vá para **Comissionamento > Metas**
+2. Clique em **Criar**
+3. Selecione o **membro** (orientadora)
+4. Defina **ano** e **mês**
+5. Informe o valor da **meta individual**
+6. Se houver meta de equipe, preencha **Team Target Amount**
+7. Salve
+
+## Regras
+
+- O **state** é calculado automaticamente com base no campo `achieved_amount` (vindo do `commission.result`).
+- As metas alimentam o cálculo de performance no `commission.result`.
+- Orientadoras veem apenas suas próprias metas (regra de registro).
+
+
+================================================================================
+07 - RESULTADOS (COMISSIONAMENTO)
+================================================================================
+
+# Resultados (Comissionamento)
+
+**Localização:** Comissionamento > Resultados
+**Modelo:** commission.result
+
+## Propósito
+
+Calcular mensalmente a comissão devida a cada orientadora com base nas vendas registradas, metas, política de comissionamento e IS-CRM.
+
+## Campos do Formulário
+
+### Cabeçalho
+| Campo | Descrição |
+|-------|-----------|
+| Name | Nome (calculado: Membro - Mês/Ano) |
+| Member | Membro da equipe (orientadora) |
+| Period Code | Mês de referência (YYYY-MM) |
+| Policy | Política de comissionamento aplicada |
+| Target | Meta do período |
+| Target Amount | Valor da meta |
+| State | Draft, Calculated, Approved, Paid |
+
+### Valores de Vendas
+| Campo | Descrição |
+|-------|-----------|
+| LIO Sales Amount | Total de vendas de LIO no período |
+| Hospital Sales Amount | Total de vendas hospitalares no período |
+| Delivery (%) | Percentual de entrega (realizado / meta × 100) - calculado |
+
+### Taxas
+| Campo | Descrição |
+|-------|-----------|
+| Range Label | Faixa de performance atingida (ex: "81% a 100%") |
+| Base Rate | Taxa base da faixa |
+| CRM Bonus Rate | Taxa de bônus/penalidade IS-CRM (positiva ou negativa) |
+| Final Rate | Taxa final = Base Rate + CRM Bonus Rate |
+| Commission Base Amount | Base de cálculo da comissão |
+| Commission Amount | Valor da comissão calculado |
+
+### IS-CRM
+| Campo | Descrição |
+|-------|-----------|
+| IS-CRM Score (%) | Média dos IS-CRM scores de todas as vendas do período |
+| IS-CRM OK | True se IS-CRM Score >= política.crm_min_pct (95%) |
+
+## Como calcular a comissão
+
+1. Certifique-se de que as **Vendas** do período estão registradas e confirmadas.
+2. Verifique se a **Meta** do período está cadastrada.
+3. Confirme se a **Política** de comissionamento está ativa.
+4. No formulário do resultado, clique em **Calcular**.
+5. O sistema irá:
+   a. Buscar todas as `commission.sale` do período para a orientadora
+   b. Calcular o `delivery_pct` com base na meta
+   c. Identificar a faixa de taxa na política
+   d. Calcular o IS-CRM médio do período
+   e. Aplicar bônus/penalidade
+   f. Calcular o valor final da comissão
+6. Revise os valores e clique em **Aprovar**.
+7. Após o pagamento, clique em **Pago**.
+
+## Ações disponíveis
+
+| Botão | Ação |
+|-------|------|
+| Calcular | Executa o cálculo da comissão com base nos dados do período |
+| Aprovar | Marca o resultado como aprovado |
+| Pago | Marca o resultado como pago |
+| Resetar Volta ao Rascunho | Retorna para estado Draft para recalcular |
+
+
+================================================================================
+08 - RECUPERAÇÃO TRIMESTRAL
+================================================================================
+
+# Recuperação Trimestral
+
+**Localização:** Comissionamento > Recuperação Trimestral
+**Modelo:** commission.recovery
+
+## Propósito
+
+Gerenciar a recuperação de comissões perdidas em trimestres anteriores. Quando uma orientadora não atinge a meta em um mês (performance < 100%), a comissão daquele mês é reduzida. Se no trimestre a performance agregada atingir 100% ou mais, parte da comissão perdida pode ser recuperada.
+
+## Campos do Formulário
+
+| Campo | Descrição |
+|-------|-----------|
+| Name | Nome (Membro - Q/AAAA, calculado) |
+| Member | Membro da equipe (orientadora) |
+| Quarter | Trimestre (Q1, Q2, Q3, Q4) |
+| Year | Ano |
+| Quarter Target Amount | Soma das metas do trimestre |
+| Quarter Sales Amount | Soma dos valores realizados no trimestre |
+| Quarter Delivery (%) | Performance trimestral (calculado) |
+| Expected Commission Amount | Comissão esperada para o trimestre |
+| Calculated Commission Amount | Comissão calculada com base na performance real |
+| Recovery Amount | Valor a recuperar (calculado) |
+| State | Pending, Recovered, Lost |
+
+## Como calcular
+
+1. Vá para **Comissionamento > Recuperação Trimestral**
+2. Clique em **Criar** ou abra um registro existente
+3. Selecione o **membro**, **trimestre** e **ano**
+4. Clique em **Calcular**
+5. O sistema irá:
+   a. Buscar as metas do trimestre (commission.target)
+   b. Buscar os resultados do trimestre (commission.result)
+   c. Calcular a performance trimestral
+   d. Se performance >= 100%, calcular o valor a recuperar
+   e. Atualizar o estado
+
+## Regras
+
+- A recuperação é automática ao recalcular os resultados mensais.
+- Se a performance trimestral >= 100%, o valor da comissão perdida em meses ruins é recuperado.
+- Orientadoras veem apenas seus próprios registros de recuperação.
+
+
+================================================================================
+09 - EQUIPE (COMISSIONAMENTO)
+================================================================================
+
+# Equipe (Comissionamento)
+
+**Localização:** Comissionamento > Equipe
+**Modelo:** commission.member
+
+## Propósito
+
+Cadastrar e gerenciar os membros da equipe de comissionamento: orientadoras, SDRs e coordenadoras.
+
+## Campos do Formulário
+
+| Campo | Descrição |
+|-------|-----------|
+| Name | Nome do membro |
+| Member Type | Tipo: Orientadora, SDR, Coordenadora |
+| Partner | Contato vinculado (res.partner) |
+| User | Usuário do sistema (calculado a partir do partner) |
+| Active | Ativo |
+| Team | Equipe CRM |
+
+### Relacionamentos
+| Campo | Descrição |
+|-------|-----------|
+| SDRs | SDRs vinculadas a esta orientadora |
+| Orientadora | Orientadora responsável (para SDRs) |
+| Targets | Metas do membro (link para commission.target) |
+| Results | Resultados do membro (link para commission.result) |
+
+## Como criar
+
+1. Vá para **Comissionamento > Equipe**
+2. Clique em **Criar**
+3. Informe o **nome**
+4. Selecione o **tipo** (Orientadora, SDR ou Coordenadora)
+5. Vincule o **partner** (contato no Odoo)
+6. Se SDR, selecione a **orientadora** responsável
+7. Se orientadora, vincula as **SDRs** que reportam a ela
+8. Salve
+
+## Regras
+
+- Uma orientadora pode ter múltiplas SDRs vinculadas.
+- Uma SDR pode ter apenas uma orientadora.
+- Coordenadoras não têm subordinados diretos.
+- Apenas orientadoras podem ter metas e resultados de comissão.
+
+
+================================================================================
+10 - POLÍTICA DE COMISSIONAMENTO
+================================================================================
+
+# Política de Comissionamento
+
+**Localização:** Comissionamento > Política
+**Modelo:** commission.policy
+**Grupo:** Apenas Commission Manager
+
+## Propósito
+
+Definir as políticas de comissionamento que determinam as faixas de taxa aplicáveis com base na performance da orientadora. Cada política possui faixas de performance com taxas específicas, além de parâmetros de margem mínima, desconto máximo e IS-CRM.
+
+## Campos do Formulário
+
+### Cabeçalho
+| Campo | Descrição |
+|-------|-----------|
+| Name | Nome da política (ex: "Política 2026") |
+| Date Start | Data de início de vigência |
+| Date End | Data de fim de vigência (opcional) |
+| Active | Ativa |
+
+### Parâmetros
+| Campo | Descrição |
+|-------|-----------|
+| Min Margin (%) | Margem mínima obrigatória (padrão: 35%) |
+| Min CRM Score (%) | IS-CRM mínimo para bônus (padrão: 95%) |
+| Max Discount (%) | Desconto máximo permitido sem aprovação (padrão: 5%) |
+| CRM Bonus Rate (%) | Bônus quando IS-CRM >= mínimo (padrão: 0,25%) |
+| CRM Penalty Rate (%) | Penalidade quando IS-CRM < mínimo (padrão: 0,25%) |
+
+### Faixas de Taxa (Aba Rate Bands)
+| Campo | Descrição |
+|-------|-----------|
+| Sequence | Ordem |
+| Delivery % From | Início da faixa |
+| Delivery % To | Fim da faixa |
+| Base Rate (%) | Taxa de comissão aplicada |
+
+## Como criar
+
+1. Vá para **Comissionamento > Política**
+2. Clique em **Criar**
+3. Dê um **nome** à política (ex: "Política 2026")
+4. Defina a **data de início**
+5. Configure os parâmetros de margem, IS-CRM e desconto
+6. Na aba **Rate Bands**, adicione as faixas de performance:
+   - Informe a sequência
+   - Defina o intervalo de performance (From - To)
+   - Informe a taxa base
+7. Salve
+
+## Exemplo de Faixas (Política 2026)
+
+| Sequência | Performance | Taxa Base |
+|-----------|-------------|-----------|
+| 10 | 0% - 50% | 0,25% |
+| 20 | 51% - 80% | 0,45% |
+| 30 | 81% - 100% | 0,75% |
+| 40 | 101% - 120% | 1,25% |
+| 50 | > 120% | 1,75% |
+
+## Funcionamento
+
+1. Ao calcular um resultado (`commission.result`), a política ativa é identificada.
+2. A performance da orientadora é comparada com as faixas.
+3. A taxa base é definida pela faixa correspondente.
+4. O bônus/penalidade IS-CRM é aplicado sobre a taxa base.
+5. A taxa final = taxa base + bônus (ou - penalidade).
+
+
+================================================================================
+11 - CÁLCULO DO IS-CRM
+================================================================================
+
+# Cálculo do IS-CRM (Índice de Saúde CRM)
+
+## O que é o IS-CRM?
+
+O **IS-CRM** (Índice de Saúde CRM / CRM Health Index) é um indicador de 0% a 100% que mede a qualidade do gerenciamento das oportunidades e vendas no CRM. Ele reflete o quão bem a orientadora está conduzindo seus processos comerciais.
+
+Um IS-CRM **>= 95%** gera um **bônus** na comissão.
+Um IS-CRM **< 95%** gera uma **penalidade** na comissão.
+
+## Onde o IS-CRM é definido?
+
+O IS-CRM pode ser definido em vários níveis:
+
+### 1. Na Venda (commission.sale)
+- Campo: **IS-CRM (%)** (crm_pct)
+- Padrão: 100%
+- Editável manualmente pela orientadora ao registrar a venda
+- Permite ajustar o score para cada venda individualmente
+
+### 2. Na Meta Mensal (crm.commission.target)
+- Campo: **IS-CRM Score** (is_crm_score)
+- Padrão: 100%
+- Pode ser ajustado manualmente
+- O campo **IS-CRM OK** indica se o score >= 95%
+
+### 3. No Resultado (commission.result)
+- Campo: **IS-CRM Score** (is_crm_score)
+- **Calculado automaticamente** como a média dos IS-CRM scores de todas as vendas do período
+- Fórmula: `is_crm_score = soma dos crm_pct das vendas / quantidade de vendas`
+- Se não houver vendas no período, o score é 100%
+
+### 4. Na Oportunidade (crm.lead)
+- Campo: **IS-CRM Score** (is_crm_score)
+- Padrão: 100%
+- Editável manualmente
+
+### 5. No Pedido de Venda (sale.order)
+- Campo: **IS-CRM Score** (is_crm_score)
+- Padrão: 100%
+- Editável manualmente
+
+## Como o IS-CRM afeta a comissão?
+
+### Fluxo completo:
+
+```
+Vendas do Período (commission.sale)
+  → Média do IS-CRM de todas as vendas
+  → IS-CRM Score do Resultado (commission.result)
+  → Comparação com o mínimo da política (crm_min_pct = 95%)
+  → Se >= 95%: Bônus (+) aplicado à taxa base
+  → Se < 95%: Penalidade (-) aplicada à taxa base
+  → Taxa Final = Taxa Base + Bônus (ou - Penalidade)
+  → Comissão = Base de Cálculo × Taxa Final
+```
+
+### Cálculo da Taxa Final:
+
+```python
+taxa_final = taxa_base + taxa_bonus_crm
+
+# Onde:
+# taxa_bonus_crm = política.crm_bonus_rate (ex: 0,25%) se IS-CRM OK
+# taxa_bonus_crm = -política.crm_penalty_rate (ex: -0,25%) se IS-CRM não OK
+```
+
+### Exemplo 1: IS-CRM OK (score 98%)
+
+| Parâmetro | Valor |
+|-----------|-------|
+| Performance | 90% |
+| Faixa | 81% a 100% |
+| Taxa Base | 0,75% |
+| IS-CRM Score | 98% (>= 95%) |
+| Bônus | +0,25% |
+| Taxa Final | 1,00% |
+| Base de Cálculo | R$ 100.000 |
+| Comissão | R$ 1.000 |
+
+### Exemplo 2: IS-CRM não OK (score 72%)
+
+| Parâmetro | Valor |
+|-----------|-------|
+| Performance | 90% |
+| Faixa | 81% a 100% |
+| Taxa Base | 0,75% |
+| IS-CRM Score | 72% (< 95%) |
+| Penalidade | -0,25% |
+| Taxa Final | 0,50% |
+| Base de Cálculo | R$ 100.000 |
+| Comissão | R$ 500 |
+
+## Parâmetros configuráveis
+
+Os parâmetros do IS-CRM são configuráveis em dois lugares:
+
+### 1. Na Comissão (Config. Comissão LIOs)
+| Campo | Padrão |
+|-------|--------|
+| IS-CRM Bonus (%) | 0,25% |
+| IS-CRM Penalty (%) | 0,25% |
+
+### 2. Na Política de Comissionamento
+| Campo | Padrão |
+|-------|--------|
+| Min CRM Score (%) | 95% |
+| CRM Bonus Rate (%) | 0,25% |
+| CRM Penalty Rate (%) | 0,25% |
+
+## Comissão Progressiva com IS-CRM
+
+Quando o tipo de comissão é **Progressiva**, o cálculo inclui o IS-CRM:
+
+```python
+comissao = base * (taxa_progressiva / 100)
+if is_crm_ok:
+    comissao += base * (is_crm_bonus / 100)     # bônus
+else:
+    comissao -= base * (is_crm_penalty / 100)    # penalidade
+
+comissao = max(comissao, 0)  # nunca negativa
+```
+
+## Dicas
+
+- Mantenha o IS-CRM das vendas sempre atualizado para refletir a real qualidade do processo.
+- Um IS-CRM baixo impacta diretamente o valor da comissão.
+- O score de 100% é o padrão e deve ser ajustado quando houver não conformidades.
+- A meta mínima de 95% e as taxas de bônus/penalidade podem ser alteradas na política.
