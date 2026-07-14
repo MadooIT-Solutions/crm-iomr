@@ -54,7 +54,6 @@ class ResUsers(models.Model):
             "crm_commissions.group_crm_commission_doctor",
             "crm_commissions.group_crm_readonly",
             "crm_commissions.group_commission_manager",
-            "crm_commissions.group_commission_orientadora",
             "crm_commissions.group_commission_coordinator",
             "sales_team.group_sale_salesman",
             "sales_team.group_sale_manager",
@@ -63,7 +62,6 @@ class ResUsers(models.Model):
             "sdr": {"crm_commissions.group_crm_commission_sdr"},
             "orientadora": {
                 "crm_commissions.group_crm_commission_orientadora",
-                "crm_commissions.group_commission_orientadora",
             },
             "coordenadora": {"crm_commissions.group_commission_coordinator"},
             "commission_user": {"crm_commissions.group_crm_commission_user"},
@@ -164,7 +162,6 @@ class ResGroups(models.Model):
             "crm_commissions.group_crm_commission_doctor",
             "crm_commissions.group_crm_readonly",
             "crm_commissions.group_commission_manager",
-            "crm_commissions.group_commission_orientadora",
             "crm_commissions.group_commission_coordinator",
         }
 
