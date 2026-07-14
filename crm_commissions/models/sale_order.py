@@ -156,6 +156,8 @@ class SaleOrderLineAgent(models.Model):
                 order_line.product_id,
                 order_line.product_uom_qty,
             )
+            if not amount:
+                amount = 0.0
             if line.commission_split_percent:
                 amount *= line.commission_split_percent / 100.0
             line.amount = amount
