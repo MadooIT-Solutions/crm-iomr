@@ -14,7 +14,7 @@
             <page name="agent_information" position="after">
                 <page
                     name="crm_commission"
-                    string="CRM Comissões"
+                    string="CRM Repasses"
                     groups="crm_commissions.group_crm_commission_user"
                     invisible="type_partner not in ('orientadora', 'sdr', 'coordenadora')"
                 >
@@ -46,7 +46,7 @@
                             </list>
                         </field>
                     </group>
-                    <group string="Regras de Comissão por Categoria">
+                    <group string="Regras de Repasse por Categoria">
                         <field name="agent_rule_ids" nolabel="1">
                             <list editable="bottom">
                                 <field name="sequence" />

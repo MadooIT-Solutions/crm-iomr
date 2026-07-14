@@ -21,11 +21,13 @@
 <t t-set="url" t-value="'/my/opportunities'"/>
 <t t-set="config_card" t-value="True"/>
 </t>
+<t t-if="request.env.user.partner_id.show_repasse_table">
 <t t-call="portal.portal_docs_entry">
 <t t-set="title">Tabela de Repasses</t>
 <t t-set="text">Consulte as regras de repasse por tipo de serviço.</t>
 <t t-set="url" t-value="'/my/repasse-rules'"/>
 <t t-set="config_card" t-value="True"/>
+</t>
 </t>
 
 </xpath>
@@ -41,6 +43,21 @@
 </t>
 
 <div class="o_portal_doctor">
+
+<form method="get" action="/my/opportunities" class="row mb-3 align-items-end">
+  <div class="col-auto">
+    <label class="form-label small text-muted mb-1">Data Início</label>
+    <input type="date" name="date_from" class="form-control form-control-sm" t-att-value="date_from"/>
+  </div>
+  <div class="col-auto">
+    <label class="form-label small text-muted mb-1">Data Fim</label>
+    <input type="date" name="date_to" class="form-control form-control-sm" t-att-value="date_to"/>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-sm btn-primary mt-3">Filtrar</button>
+  </div>
+</form>
+
 <div class="row mb-3">
 <div class="col-12">
 <h5 class="text-muted mb-2">Resumo por Estágio</h5>
@@ -51,7 +68,7 @@
 </div>
 </div>
 
-<div class="row mb-3">
+<div class="row mb-3" t-if="show_all_values">
 <div class="col-12">
 <h5 class="text-muted mb-2">Ganhos e Não Faturados</h5>
 <div class="d-flex flex-wrap gap-2">
@@ -82,7 +99,7 @@
 <div class="row mb-4">
 <div class="col-12">
 <t t-if="not open_opportunities">
-<p class="text-muted">Nenhuma oportunidade em aberto no momento.</p>
+<p class="text-muted">Nenhuma oportunidade em aberto no período.</p>
 </t>
     <t t-if="open_opportunities">
         <t t-raw="accordion_html"/>
@@ -92,13 +109,13 @@
 
 <div class="row mb-4">
 <div class="col-12">
-<h3>Minhas Comissões Pendentes</h3>
+<h3>Oportunidades Convertidas</h3>
 </div>
 </div>
 <div class="row mb-4">
 <div class="col-12">
 <t t-if="not pending_data">
-<p class="text-muted">Nenhuma comissão pendente no momento.</p>
+<p class="text-muted">Nenhuma oportunidade convertida no período.</p>
 </t>
 <t t-if="pending_data">
 <table class="table table-striped">
@@ -108,7 +125,7 @@
 <th>Cliente</th>
 <th>Data</th>
 <th>Oportunidade</th>
-<th>Valor</th>
+<th t-if="show_all_values">Valor</th>
 </tr>
 </thead>
 <tbody>
@@ -117,7 +134,7 @@
 <td><t t-esc="pd['partner_name']"/></td>
 <td><t t-esc="pd['order_date']"/></td>
 <td><t t-esc="pd['opportunity_name']"/></td>
-<td>R$ <t t-esc="pd['amount_fmt']"/></td>
+<td t-if="show_all_values">R$ <t t-esc="pd['amount_fmt']"/></td>
 </tr>
 </tbody>
 </table>
@@ -133,7 +150,7 @@
 <div class="row">
 <div class="col-12">
 <t t-if="not settlements">
-<p class="text-muted">Nenhum repasse registrado no momento.</p>
+<p class="text-muted">Nenhum repasse registrado no período.</p>
 </t>
 <t t-if="settlements">
 <table class="table table-striped">
@@ -141,7 +158,7 @@
 <tr>
 <th>Repasse</th>
 <th>Período</th>
-<th>Valor</th>
+<th t-if="show_all_values">Valor</th>
 <th>Estado</th>
 <th>Pedido</th>
 <th>Status Pagamento</th>
@@ -153,7 +170,7 @@
 <tr>
 <td><t t-esc="s['settlement'].name or ''"/></td>
 <td><t t-esc="s['settlement'].date_from"/> a <t t-esc="s['settlement'].date_to"/></td>
-<td><t t-esc="line_data['line'].settled_amount"/></td>
+<td t-if="show_all_values"><t t-esc="line_data['line'].settled_amount"/></td>
 <td>
 <t t-if="s['settlement'].state == 'settled'">Liquidado</t>
 <t t-if="s['settlement'].state == 'invoiced'">Faturado</t>
@@ -189,7 +206,7 @@
                 <th>Paciente</th>
                 <th>Data do Pedido</th>
                 <th>Oportunidade (CRM)</th>
-                <th>Repasse</th>
+                <th t-if="show_all_values">Repasse</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,7 +215,7 @@
                 <td><t t-esc="uo['partner_name']"/></td>
                 <td><t t-esc="uo['order_date']"/></td>
                 <td><t t-esc="uo['opportunity_name']"/></td>
-                <td>R$ <t t-esc="uo['commission_fmt']"/></td>
+                <td t-if="show_all_values">R$ <t t-esc="uo['commission_fmt']"/></td>
                 </tr>
               </tbody>
               </table>
@@ -214,7 +231,7 @@
           <div class="row mb-4">
             <div class="col-12">
               <t t-if="not lost_data">
-                <p class="text-muted">Nenhuma oportunidade perdida.</p>
+                <p class="text-muted">Nenhuma oportunidade perdida no período.</p>
               </t>
               <t t-if="lost_data">
                 <table class="table table-striped">
@@ -224,7 +241,7 @@
                       <th>Paciente</th>
                       <th>Data da Indicação</th>
                       <th>Indicação</th>
-                      <th>Expectativa</th>
+                      <th t-if="show_all_values">Expectativa</th>
                       <th>Motivo</th>
                     </tr>
                   </thead>
@@ -234,7 +251,7 @@
                       <td><t t-esc="ld['partner_name']"/></td>
                       <td><t t-esc="ld['date_str']"/></td>
                       <td><t t-esc="ld['referred_names']"/></td>
-                      <td>R$ <t t-esc="ld['expected_revenue_fmt']"/></td>
+                      <td t-if="show_all_values">R$ <t t-esc="ld['expected_revenue_fmt']"/></td>
                       <td><t t-esc="ld['lost_reason']"/></td>
                     </tr>
                   </tbody>

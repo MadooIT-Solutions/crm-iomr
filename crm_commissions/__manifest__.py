@@ -11,6 +11,7 @@
         "sale_commission_oca",
         "crm",
         "sale_management",
+        "sale_crm",
         "portal",
         "account",
         "crm_iomr_auto",

@@ -66,6 +66,14 @@ class ResPartner(models.Model):
         help="Specific commission rules for this agent based on product category. "
              "When a sale order line matches a category, this commission is used instead of the default.",
     )
+    show_repasse_table = fields.Boolean(
+        string="Ver Tabela de Repasses",
+        help="Se marcado, o médico pode visualizar a Tabela de Repasses no portal.",
+    )
+    show_all_values = fields.Boolean(
+        string="Ver todos os valores",
+        help="Se marcado, o médico pode visualizar todos os valores (Expectativa, Repasse e Valor) no portal.",
+    )
 
     @api.onchange("type_partner")
     def _onchange_type_partner(self):

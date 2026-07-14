@@ -356,8 +356,8 @@ msgstr "Meta IS-CRM (%)"
 #. module: crm_commissions
 #: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_root
 #: model:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
-msgid "CRM Comiss\u00f5es"
-msgstr "CRM Comissões"
+msgid "CRM Repasses"
+msgstr "CRM Repasses"
 
 #. module: crm_commissions
 #: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_targets
@@ -376,8 +376,8 @@ msgstr "Bônus Trimestrais"
 
 #. module: crm_commissions
 #: model:ir.ui.menu,name:crm_commissions.menu_crm_lios_config
-msgid "Config. Comiss\u00e3o LIOs"
-msgstr "Config. Comissão LIOs"
+msgid "Config. Repasse LIOs"
+msgstr "Config. Repasse LIOs"
 
 #. module: crm_commissions
 #: model:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
@@ -406,8 +406,8 @@ msgstr "Detalhamento mensal"
 
 #. module: crm_commissions
 #: model:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
-msgid "CRM Comiss\u00e3o"
-msgstr "CRM Comissão"
+msgid "CRM Repasse"
+msgstr "CRM Repasse"
 
 #. module: crm_commissions
 #: model:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
@@ -416,8 +416,8 @@ msgstr "Equipe Comercial"
 
 #. module: crm_commissions
 #: model:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
-msgid "Comiss\u00e3o"
-msgstr "Comissão"
+msgid "Repasse"
+msgstr "Repasse"
 
 #. module: crm_commissions
 #: model:ir.model.fields,field_description:crm_commissions.field_commission__name

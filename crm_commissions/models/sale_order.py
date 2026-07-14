@@ -1,7 +1,8 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class SaleOrder(models.Model):
@@ -47,6 +48,27 @@ class SaleOrder(models.Model):
                 )
             else:
                 rec.margin_percent = 0.0
+
+    @api.onchange("opportunity_id")
+    def _onchange_opportunity_id(self):
+        if self.opportunity_id:
+            self.doctor_id = self.opportunity_id.doctor
+            self.referred_partner = self.opportunity_id.referred_partner
+        else:
+            self.doctor_id = False
+            self.referred_partner = False
+
+    def action_confirm(self):
+        for rec in self:
+            if not rec.doctor_id:
+                raise UserError(
+                    _("O campo Médico é obrigatório para confirmar o pedido.")
+                )
+            if not rec.opportunity_id:
+                raise UserError(
+                    _("O campo Oportunidade é obrigatório para confirmar o pedido.")
+                )
+        return super().action_confirm()
 
 
 class SaleOrderLine(models.Model):

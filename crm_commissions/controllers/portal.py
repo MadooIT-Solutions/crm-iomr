@@ -1,4 +1,6 @@
 import os
+from datetime import date, timedelta
+
 from odoo import http
 from odoo.http import request
 
@@ -16,23 +18,42 @@ class CustomerPortal(http.Controller):
         if partner.type_partner not in ("doctorint", "doctorext"):
             return request.redirect("/my")
 
+        show_all = partner.show_all_values
+        today = date.today()
+        date_from = kw.get("date_from")
+        date_to = kw.get("date_to")
+        if not date_from:
+            date_from = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+        if not date_to:
+            date_to = today.strftime("%Y-%m-%d")
+
+        domain_open = [
+            ("doctor", "=", partner.id),
+            ("type", "=", "opportunity"),
+            ("probability", ">", 0),
+            ("probability", "<", 100),
+        ]
+        if date_from:
+            domain_open.append(("create_date", ">=", date_from + " 00:00:00"))
+        if date_to:
+            domain_open.append(("create_date", "<=", date_to + " 23:59:59"))
+
         open_opportunities = request.env["crm.lead"].search(
-            [
-                ("doctor", "=", partner.id),
-                ("type", "=", "opportunity"),
-                ("probability", ">", 0),
-                ("probability", "<", 100),
-            ],
-            order="create_date desc",
+            domain_open, order="create_date desc",
         )
 
+        domain_lost = [
+            ("doctor", "=", partner.id),
+            ("type", "=", "opportunity"),
+            ("probability", "=", 0),
+        ]
+        if date_from:
+            domain_lost.append(("create_date", ">=", date_from + " 00:00:00"))
+        if date_to:
+            domain_lost.append(("create_date", "<=", date_to + " 23:59:59"))
+
         lost_opportunities = request.env["crm.lead"].with_context(active_test=False).search(
-            [
-                ("doctor", "=", partner.id),
-                ("type", "=", "opportunity"),
-                ("probability", "=", 0),
-            ],
-            order="create_date desc",
+            domain_lost, order="create_date desc",
         )
 
         commission_rate = partner.commission_id.fix_qty or 0.0
@@ -58,7 +79,7 @@ class CustomerPortal(http.Controller):
             total_opps += stage_count
             total_commission_val += stage_commission
             stage_commission_fmt = "{:,.2f}".format(stage_commission)
-            summary_cards_html += (
+            card_html = (
                 '<div class="card o_portal_commission_card" style="min-width:160px">'
                 '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
                 '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">'
@@ -67,12 +88,16 @@ class CustomerPortal(http.Controller):
                 "<div>"
                 '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">'
                 + str(stage_count)
-                + '</span>'
-                '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ '
-                + stage_commission_fmt
-                + "</span>"
-                "</div></div></div>"
             )
+            if show_all:
+                card_html += (
+                    '</span>'
+                    '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ '
+                    + stage_commission_fmt
+                )
+            card_html += "</span></div></div></div>"
+            summary_cards_html += card_html
+
             opportunity_data = [
                 {
                     "id": opp.id,
@@ -89,12 +114,12 @@ class CustomerPortal(http.Controller):
                         opp.sudo().referred_partner.mapped("name")
                     )
                     or "-",
-                    "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0),
+                    "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0) if show_all else "",
                     "commission_fmt": "{:,.2f}".format(
                         opp.expected_revenue
                         * (opp.commission_percent or commission_rate)
                         / 100.0
-                    ),
+                    ) if show_all else "",
                     "probability": opp.probability or 0,
                     "priority": opp.priority or "",
                     "date_deadline": opp.date_deadline.strftime("%d/%m/%Y")
@@ -132,7 +157,7 @@ class CustomerPortal(http.Controller):
                 }
             )
 
-        total_commission_fmt = "{:,.2f}".format(total_commission_val)
+        total_commission_fmt = "{:,.2f}".format(total_commission_val) if show_all else ""
         total_card_html = (
             '<div class="card o_portal_commission_card" style="min-width:160px">'
             '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
@@ -140,32 +165,51 @@ class CustomerPortal(http.Controller):
             "<div>"
             '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">'
             + str(total_opps)
-            + '</span>'
-            '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ '
-            + total_commission_fmt
-            + "</span>"
-            "</div></div></div>"
         )
+        if show_all:
+            total_card_html += (
+                '</span>'
+                '<span class="ms-1 small fw-bold" style="color:#ffffff">R$ '
+                + total_commission_fmt
+            )
+        total_card_html += "</span></div></div></div>"
 
         accordion_html = ""
         for group in opportunities_by_stage:
             rows = ""
             for d in group["data"]:
-                rows += (
-                    "<tr>"
-                    "<td>%s</td>"
-                    "<td>%s</td><td>%s</td><td>%s</td>"
-                    "<td>R$ %s</td><td>R$ %s</td>"
-                    "</tr>"
-                    % (
-                        d["name"],
-                        d["partner_name"],
-                        d["date_str"],
-                        d["referred_names"],
-                        d["expected_revenue_fmt"],
-                        d["commission_fmt"],
+                if show_all:
+                    rows += (
+                        "<tr>"
+                        "<td>%s</td>"
+                        "<td>%s</td><td>%s</td><td>%s</td>"
+                        "<td>R$ %s</td><td>R$ %s</td>"
+                        "</tr>"
+                        % (
+                            d["name"],
+                            d["partner_name"],
+                            d["date_str"],
+                            d["referred_names"],
+                            d["expected_revenue_fmt"],
+                            d["commission_fmt"],
+                        )
                     )
-                )
+                else:
+                    rows += (
+                        "<tr>"
+                        "<td>%s</td>"
+                        "<td>%s</td><td>%s</td><td>%s</td>"
+                        "</tr>"
+                        % (
+                            d["name"],
+                            d["partner_name"],
+                            d["date_str"],
+                            d["referred_names"],
+                        )
+                    )
+            headers = "<th>Oportunidade</th><th>Paciente</th><th>Data da Indica\u00e7\u00e3o</th><th>Indica\u00e7\u00e3o</th>"
+            if show_all:
+                headers += "<th>Expectativa</th><th>Repasse</th>"
             accordion_html += (
                 '<details class="mb-3" style="cursor:pointer">'
                 '<summary class="fw-bold py-2 px-3" style="background-color:#8EBAA6;color:#ffffff;border-radius:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">'
@@ -173,12 +217,8 @@ class CustomerPortal(http.Controller):
                 '<span class="badge ms-2" style="background-color:#6A6D70;color:#ffffff">%d</span>'
                 "</summary>"
                 '<table class="table table-striped mb-0 mt-2">'
-                "<thead><tr>"
-                "<th>Oportunidade</th><th>Paciente</th>"
-                "<th>Data da Indica\u00e7\u00e3o</th><th>Indica\u00e7\u00e3o</th>"
-                "<th>Expectativa</th><th>Repasse</th>"
-                "</tr></thead><tbody>%s</tbody></table></details>"
-                % (group["stage_name"], group["count"], rows)
+                "<thead><tr>%s</tr></thead><tbody>%s</tbody></table></details>"
+                % (group["stage_name"], group["count"], headers, rows)
             )
 
         commissions = request.env["commission.settlement"].search(
@@ -289,9 +329,9 @@ class CustomerPortal(http.Controller):
             ganhos_total += amt
             nao_faturado_total += amt
 
-        ganhos_total_fmt = "{:,.2f}".format(ganhos_total)
-        faturado_total_fmt = "{:,.2f}".format(faturado_total)
-        nao_faturado_total_fmt = "{:,.2f}".format(nao_faturado_total)
+        ganhos_total_fmt = "{:,.2f}".format(ganhos_total) if show_all else ""
+        faturado_total_fmt = "{:,.2f}".format(faturado_total) if show_all else ""
+        nao_faturado_total_fmt = "{:,.2f}".format(nao_faturado_total) if show_all else ""
 
         lost_data = []
         for opp in lost_opportunities:
@@ -305,7 +345,7 @@ class CustomerPortal(http.Controller):
                     opp.sudo().referred_partner.mapped("name")
                 )
                 or "-",
-                "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0),
+                "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0) if show_all else "",
                 "lost_reason": opp.lost_reason_id.sudo().name or "-",
             })
 
@@ -323,6 +363,9 @@ class CustomerPortal(http.Controller):
                 "faturado_total_fmt": faturado_total_fmt,
                 "nao_faturado_total_fmt": nao_faturado_total_fmt,
                 "lost_data": lost_data,
+                "show_all_values": show_all,
+                "date_from": date_from,
+                "date_to": date_to,
             },
         )
 
