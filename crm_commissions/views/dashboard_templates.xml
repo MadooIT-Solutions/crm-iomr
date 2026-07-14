@@ -288,17 +288,17 @@ t-esc="'%d' % quarterly_pct"/>%
 </tr>
 </thead>
 <tbody>
-<tr t-foreach="order_data" t-as="order">
-<td><t t-esc="order['name']"/></td>
-<td><t t-esc="order['partner_name']"/></td>
-<td><t t-esc="order['date_order']"/></td>
-<td><t t-esc="order['amount_total_fmt']"/></td>
-<td><t t-esc="order['commission_total_fmt']"/></td>
+<tr t-foreach="order_data" t-as="o">
+<td><t t-esc="o['name']"/></td>
+<td><t t-esc="o['partner_name']"/></td>
+<td><t t-esc="o['date_order']"/></td>
+<td><t t-esc="o['amount_total_fmt']"/></td>
+<td><t t-esc="o['commission_total_fmt']"/></td>
 <td>
-<t t-if="order['invoice_status'] == 'invoiced'"><span class="text-success">Faturado</span></t>
-<t t-if="order['invoice_status'] == 'to invoice'"><span class="text-warning">A Faturar</span></t>
-<t t-if="order['invoice_status'] == 'no'"><span class="text-muted">Nada a Faturar</span></t>
-<t t-if="order['invoice_status'] == 'upselling'"><span class="text-info">Upselling</span></t>
+<t t-if="o['invoice_status'] == 'invoiced'"><span class="text-success">Faturado</span></t>
+<t t-if="o['invoice_status'] == 'to invoice'"><span class="text-warning">A Faturar</span></t>
+<t t-if="o['invoice_status'] == 'no'"><span class="text-muted">Nada a Faturar</span></t>
+<t t-if="o['invoice_status'] == 'upselling'"><span class="text-info">Upselling</span></t>
 </td>
 </tr>
 </tbody>

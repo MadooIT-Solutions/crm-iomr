@@ -92,7 +92,38 @@ class SaleOrderLine(models.Model):
                                 vals.append(
                                     (0, 0, record._prepare_agent_vals(doctor))
                                 )
-                record.agent_ids = vals
+                record.agent_ids = record._apply_agent_category_rules(
+                    vals, record.product_id
+                )
+
+    def _apply_agent_category_rules(self, vals, product):
+        if not product or not product.categ_id or not vals:
+            return vals
+        result = []
+        for val in vals:
+            if len(val) < 3:
+                result.append(val)
+                continue
+            agent_id = val[2].get("agent_id")
+            comm_id = val[2].get("commission_id")
+            if not agent_id or not comm_id:
+                result.append(val)
+                continue
+            rule = self.env["commission.agent.rule"].search(
+                [
+                    ("agent_id", "=", agent_id),
+                    ("categ_ids", "in", product.categ_id.id),
+                ],
+                order="sequence",
+                limit=1,
+            )
+            if rule:
+                val[2]["commission_id"] = rule.commission_id.id
+            commission = self.env["commission"].browse(val[2]["commission_id"])
+            if commission.categ_ids and product.categ_id not in commission.categ_ids:
+                continue
+            result.append(val)
+        return result
 
     def _prepare_invoice_line(self, **optional_values):
         vals = super()._prepare_invoice_line(**optional_values)

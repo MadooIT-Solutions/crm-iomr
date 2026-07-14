@@ -59,6 +59,13 @@ class ResPartner(models.Model):
         string="IS-CRM target (%)",
         default=95.0,
     )
+    agent_rule_ids = fields.One2many(
+        "commission.agent.rule",
+        inverse_name="agent_id",
+        string="Commission rules per category",
+        help="Specific commission rules for this agent based on product category. "
+             "When a sale order line matches a category, this commission is used instead of the default.",
+    )
 
     @api.onchange("type_partner")
     def _onchange_type_partner(self):

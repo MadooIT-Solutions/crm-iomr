@@ -15,6 +15,8 @@ class CommissionLineMixin(models.AbstractModel):
     def _get_commission_amount(self, commission, subtotal, product, quantity):
         self.ensure_one()
         if commission and commission.commission_type == "progressive":
+            if commission.categ_ids and product and product.categ_id not in commission.categ_ids:
+                return 0.0
             order = (
                 self.object_id.order_id
                 if hasattr(self.object_id, "order_id")

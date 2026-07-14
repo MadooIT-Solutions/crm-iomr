@@ -146,6 +146,7 @@
                 <field name="is_crm_penalty" invisible="commission_type != 'progressive'" />
                 <field name="min_margin" invisible="commission_type != 'progressive'" />
                 <field name="max_discount" invisible="commission_type != 'progressive'" />
+                <field name="categ_ids" invisible="commission_type != 'progressive'" widget="many2many_tags" />
             </field>
             <field name="section_ids" position="after">
                 <field

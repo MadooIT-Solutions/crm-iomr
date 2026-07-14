@@ -63,6 +63,17 @@ class Commission(models.Model):
         default=5.0,
         help="Maximum discount allowed without management approval",
     )
+    categ_ids = fields.Many2many(
+        "product.category",
+        string="Product Categories",
+        help="Only apply this commission to products in these categories. Leave empty to apply to all.",
+    )
+    agent_rule_ids = fields.One2many(
+        "commission.agent.rule",
+        "commission_id",
+        string="Agent Rules",
+        help="Specific rules linking agents and categories to this commission.",
+    )
 
     def _get_progressive_rate(self, performance_pct):
         self.ensure_one()
@@ -338,3 +349,32 @@ class CommissionQuarterlyBonus(models.Model):
                         "achieved_amount"
                     )
                 )
+
+
+class CommissionAgentRule(models.Model):
+    _name = "commission.agent.rule"
+    _description = "Commission rule per agent and product category"
+    _order = "sequence, id"
+    _rec_name = "agent_id"
+
+    agent_id = fields.Many2one(
+        "res.partner",
+        string="Agent",
+        domain=[("agent", "=", True)],
+        required=True,
+    )
+    commission_id = fields.Many2one(
+        "commission",
+        string="Commission",
+        required=True,
+    )
+    categ_ids = fields.Many2many(
+        "product.category",
+        string="Categories",
+        required=True,
+        help="Product categories that trigger this commission rule for this agent.",
+    )
+    sequence = fields.Integer(
+        default=10,
+        help="Lower sequence = higher priority when multiple rules match.",
+    )
