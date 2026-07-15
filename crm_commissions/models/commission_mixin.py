@@ -12,11 +12,22 @@ class CommissionLineMixin(models.AbstractModel):
         default=100.0,
     )
 
+    def _get_product_category_ids(self, product):
+        categ_ids = set()
+        categ = product.categ_id
+        while categ:
+            categ_ids.add(categ.id)
+            categ = categ.parent_id
+        return list(categ_ids)
+
     def _get_commission_amount(self, commission, subtotal, product, quantity):
         self.ensure_one()
         if commission and commission.commission_type == "progressive":
-            if commission.categ_ids and product and product.categ_id not in commission.categ_ids:
-                return 0.0
+            if commission.categ_ids and product and product.categ_id:
+                categ_ids = self._get_product_category_ids(product)
+                commission_categ_ids = set(commission.categ_ids.ids)
+                if not any(cid in commission_categ_ids for cid in categ_ids):
+                    return 0.0
             order = (
                 self.object_id.order_id
                 if hasattr(self.object_id, "order_id")

@@ -118,10 +118,19 @@ class SaleOrderLine(models.Model):
                     vals, record.product_id
                 )
 
+    def _get_product_category_ids(self, product):
+        categ_ids = set()
+        categ = product.categ_id
+        while categ:
+            categ_ids.add(categ.id)
+            categ = categ.parent_id
+        return list(categ_ids)
+
     def _apply_agent_category_rules(self, vals, product):
         if not product or not product.categ_id or not vals:
             return vals
         result = []
+        categ_ids = self._get_product_category_ids(product)
         for val in vals:
             if len(val) < 3:
                 result.append(val)
@@ -134,7 +143,7 @@ class SaleOrderLine(models.Model):
             rule = self.env["commission.agent.rule"].search(
                 [
                     ("agent_id", "=", agent_id),
-                    ("categ_ids", "in", product.categ_id.id),
+                    ("categ_ids", "in", categ_ids),
                 ],
                 order="sequence",
                 limit=1,
@@ -142,8 +151,10 @@ class SaleOrderLine(models.Model):
             if rule:
                 val[2]["commission_id"] = rule.commission_id.id
             commission = self.env["commission"].browse(val[2]["commission_id"])
-            if commission.categ_ids and product.categ_id not in commission.categ_ids:
-                continue
+            if commission.categ_ids:
+                commission_categ_ids = set(commission.categ_ids.ids)
+                if not any(cid in commission_categ_ids for cid in categ_ids):
+                    continue
             if commission.commission_type == "product":
                 if not self._has_commission_item_for_product(commission, product):
                     continue
