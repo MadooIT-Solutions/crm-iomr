@@ -26,6 +26,7 @@ class AccountInvoiceLineAgent(models.Model):
             )
             if line.invoice_id.move_type and "refund" in line.invoice_id.move_type:
                 amount = -amount
+            amount = amount or 0.0
             if line.commission_split_percent:
                 amount *= line.commission_split_percent / 100.0
             line.amount = amount
