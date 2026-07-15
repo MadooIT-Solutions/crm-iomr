@@ -37,13 +37,12 @@ class AccountInvoiceLineAgent(models.Model):
     @api.depends(
         "object_id.price_subtotal",
         "object_id.commission_free",
+        "object_id.quantity",
         "commission_id",
     )
     def _compute_amount(self):
         super()._compute_amount()
         for line in self:
             line.amount = line.amount or 0.0
-            if line.invoice_id.move_type and "refund" in line.invoice_id.move_type:
-                line.amount = -line.amount
             if line.commission_split_percent:
                 line.amount *= line.commission_split_percent / 100.0
