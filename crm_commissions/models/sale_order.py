@@ -144,8 +144,30 @@ class SaleOrderLine(models.Model):
             commission = self.env["commission"].browse(val[2]["commission_id"])
             if commission.categ_ids and product.categ_id not in commission.categ_ids:
                 continue
+            if commission.commission_type == "product":
+                if not self._has_commission_item_for_product(commission, product):
+                    continue
             result.append(val)
         return result
+
+    def _has_commission_item_for_product(self, commission, product):
+        categ_ids = set()
+        categ = product.categ_id
+        while categ:
+            categ_ids.add(categ.id)
+            categ = categ.parent_id
+        return bool(self.env["commission.item"].search([
+            ("commission_id", "=", commission.id),
+            "|",
+            ("product_tmpl_id", "=", False),
+            ("product_tmpl_id", "=", product.product_tmpl_id.id),
+            "|",
+            ("product_id", "=", False),
+            ("product_id", "=", product.id),
+            "|",
+            ("categ_id", "=", False),
+            ("categ_id", "in", list(categ_ids)),
+        ], limit=1))
 
     def _prepare_invoice_line(self, **optional_values):
         vals = super()._prepare_invoice_line(**optional_values)
