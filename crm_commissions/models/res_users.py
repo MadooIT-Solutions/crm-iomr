@@ -6,6 +6,9 @@ from odoo import api, fields, models
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    show_repasse_table = fields.Boolean(related='partner_id.show_repasse_table')
+    show_all_values = fields.Boolean(related='partner_id.show_all_values')
+
     crm_role = fields.Selection(
         selection=[
             ("sdr", "SDR"),

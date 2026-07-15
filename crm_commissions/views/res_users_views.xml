@@ -11,8 +11,8 @@
             <xpath expr="//page[@name='access_rights']/group[1]" position="after">
                 <group string="Função CRM" name="crm_role_group">
                     <field name="crm_role" widget="selection"/>
-                    <field name="partner_id.show_repasse_table" string="Ver Tabela de Repasses" attrs="{'invisible': [('crm_role', '!=', 'doctor')]}"/>
-                    <field name="partner_id.show_all_values" string="Ver todos os valores" attrs="{'invisible': [('crm_role', '!=', 'doctor')]}"/>
+                    <field name="show_repasse_table" string="Ver Tabela de Repasses" attrs="{'invisible': [('crm_role', '!=', 'doctor')]}"/>
+                    <field name="show_all_values" string="Ver todos os valores" attrs="{'invisible': [('crm_role', '!=', 'doctor')]}"/>
                 </group>
             </xpath>
 
