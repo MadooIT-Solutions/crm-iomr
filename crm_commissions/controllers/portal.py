@@ -279,6 +279,9 @@ class CustomerPortal(http.Controller):
                     "partner_name": order.sudo().partner_id.name or "-",
                     "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
                     "opportunity_name": opportunity.name if opportunity else "-",
+                    "referred_names": ", ".join(
+                        order.sudo().referred_partner.mapped("name")
+                    ) or "-",
                     "amount": 0.0,
                 }
             pending_by_order[order_id]["amount"] += agent_line.amount or 0.0
