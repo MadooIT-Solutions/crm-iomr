@@ -121,11 +121,12 @@
 <table class="table table-striped">
 <thead>
 <tr>
-<th>Pedido</th>
-<th>Cliente</th>
-<th>Data</th>
-<th>Oportunidade</th>
-<th t-if="show_all_values">Valor</th>
+                            <th>Pedido</th>
+                            <th>Cliente</th>
+                            <th>Data</th>
+                            <th>Oportunidade</th>
+                            <th>Indicações</th>
+                            <th t-if="show_all_values">Valor</th>
 </tr>
 </thead>
 <tbody>
@@ -133,8 +134,9 @@
 <td><t t-esc="pd['order_name']"/></td>
 <td><t t-esc="pd['partner_name']"/></td>
 <td><t t-esc="pd['order_date']"/></td>
-<td><t t-esc="pd['opportunity_name']"/></td>
-<td t-if="show_all_values">R$ <t t-esc="pd['amount_fmt']"/></td>
+                            <td><t t-esc="pd['opportunity_name']"/></td>
+                            <td><t t-esc="pd['referred_names']"/></td>
+                            <td t-if="show_all_values">R$ <t t-esc="pd['amount_fmt']"/></td>
 </tr>
 </tbody>
 </table>
