@@ -72,7 +72,10 @@ class ResUsers(models.Model):
                 "crm_commissions.group_crm_commission_manager",
                 "crm_commissions.group_commission_manager",
             },
-            "doctor": {"crm_commissions.group_crm_commission_doctor"},
+            "doctor": {
+                "crm_commissions.group_crm_commission_doctor",
+                "crm_commissions.group_crm_commission_user",
+            },
             "readonly": {"crm_commissions.group_crm_readonly"},
             "salesman": {"sales_team.group_sale_salesman"},
             "sale_manager": {"sales_team.group_sale_manager"},
