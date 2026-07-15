@@ -170,16 +170,7 @@ class SaleOrderLineAgent(models.Model):
         "object_id.product_uom_qty",
     )
     def _compute_amount(self):
+        super()._compute_amount()
         for line in self:
-            order_line = line.object_id
-            amount = line._get_commission_amount(
-                line.commission_id,
-                order_line.price_subtotal,
-                order_line.product_id,
-                order_line.product_uom_qty,
-            )
-            if not amount:
-                amount = 0.0
             if line.commission_split_percent:
-                amount *= line.commission_split_percent / 100.0
-            line.amount = amount
+                line.amount *= line.commission_split_percent / 100.0

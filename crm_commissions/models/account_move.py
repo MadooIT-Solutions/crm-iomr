@@ -13,16 +13,9 @@ class AccountInvoiceLineAgent(models.Model):
         "commission_id",
     )
     def _compute_amount(self):
+        super()._compute_amount()
         for line in self:
-            inv_line = line.object_id
-            amount = line._get_commission_amount(
-                line.commission_id,
-                inv_line.price_subtotal,
-                inv_line.product_id,
-                inv_line.quantity,
-            )
             if line.invoice_id.move_type and "refund" in line.invoice_id.move_type:
-                amount = -amount
+                line.amount = -line.amount
             if line.commission_split_percent:
-                amount *= line.commission_split_percent / 100.0
-            line.amount = amount
+                line.amount *= line.commission_split_percent / 100.0
