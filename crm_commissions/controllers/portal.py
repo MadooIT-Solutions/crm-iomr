@@ -322,9 +322,9 @@ class CustomerPortal(http.Controller):
                 val = line_data["line"].settled_amount or 0.0
                 if state != "cancel":
                     ganhos_total += val
-                if state == "invoiced" and line_data["payment_state"] == "paid":
+                if line_data["invoice_state"] == "posted":
                     faturado_total += val
-                elif state == "settled":
+                elif state not in ("cancel",):
                     nao_faturado_total += val
 
         for pd in pending_data:
