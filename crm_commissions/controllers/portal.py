@@ -221,7 +221,7 @@ class CustomerPortal(http.Controller):
                 % (group["stage_name"], group["count"], headers, rows)
             )
 
-        commissions = request.env["commission.settlement"].search(
+        commissions = request.env["commission.settlement"].sudo().search(
             [("agent_id", "=", partner.id)],
             order="date_from desc",
         )
