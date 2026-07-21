@@ -79,10 +79,13 @@ class CustomerPortal(http.Controller):
             total_opps += stage_count
             total_commission_val += stage_commission
             stage_commission_fmt = "{:,.2f}".format(stage_commission)
+            tooltip_map = {"Follow-up": "Oportunidades em fase de Follow-up (acompanhamento)", "Negocia\u00e7\u00e3o": "Oportunidades em fase de Negocia\u00e7\u00e3o"}
+            stage_tooltip = tooltip_map.get(stage_name, "Oportunidades neste est\u00e1gio")
             card_html = (
                 '<div class="card o_portal_commission_card" style="min-width:160px">'
                 '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
-                '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">'
+                '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff" title="%s">'
+                % stage_tooltip
                 + stage_name
                 + '</div>'
                 "<div>"
@@ -161,7 +164,7 @@ class CustomerPortal(http.Controller):
         total_card_html = (
             '<div class="card o_portal_commission_card" style="min-width:160px">'
             '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
-            '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total</div>'
+            '<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff" title="Total de oportunidades e repasses em todos os est\u00e1gios">Total</div>'
             "<div>"
             '<span class="badge me-1" style="background:rgba(255,255,255,0.2);color:#ffffff">'
             + str(total_opps)
@@ -207,9 +210,9 @@ class CustomerPortal(http.Controller):
                             d["referred_names"],
                         )
                     )
-            headers = "<th>Oportunidade</th><th>Paciente</th><th>Data da Indica\u00e7\u00e3o</th><th>Indica\u00e7\u00e3o</th>"
+            headers = '<th title="Nome da oportunidade registrada no CRM">Oportunidade</th><th title="Nome do paciente vinculado \u00e0 oportunidade">Paciente</th><th title="Data em que a oportunidade foi criada">Data da Indica\u00e7\u00e3o</th><th title="Profissional que indicou o paciente">Indica\u00e7\u00e3o</th>'
             if show_all:
-                headers += "<th>Expectativa</th><th>Repasse</th>"
+                headers += '<th title="Receita esperada para esta oportunidade">Expectativa</th><th title="Valor estimado do repasse para esta oportunidade">Repasse</th>'
             accordion_html += (
                 '<details class="mb-3" style="cursor:pointer">'
                 '<summary class="fw-bold py-2 px-3" style="background-color:#8EBAA6;color:#ffffff;border-radius:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">'

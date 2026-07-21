@@ -46,11 +46,11 @@
 
 <form method="get" action="/my/opportunities" class="row mb-3 align-items-end">
   <div class="col-auto">
-    <label class="form-label small text-muted mb-1">Data Início</label>
+    <label class="form-label small text-muted mb-1" title="Filtrar oportunidades a partir desta data">Data Início</label>
     <input type="date" name="date_from" class="form-control form-control-sm" t-att-value="date_from"/>
   </div>
   <div class="col-auto">
-    <label class="form-label small text-muted mb-1">Data Fim</label>
+    <label class="form-label small text-muted mb-1" title="Filtrar oportunidades até esta data">Data Fim</label>
     <input type="date" name="date_to" class="form-control form-control-sm" t-att-value="date_to"/>
   </div>
   <div class="col-auto">
@@ -74,17 +74,17 @@
 <div class="d-flex flex-wrap gap-2">
 <div class="card o_portal_commission_card" style="min-width:160px">
 <div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">
-<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Total Ganhos</div>
+<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff" title="Soma total de todos os repasses pendentes">Total Ganhos</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="ganhos_total_fmt"/></span></div>
 </div></div>
 <div class="card o_portal_commission_card" style="min-width:160px">
 <div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">
-<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Faturado</div>
+<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff" title="Total dos repasses já faturados (com nota fiscal emitida)">Faturado</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="faturado_total_fmt"/></span></div>
 </div></div>
 <div class="card o_portal_commission_card" style="min-width:160px">
 <div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">
-<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff">Não Faturado</div>
+<div class="fw-bold small text-uppercase mb-1" style="color:#ffffff" title="Total dos repasses ainda não faturados">Não Faturado</div>
 <div><span class="fw-bold" style="color:#ffffff">R$ <t t-esc="nao_faturado_total_fmt"/></span></div>
 </div></div>
 </div>
@@ -121,12 +121,12 @@
 <table class="table table-striped">
 <thead>
 <tr>
-                            <th>Pedido</th>
-                            <th>Cliente</th>
-                            <th>Data</th>
-                            <th>Oportunidade</th>
-                            <th>Indicações</th>
-                            <th t-if="show_all_values">Valor</th>
+                            <th title="Número do pedido de venda gerado">Pedido</th>
+                            <th title="Nome do cliente no pedido">Cliente</th>
+                            <th title="Data do pedido de venda">Data</th>
+                            <th title="Oportunidade de origem no CRM">Oportunidade</th>
+                            <th title="Profissionais que indicaram o paciente">Indicações</th>
+                            <th t-if="show_all_values" title="Valor do repasse gerado pelo pedido">Valor</th>
 </tr>
 </thead>
 <tbody>
@@ -159,12 +159,12 @@
 <table class="table table-striped">
 <thead>
 <tr>
-<th>Repasse</th>
-<th>Período</th>
-<th t-if="show_all_values">Valor</th>
-<th>Estado</th>
-<th>Pedido</th>
-<th>Status Pagamento</th>
+                    <th title="Identificação do repasse">Repasse</th>
+                    <th title="Período de competência do repasse">Período</th>
+                    <th t-if="show_all_values" title="Valor líquido do repasse">Valor</th>
+                    <th title="Situação atual do repasse (liquidado, faturado, exceção ou cancelado)">Estado</th>
+                    <th title="Pedido de venda vinculado ao repasse">Pedido</th>
+                    <th title="Situação do pagamento da fatura">Status Pagamento</th>
 </tr>
 </thead>
 <tbody>
@@ -205,11 +205,11 @@
 <table class="table table-striped">
 <thead>
 <tr>
-<th>Pedido</th>
-<th>Paciente</th>
-<th>Data do Pedido</th>
-<th>Oportunidade (CRM)</th>
-<th t-if="show_all_values">Repasse</th>
+                    <th title="Número do pedido de venda">Pedido</th>
+                    <th title="Nome do paciente">Paciente</th>
+                    <th title="Data de criação do pedido">Data do Pedido</th>
+                    <th title="Oportunidade de origem no CRM">Oportunidade (CRM)</th>
+                    <th t-if="show_all_values" title="Valor estimado do repasse para este pedido">Repasse</th>
 </tr>
 </thead>
 <tbody>
@@ -241,12 +241,12 @@
                 <table class="table table-striped">
                   <thead>
                     <tr>
-                      <th>Oportunidade</th>
-                      <th>Paciente</th>
-                      <th>Data da Indicação</th>
-                      <th>Indicação</th>
-                      <th t-if="show_all_values">Expectativa</th>
-                      <th>Motivo</th>
+                      <th title="Nome da oportunidade perdida">Oportunidade</th>
+                      <th title="Nome do paciente">Paciente</th>
+                      <th title="Data em que a oportunidade foi criada">Data da Indicação</th>
+                      <th title="Profissional que indicou o paciente">Indicação</th>
+                      <th t-if="show_all_values" title="Receita esperada para esta oportunidade">Expectativa</th>
+                      <th title="Motivo pelo qual a oportunidade foi perdida">Motivo</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -296,12 +296,12 @@
 <table class="table table-striped o_repasse_table">
 <thead>
 <tr>
-<th>Tipo</th>
-<th>Convênio</th>
-<th>Repasse</th>
-<th>Base de Cálculo</th>
-<th>Equação</th>
-<th>Observação</th>
+                    <th title="Tipo de serviço ou honorário">Tipo</th>
+                    <th title="Convênio ou forma de pagamento">Convênio</th>
+                    <th title="Percentual ou valor fixo de repasse ao médico">Repasse</th>
+                    <th title="Base utilizada para calcular o valor do repasse">Base de Cálculo</th>
+                    <th title="Fórmula aplicada para calcular o repasse">Equação</th>
+                    <th title="Informações adicionais sobre a regra">Observação</th>
 </tr>
 </thead>
 <tbody>
