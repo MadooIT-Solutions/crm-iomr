@@ -4,6 +4,9 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+_SDR_PASS_PCT = 50.0
+_SDR_SHARE_PCT = 25.0
+
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
@@ -114,9 +117,49 @@ class SaleOrderLine(models.Model):
                                 vals.append(
                                     (0, 0, record._prepare_agent_vals(doctor))
                                 )
+                sdr_partner = (
+                    record.order_id.opportunity_id
+                    and record.order_id.opportunity_id._get_sdr_partner_from_rotation()
+                )
+                if sdr_partner:
+                    vals = record._apply_sdr_commission_split(vals, sdr_partner)
                 record.agent_ids = record._apply_agent_category_rules(
                     vals, record.product_id
                 )
+
+    def _apply_sdr_commission_split(self, vals, sdr_partner):
+        """Add the SDR as an extra agent when the opportunity passed through it.
+
+        The orientadora keeps her full commission; the SDR receives an extra
+        share computed as _SDR_PASS_PCT x _SDR_SHARE_PCT (50% x 1/4 = 12.5%).
+        """
+        if not sdr_partner or not sdr_partner.agent:
+            return vals
+        if any(
+            len(v) >= 3 and v[2].get("agent_id") == sdr_partner.id
+            for v in vals
+        ):
+            return vals
+        orientadora_vals = [
+            v
+            for v in vals
+            if len(v) >= 3
+            and v[2].get("agent_id")
+            and (
+                self.env["res.partner"]
+                .browse(v[2]["agent_id"])
+                .type_partner
+                == "orientadora"
+            )
+        ]
+        if not orientadora_vals:
+            return vals
+        sdr_pct = _SDR_PASS_PCT * _SDR_SHARE_PCT / 100.0
+        sdr_vals = self._prepare_agent_vals(sdr_partner)
+        sdr_vals["commission_id"] = orientadora_vals[0][2]["commission_id"]
+        sdr_vals["commission_split_percent"] = sdr_pct
+        vals.append((0, 0, sdr_vals))
+        return vals
 
     def _get_product_category_ids(self, product):
         categ_ids = set()

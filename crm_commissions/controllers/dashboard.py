@@ -74,7 +74,11 @@ class CommissionDashboard(http.Controller):
         else:
             domain_orders += [("user_id", "=", request.env.user.id)]
         recent_orders = request.env["sale.order"].search(domain_orders)
-        current_commission_total = sum(recent_orders.mapped("commission_total"))
+        current_commission_total = sum(
+            recent_orders.mapped("order_line.agent_ids")
+            .filtered(lambda line: line.agent_id.id == partner.id)
+            .mapped("amount")
+        )
 
         settlements = request.env["commission.settlement"].search(
             [("agent_id", "=", partner.id)],

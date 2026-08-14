@@ -57,6 +57,22 @@ class CrmLead(models.Model):
                 rec.margin_percent = 100.0
                 rec.margin_ok = True
 
+    def _get_sdr_partner_from_rotation(self):
+        """Return the SDR partner the opportunity passed through, if any.
+
+        Checks the rotation history for any user whose partner is an SDR,
+        either as the previous or the current seller of the opportunity.
+        """
+        self.ensure_one()
+        rotations = self.env["crm.lead.rotation"].sudo().search(
+            [("lead_id", "=", self.id)]
+        )
+        for rotation in rotations:
+            for user in (rotation.user_to_id, rotation.user_from_id):
+                if user and user.partner_id.type_partner == "sdr":
+                    return user.partner_id
+        return False
+
     def action_validate_discount(self):
         self.ensure_one()
         self.discount_approved = True

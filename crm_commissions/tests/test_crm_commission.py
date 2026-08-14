@@ -139,3 +139,86 @@ class TestCrmCommission(TransactionCase):
         )
         partner.write({"type_partner": "sdr"})
         self.assertEqual(partner.type_partner, "sdr")
+
+    def test_08_sdr_extra_commission_split(self):
+        commission = self.Commission.create(
+            {
+                "name": "Test Progressive",
+                "commission_type": "progressive",
+            }
+        )
+        vals = [
+            (0, 0, {"agent_id": self.orientadora.id, "commission_id": commission.id})
+        ]
+        line = self.env["sale.order.line"].new({})
+        result = line._apply_sdr_commission_split(vals, self.sdr)
+
+        sdr_lines = [v for v in result if v[2].get("agent_id") == self.sdr.id]
+        self.assertTrue(sdr_lines)
+        self.assertAlmostEqual(sdr_lines[0][2]["commission_split_percent"], 12.5)
+        self.assertEqual(sdr_lines[0][2]["commission_id"], commission.id)
+
+        orientadora_lines = [
+            v for v in result if v[2].get("agent_id") == self.orientadora.id
+        ]
+        self.assertTrue(orientadora_lines)
+        self.assertAlmostEqual(
+            orientadora_lines[0][2].get("commission_split_percent", 100.0),
+            100.0,
+        )
+
+    def test_09_sdr_split_guards(self):
+        commission = self.Commission.create(
+            {
+                "name": "Test Progressive",
+                "commission_type": "progressive",
+            }
+        )
+        line = self.env["sale.order.line"].new({})
+
+        vals = [
+            (0, 0, {"agent_id": self.orientadora.id, "commission_id": commission.id}),
+            (0, 0, {"agent_id": self.sdr.id, "commission_id": commission.id}),
+        ]
+        result = line._apply_sdr_commission_split(vals, self.sdr)
+        sdr_lines = [v for v in result if v[2].get("agent_id") == self.sdr.id]
+        self.assertEqual(len(sdr_lines), 1)
+
+        vals2 = [
+            (0, 0, {"agent_id": self.sdr.id, "commission_id": commission.id})
+        ]
+        result2 = line._apply_sdr_commission_split(vals2, self.sdr)
+        self.assertEqual(len(result2), 1)
+
+        result3 = line._apply_sdr_commission_split(vals, False)
+        self.assertEqual(len(result3), 2)
+
+    def test_10_get_sdr_partner_from_rotation(self):
+        sdr_user = self.env["res.users"].create(
+            {
+                "name": "SDR User",
+                "login": "sdr_rotation_login",
+                "partner_id": self.sdr.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        customer = self.ResPartner.create({"name": "Rotation Customer"})
+        lead = self.env["crm.lead"].create(
+            {
+                "name": "Opportunity Via SDR",
+                "partner_id": customer.id,
+                "user_id": sdr_user.id,
+            }
+        )
+        self.assertFalse(lead._get_sdr_partner_from_rotation())
+
+        self.env["crm.lead.rotation"].create(
+            {
+                "lead_id": lead.id,
+                "user_to_id": sdr_user.id,
+                "rotation_sequence": 1,
+                "rotation_type": "lost_sdr",
+            }
+        )
+        self.assertEqual(lead._get_sdr_partner_from_rotation(), self.sdr)
