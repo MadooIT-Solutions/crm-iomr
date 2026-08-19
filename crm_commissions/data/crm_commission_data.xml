@@ -47,4 +47,12 @@
         <field name="percent_to">999.0</field>
         <field name="commission_percent">1.75</field>
     </record>
+
+    <record id="commission_fixed_1pct_extras" model="commission">
+        <field name="name">Comissão Fixa 1% (Taxa Sala / Mat-Med / Cola)</field>
+        <field name="commission_type">fixed</field>
+        <field name="fix_qty">1.0</field>
+        <field name="amount_base_type">gross_amount</field>
+        <field name="settlement_type">sale_invoice</field>
+    </record>
 </odoo>

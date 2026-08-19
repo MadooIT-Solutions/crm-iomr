@@ -221,3 +221,210 @@ class TestCrmCommission(TransactionCase):
             }
         )
         self.assertEqual(lead._get_sdr_partner_from_rotation(), self.sdr)
+
+    def _create_sale_line(self, partner, product, user_id=False):
+        order = self.env["sale.order"].create(
+            {"partner_id": partner.id, "user_id": user_id or False}
+        )
+        return self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product.id,
+                "product_uom_qty": 1,
+                "price_unit": 100.0,
+            }
+        )
+
+    def _create_product(self, name, categ):
+        return self.env["product.product"].create(
+            {
+                "name": name,
+                "categ_id": categ.id,
+                "type": "consu",
+                "sale_ok": True,
+                "list_price": 100.0,
+            }
+        )
+
+    def test_11_agent_rule_fixed_commission_by_category(self):
+        fixed = self.Commission.create(
+            {"name": "Teste Fixa 1%", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.CommissionProgressiveLine.create(
+            {
+                "commission_id": prog.id,
+                "percent_from": 0.0,
+                "percent_to": 100.0,
+                "commission_percent": 0.5,
+                "sequence": 10,
+            }
+        )
+        self.orientadora.commission_id = prog.id
+        cat_extra = self.env["product.category"].create({"name": "TESTE EXTRA"})
+        cat_lio = self.env["product.category"].create({"name": "TESTE LIO"})
+        cat_lio_sub = self.env["product.category"].create(
+            {"name": "TESTE LIO SUB", "parent_id": cat_lio.id}
+        )
+        cat_other = self.env["product.category"].create({"name": "TESTE OUTRA"})
+        prod_extra = self._create_product("Produto Extra", cat_extra)
+        prod_lio = self._create_product("Lente LIO", cat_lio_sub)
+        prod_other = self._create_product("Produto Outro", cat_other)
+        customer = self.ResPartner.create({"name": "Cliente Teste"})
+        customer.agent_ids = [(6, 0, [self.orientadora.id])]
+
+        self.env["commission.agent.rule"].create(
+            {
+                "agent_id": self.orientadora.id,
+                "commission_id": fixed.id,
+                "categ_ids": [(6, 0, [cat_extra.id])],
+                "sequence": 10,
+            }
+        )
+        prog.categ_ids = [(6, 0, [cat_lio.id, cat_lio_sub.id])]
+
+        line_extra = self._create_sale_line(customer, prod_extra)
+        line_extra._compute_agent_ids()
+        agent = line_extra.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertTrue(agent)
+        self.assertEqual(agent.commission_id, fixed)
+        self.assertAlmostEqual(agent.amount, 1.0)
+
+        line_lio = self._create_sale_line(customer, prod_lio)
+        line_lio._compute_agent_ids()
+        agent_lio = line_lio.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertTrue(agent_lio)
+        self.assertEqual(agent_lio.commission_id, prog)
+        self.assertAlmostEqual(agent_lio.amount, 0.75)
+
+        line_other = self._create_sale_line(customer, prod_other)
+        line_other._compute_agent_ids()
+        agent_other = line_other.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertFalse(agent_other)
+
+    def test_13_salesperson_flow_fixed_commission(self):
+        fixed = self.Commission.create(
+            {"name": "Teste Fixa 1%", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.CommissionProgressiveLine.create(
+            {
+                "commission_id": prog.id,
+                "percent_from": 0.0,
+                "percent_to": 100.0,
+                "commission_percent": 0.5,
+                "sequence": 10,
+            }
+        )
+        self.orientadora.commission_id = prog.id
+        cat_extra = self.env["product.category"].create({"name": "TESTE EXTRA"})
+        cat_lio = self.env["product.category"].create({"name": "TESTE LIO"})
+        cat_lio_sub = self.env["product.category"].create(
+            {"name": "TESTE LIO SUB", "parent_id": cat_lio.id}
+        )
+        cat_hon = self.env["product.category"].create(
+            {"name": "HONORARIO TESTE"}
+        )
+        cat_other = self.env["product.category"].create({"name": "TESTE OUTRA"})
+        prod_extra = self._create_product("Produto Extra", cat_extra)
+        prod_lio = self._create_product("Lente LIO", cat_lio_sub)
+        prod_hon = self._create_product("Honorario", cat_hon)
+        prod_other = self._create_product("Produto Outro", cat_other)
+        customer = self.ResPartner.create({"name": "Cliente Teste"})
+
+        self.orientadora.salesman_as_agent = True
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "Sales Orientadora",
+                "login": "sales_orientadora_login",
+                "partner_id": self.orientadora.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        self.env["commission.agent.rule"].create(
+            {
+                "agent_id": self.orientadora.id,
+                "commission_id": fixed.id,
+                "categ_ids": [(6, 0, [cat_extra.id])],
+                "sequence": 10,
+            }
+        )
+        prog.categ_ids = [(6, 0, [cat_lio.id, cat_lio_sub.id])]
+
+        line_extra = self._create_sale_line(customer, prod_extra, user_id=sales_user.id)
+        line_extra._compute_agent_ids()
+        agent = line_extra.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertTrue(agent)
+        self.assertEqual(agent.commission_id, fixed)
+        self.assertAlmostEqual(agent.amount, 1.0)
+
+        line_lio = self._create_sale_line(customer, prod_lio, user_id=sales_user.id)
+        line_lio._compute_agent_ids()
+        agent_lio = line_lio.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertTrue(agent_lio)
+        self.assertEqual(agent_lio.commission_id, prog)
+
+        line_hon = self._create_sale_line(customer, prod_hon, user_id=sales_user.id)
+        line_hon._compute_agent_ids()
+        agent_hon = line_hon.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertFalse(agent_hon)
+
+        line_other = self._create_sale_line(customer, prod_other, user_id=sales_user.id)
+        line_other._compute_agent_ids()
+        agent_other = line_other.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        self.assertFalse(agent_other)
+
+    def test_12_agent_rule_does_not_affect_other_agents(self):
+        self.orientadora.commission_id = self.Commission.create(
+            {"name": "Teste Padrao", "commission_type": "fixed", "fix_qty": 0.5}
+        ).id
+        fixed = self.Commission.create(
+            {"name": "Teste Fixa 1%", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        coord_comm = self.Commission.create(
+            {"name": "Teste Coordenador", "commission_type": "fixed", "fix_qty": 0.5}
+        )
+        cat_extra = self.env["product.category"].create({"name": "TESTE EXTRA"})
+        prod_extra = self._create_product("Produto Extra", cat_extra)
+        customer = self.ResPartner.create({"name": "Cliente Teste"})
+        self.coordenadora.commission_id = coord_comm.id
+        customer.agent_ids = [(6, 0, [self.orientadora.id, self.coordenadora.id])]
+
+        self.env["commission.agent.rule"].create(
+            {
+                "agent_id": self.orientadora.id,
+                "commission_id": fixed.id,
+                "categ_ids": [(6, 0, [cat_extra.id])],
+                "sequence": 10,
+            }
+        )
+        line = self._create_sale_line(customer, prod_extra)
+        line._compute_agent_ids()
+
+        orient = line.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        coord = line.agent_ids.filtered(
+            lambda a: a.agent_id == self.coordenadora
+        )
+        self.assertEqual(orient.commission_id, fixed)
+        self.assertNotEqual(coord.commission_id, fixed)

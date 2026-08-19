@@ -9,6 +9,7 @@
     "depends": [
         "commission_oca",
         "sale_commission_oca",
+        "sale_commission_salesman",
         "crm",
         "sale_management",
         "sale_crm",
