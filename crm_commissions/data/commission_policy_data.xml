@@ -8,6 +8,7 @@
         <field name="max_discount_pct">5.0</field>
         <field name="crm_bonus_rate">0.25</field>
         <field name="crm_penalty_rate">0.25</field>
+        <field name="coordinator_rate">0.5</field>
         <field name="active">True</field>
     </record>
 

@@ -42,6 +42,11 @@
                             <field name="crm_penalty_rate" string="CRM Penalty Rate (%)"/>
                         </group>
                     </group>
+                    <group>
+                        <group>
+                            <field name="coordinator_rate" string="Coordinator Rate (%)"/>
+                        </group>
+                    </group>
                     <notebook>
                         <page name="rate_bands" string="Rate Bands">
                             <field name="line_ids">

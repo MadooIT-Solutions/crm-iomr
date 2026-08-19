@@ -155,7 +155,7 @@ class TestCrmCommission(TransactionCase):
 
         sdr_lines = [v for v in result if v[2].get("agent_id") == self.sdr.id]
         self.assertTrue(sdr_lines)
-        self.assertAlmostEqual(sdr_lines[0][2]["commission_split_percent"], 12.5)
+        self.assertAlmostEqual(sdr_lines[0][2]["commission_split_percent"], 25.0)
         self.assertEqual(sdr_lines[0][2]["commission_id"], commission.id)
 
         orientadora_lines = [
@@ -163,8 +163,7 @@ class TestCrmCommission(TransactionCase):
         ]
         self.assertTrue(orientadora_lines)
         self.assertAlmostEqual(
-            orientadora_lines[0][2].get("commission_split_percent", 100.0),
-            100.0,
+            orientadora_lines[0][2]["commission_split_percent"], 75.0
         )
 
     def test_09_sdr_split_guards(self):

@@ -34,6 +34,11 @@ class CommissionPolicy(models.Model):
         default=0.25,
         help="Commission rate deduction when IS-CRM < minimum",
     )
+    coordinator_rate = fields.Float(
+        string="Coordinator Rate (%)",
+        default=0.5,
+        help="Fixed commission rate for coordinators on total Orientadora sales",
+    )
     line_ids = fields.One2many(
         "commission.policy.line",
         "policy_id",

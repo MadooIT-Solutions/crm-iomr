@@ -11,6 +11,11 @@
                 <field name="commission_base_amount"/>
                 <field name="delivery_pct" widget="progressbar"/>
                 <field name="range_label"/>
+                <field name="base_rate"/>
+                <field name="coordinator_rate"
+                       invisible="member_id.member_type != 'coordenadora'"/>
+                <field name="orientadora_count"
+                       invisible="member_id.member_type != 'coordenadora'"/>
                 <field name="final_rate"/>
                 <field name="commission_amount"/>
                 <field name="state"/>
@@ -58,6 +63,10 @@
                             <field name="base_rate"/>
                             <field name="crm_bonus_rate"/>
                             <field name="final_rate"/>
+                            <field name="coordinator_rate"
+                                   invisible="member_id.member_type != 'coordenadora'"/>
+                            <field name="orientadora_count"
+                                   invisible="member_id.member_type != 'coordenadora'"/>
                         </group>
                     </group>
                     <group>

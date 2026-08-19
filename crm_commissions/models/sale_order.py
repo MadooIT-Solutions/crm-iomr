@@ -4,8 +4,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-_SDR_PASS_PCT = 50.0
-_SDR_SHARE_PCT = 25.0
+_SDR_COMMISSION_PCT = 25.0
 
 
 class SaleOrder(models.Model):
@@ -128,10 +127,11 @@ class SaleOrderLine(models.Model):
                 )
 
     def _apply_sdr_commission_split(self, vals, sdr_partner):
-        """Add the SDR as an extra agent when the opportunity passed through it.
+        """Split the orientadora's commission when the opportunity passed
+        through an SDR.
 
-        The orientadora keeps her full commission; the SDR receives an extra
-        share computed as _SDR_PASS_PCT x _SDR_SHARE_PCT (50% x 1/4 = 12.5%).
+        The SDR receives _SDR_COMMISSION_PCT (25%) of the orientadora's
+        commission and the orientadora keeps the remaining 75%.
         """
         if not sdr_partner or not sdr_partner.agent:
             return vals
@@ -154,10 +154,11 @@ class SaleOrderLine(models.Model):
         ]
         if not orientadora_vals:
             return vals
-        sdr_pct = _SDR_PASS_PCT * _SDR_SHARE_PCT / 100.0
+        for v in orientadora_vals:
+            v[2]["commission_split_percent"] = 100.0 - _SDR_COMMISSION_PCT
         sdr_vals = self._prepare_agent_vals(sdr_partner)
         sdr_vals["commission_id"] = orientadora_vals[0][2]["commission_id"]
-        sdr_vals["commission_split_percent"] = sdr_pct
+        sdr_vals["commission_split_percent"] = _SDR_COMMISSION_PCT
         vals.append((0, 0, sdr_vals))
         return vals
 
