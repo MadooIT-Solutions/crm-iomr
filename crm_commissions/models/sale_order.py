@@ -47,9 +47,18 @@ class SaleOrderLine(models.Model):
         self.agent_ids = False
         for record in self:
             if record.order_id.partner_id and not record.commission_free:
+                is_excluded_categ = record._product_in_excluded_commission_categ()
                 vals = record._prepare_agents_vals_partner(
                     record.order_id.partner_id, settlement_type="sale_invoice"
                 )
+                if is_excluded_categ:
+                    vals = [
+                        v for v in vals
+                        if len(v) < 3
+                        or self.env["res.partner"].browse(
+                            v[2].get("agent_id")
+                        ).type_partner not in ("orientadora", "sdr")
+                    ]
                 if record.order_id.doctor_id:
                     doctor = record.order_id.doctor_id
                     if doctor.agent and doctor.commission_id:
@@ -86,7 +95,7 @@ class SaleOrderLine(models.Model):
                     record.order_id.opportunity_id
                     and record.order_id.opportunity_id._get_sdr_partner_from_rotation()
                 )
-                if sdr_partner:
+                if sdr_partner and not is_excluded_categ:
                     vals = record._apply_sdr_commission_split(vals, sdr_partner)
                 record.agent_ids = record._apply_agent_category_rules(
                     vals, record.product_id
@@ -136,11 +145,37 @@ class SaleOrderLine(models.Model):
             categ = categ.parent_id
         return list(categ_ids)
 
+    def _product_in_excluded_commission_categ(self):
+        if not self.product_id or not self.product_id.categ_id:
+            return False
+        excluded = set(self._get_excluded_orientadora_categ_ids())
+        if not excluded:
+            return False
+        return any(cid in excluded for cid in self._get_product_category_ids(self.product_id))
+
+    _EXCLUDED_ORIENTADORA_CATEGS = None
+
+    @api.model
+    def _get_excluded_orientadora_categ_ids(self):
+        if self._EXCLUDED_ORIENTADORA_CATEGS is None:
+            cats = self.env["product.category"].search(
+                ["|", ("name", "ilike", "HONORARIO"), ("name", "ilike", "PROCEDIMENTO")]
+            )
+            all_ids = set()
+            for cat in cats:
+                c = cat
+                while c:
+                    all_ids.add(c.id)
+                    c = c.parent_id
+            SaleOrderLine._EXCLUDED_ORIENTADORA_CATEGS = list(all_ids)
+        return self._EXCLUDED_ORIENTADORA_CATEGS
+
     def _apply_agent_category_rules(self, vals, product):
         if not product or not product.categ_id or not vals:
             return vals
         result = []
         categ_ids = self._get_product_category_ids(product)
+        excluded_categ_ids = set(self._get_excluded_orientadora_categ_ids())
         for val in vals:
             if len(val) < 3:
                 result.append(val)
@@ -149,6 +184,13 @@ class SaleOrderLine(models.Model):
             comm_id = val[2].get("commission_id")
             if not agent_id or not comm_id:
                 result.append(val)
+                continue
+            agent = self.env["res.partner"].browse(agent_id)
+            if (
+                agent.type_partner in ("orientadora", "sdr")
+                and excluded_categ_ids
+                and any(cid in excluded_categ_ids for cid in categ_ids)
+            ):
                 continue
             rule = self.env["commission.agent.rule"].search(
                 [
