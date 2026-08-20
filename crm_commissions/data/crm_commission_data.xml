@@ -55,4 +55,11 @@
         <field name="amount_base_type">gross_amount</field>
         <field name="settlement_type">sale_invoice</field>
     </record>
+
+    <record id="commission_coordinator_policy" model="commission">
+        <field name="name">Comissão Coordenadora (via política)</field>
+        <field name="commission_type">coordinator</field>
+        <field name="amount_base_type">gross_amount</field>
+        <field name="settlement_type">sale_invoice</field>
+    </record>
 </odoo>

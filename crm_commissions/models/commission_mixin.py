@@ -22,6 +22,13 @@ class CommissionLineMixin(models.AbstractModel):
 
     def _get_commission_amount(self, commission, subtotal, product, quantity):
         self.ensure_one()
+        if commission and commission.commission_type == "coordinator":
+            policy = self.env["commission.policy"].search(
+                [("active", "=", True)], order="date_start desc", limit=1
+            )
+            if policy:
+                return subtotal * policy.coordinator_rate / 100.0
+            return 0.0
         if commission and commission.commission_type == "progressive":
             if commission.categ_ids and product and product.categ_id:
                 categ_ids = self._get_product_category_ids(product)

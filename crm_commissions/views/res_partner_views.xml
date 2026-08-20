@@ -20,6 +20,10 @@
                 >
                     <group>
                         <field name="crm_team_id" />
+                        <field
+                            name="coordenadora_id"
+                            invisible="type_partner not in ('orientadora', 'sdr')"
+                        />
                         <field name="sdr_agent_ids" widget="many2many_tags" />
                         <field name="is_crm_target" />
                     </group>

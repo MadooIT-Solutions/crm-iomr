@@ -113,9 +113,53 @@ class SaleOrderLine(models.Model):
                 if sdr_partner and not is_excluded_categ:
                     vals = record._apply_sdr_commission_split(vals, sdr_partner)
                 vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
-                record.agent_ids = record._apply_agent_category_rules(
-                    vals, record.product_id
+                record.agent_ids = record._add_coordinator_agents(
+                    record._apply_agent_category_rules(vals, record.product_id)
                 )
+
+    def _get_coordinator_commission(self):
+        commission = self.env.ref(
+            "crm_commissions.commission_coordinator_policy",
+            raise_if_not_found=False,
+        )
+        if not commission:
+            commission = self.env["commission"].search(
+                [("commission_type", "=", "coordinator")], limit=1
+            )
+        return commission
+
+    def _add_coordinator_agents(self, agent_vals):
+        """Mirror the orientadora's commission lines to her coordinator.
+
+        The coordinator receives commission (via the active policy rate) on
+        the same items where the orientadora receives commission.
+        """
+        result = list(agent_vals)
+        coordinator_comm = self._get_coordinator_commission()
+        if not coordinator_comm:
+            return result
+        present_agents = {
+            v[2].get("agent_id") for v in result if len(v) >= 3
+        }
+        for val in result:
+            if len(val) < 3:
+                continue
+            agent = self.env["res.partner"].browse(val[2].get("agent_id"))
+            coordinator = agent.coordenadora_id
+            if (
+                agent.type_partner == "orientadora"
+                and coordinator
+                and coordinator.id not in present_agents
+            ):
+                result.append(
+                    (0, 0, {
+                        "agent_id": coordinator.id,
+                        "commission_id": coordinator_comm.id,
+                        "commission_split_percent": 100.0,
+                    })
+                )
+                present_agents.add(coordinator.id)
+        return result
 
     def _apply_sdr_commission_split(self, vals, sdr_partner):
         """Split the orientadora's commission when the opportunity passed

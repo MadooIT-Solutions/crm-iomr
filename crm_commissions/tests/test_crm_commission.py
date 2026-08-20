@@ -428,3 +428,126 @@ class TestCrmCommission(TransactionCase):
         )
         self.assertEqual(orient.commission_id, fixed)
         self.assertNotEqual(coord.commission_id, fixed)
+
+    def test_14_coordinator_mirrors_orientadora_commission(self):
+        fixed = self.Commission.create(
+            {"name": "Teste Fixa 1%", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.CommissionProgressiveLine.create(
+            {
+                "commission_id": prog.id,
+                "percent_from": 0.0,
+                "percent_to": 100.0,
+                "commission_percent": 0.5,
+                "sequence": 10,
+            }
+        )
+        self.orientadora.commission_id = prog.id
+        self.orientadora.salesman_as_agent = True
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "Sales Orientadora 14",
+                "login": "sales_orientadora_login_14",
+                "partner_id": self.orientadora.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        customer = self.ResPartner.create({"name": "Cliente Teste 14"})
+        cat_extra = self.env["product.category"].create({"name": "TESTE EXTRA 14"})
+        cat_lio = self.env["product.category"].create({"name": "TESTE LIO 14"})
+        cat_hon = self.env["product.category"].create({"name": "HONORARIO TESTE 14"})
+        cat_other = self.env["product.category"].create({"name": "TESTE OUTRA 14"})
+        prod_extra = self._create_product("Produto Extra 14", cat_extra)
+        prod_lio = self._create_product("Lente LIO 14", cat_lio)
+        prod_hon = self._create_product("Produto Hon 14", cat_hon)
+        prod_other = self._create_product("Produto Outro 14", cat_other)
+        self.env["commission.agent.rule"].create(
+            {
+                "agent_id": self.orientadora.id,
+                "commission_id": fixed.id,
+                "categ_ids": [(6, 0, [cat_extra.id])],
+                "sequence": 10,
+            }
+        )
+        prog.categ_ids = [(6, 0, [cat_lio.id])]
+        coordinator_comm = self.env.ref(
+            "crm_commissions.commission_coordinator_policy"
+        )
+
+        policy = self.env["commission.policy"].search(
+            [("active", "=", True)], order="date_start desc", limit=1
+        )
+        self.assertTrue(policy)
+        self.assertEqual(policy.coordinator_rate, 0.5)
+
+        line_extra = self._create_sale_line(
+            customer, prod_extra, user_id=sales_user.id
+        )
+        line_extra._compute_agent_ids()
+        self.assertEqual(len(line_extra.agent_ids), 2)
+        orient = line_extra.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        coord = line_extra.agent_ids.filtered(
+            lambda a: a.agent_id == self.coordenadora
+        )
+        self.assertEqual(orient.commission_id, fixed)
+        self.assertEqual(orient.amount, 1.0)
+        self.assertEqual(coord.commission_id, coordinator_comm)
+        self.assertAlmostEqual(coord.amount, 0.5)
+
+        line_lio = self._create_sale_line(customer, prod_lio, user_id=sales_user.id)
+        line_lio._compute_agent_ids()
+        orient_lio = line_lio.agent_ids.filtered(
+            lambda a: a.agent_id == self.orientadora
+        )
+        coord_lio = line_lio.agent_ids.filtered(
+            lambda a: a.agent_id == self.coordenadora
+        )
+        self.assertTrue(orient_lio)
+        self.assertEqual(orient_lio.commission_id, prog)
+        self.assertEqual(coord_lio.commission_id, coordinator_comm)
+        self.assertAlmostEqual(coord_lio.amount, 0.5)
+
+        line_hon = self._create_sale_line(customer, prod_hon, user_id=sales_user.id)
+        line_hon._compute_agent_ids()
+        self.assertFalse(line_hon.agent_ids.filtered(
+            lambda a: a.agent_id == self.coordenadora
+        ))
+
+        line_other = self._create_sale_line(
+            customer, prod_other, user_id=sales_user.id
+        )
+        line_other._compute_agent_ids()
+        self.assertFalse(line_other.agent_ids.filtered(
+            lambda a: a.agent_id == self.coordenadora
+        ))
+
+    def test_15_coordinator_not_duplicated_when_agent_listed(self):
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        orient_comm = self.Commission.create(
+            {"name": "Teste Padrao", "commission_type": "fixed", "fix_qty": 0.5}
+        )
+        coord_comm = self.Commission.create(
+            {"name": "Teste Coordenador", "commission_type": "fixed", "fix_qty": 0.5}
+        )
+        self.orientadora.commission_id = orient_comm.id
+        self.coordenadora.commission_id = coord_comm.id
+        customer = self.ResPartner.create({"name": "Cliente Teste 15"})
+        customer.agent_ids = [(6, 0, [self.orientadora.id, self.coordenadora.id])]
+
+        line = self._create_sale_line(customer, self._create_product(
+            "Produto 15", self.env["product.category"].create({"name": "TESTE 15"})
+        ))
+        line._compute_agent_ids()
+
+        coord_lines = line.agent_ids.filtered(
+            lambda a: a.agent_id == self.coordenadora
+        )
+        self.assertEqual(len(coord_lines), 1)
+        self.assertEqual(coord_lines.commission_id, coord_comm)

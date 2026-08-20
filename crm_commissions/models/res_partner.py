@@ -55,6 +55,11 @@ class ResPartner(models.Model):
         string="Linked SDRs",
         domain=[("type_partner", "=", "sdr")],
     )
+    coordenadora_id = fields.Many2one(
+        "res.partner",
+        string="Coordenadora",
+        domain=[("type_partner", "=", "coordenadora")],
+    )
     is_crm_target = fields.Float(
         string="IS-CRM target (%)",
         default=95.0,

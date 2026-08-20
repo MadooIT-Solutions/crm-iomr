@@ -11,8 +11,14 @@ class Commission(models.Model):
     _inherit = "commission"
 
     commission_type = fields.Selection(
-        selection_add=[("progressive", "Progressive by performance")],
-        ondelete={"progressive": "set default"},
+        selection_add=[
+            ("progressive", "Progressive by performance"),
+            ("coordinator", "Coordinator (via policy)"),
+        ],
+        ondelete={
+            "progressive": "set default",
+            "coordinator": "set default",
+        },
     )
     progressive_line_ids = fields.One2many(
         string="Progressive rates",
