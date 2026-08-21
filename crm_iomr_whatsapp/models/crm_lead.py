@@ -32,12 +32,12 @@ class CrmLead(models.Model):
             return
         if not self.env.registry.get("mail.whatsapp.chatter.link"):
             return
-        link = self.env["mail.whatsapp.chatter.link"].search(
+        link = self.env["mail.whatsapp.chatter.link"].sudo().search(
             [("res_model", "=", "crm.lead"), ("res_id", "=", self.id)], limit=1
         )
         if not link or not link.channel_id:
             return
-        channel = link.channel_id
+        channel = link.channel_id.sudo()
         new_partner = self.user_id.partner_id
         if not any(
             member.partner_id == new_partner
