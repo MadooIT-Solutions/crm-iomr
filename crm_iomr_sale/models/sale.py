@@ -13,6 +13,7 @@ class SaleOrder(models.Model):
         "res.partner",
         string="Convênio",
         domain=[("type_partner", "=", "convenio")],
+        related="opportunity_id.convenio",
         tracking=True,
     )
 
