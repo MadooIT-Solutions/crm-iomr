@@ -10,24 +10,11 @@ _SDR_COMMISSION_PCT = 25.0
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    doctor_id = fields.Many2one(
-        "res.partner",
-        string="Doctor/Médico",
-        domain=[("type_partner", "in", ("doctorint", "doctorext"))],
-    )
-    referred_partner = fields.Many2many(
-        "res.partner",
-        relation="sale_order_rel_res_partner",
-        column1="order_id",
-        column2="partner_id",
-        string="Indicações",
-        copy=False,
-        domain=[("type_partner", "!=", "convenio")],
-    )
     is_crm_score = fields.Float(
         string="IS-CRM score",
         default=100.0,
     )
+
     discount_approved = fields.Boolean(string="Discount approved", default=False)
     margin_percent = fields.Float(
         string="Margin (%)",
@@ -50,27 +37,6 @@ class SaleOrder(models.Model):
                 )
             else:
                 rec.margin_percent = 0.0
-
-    @api.onchange("opportunity_id")
-    def _onchange_opportunity_id(self):
-        if self.opportunity_id:
-            self.doctor_id = self.opportunity_id.doctor
-            self.referred_partner = self.opportunity_id.referred_partner
-        else:
-            self.doctor_id = False
-            self.referred_partner = False
-
-    def action_confirm(self):
-        for rec in self:
-            if not rec.doctor_id:
-                raise UserError(
-                    _("O campo Médico é obrigatório para confirmar o pedido.")
-                )
-            if not rec.opportunity_id:
-                raise UserError(
-                    _("O campo Oportunidade é obrigatório para confirmar o pedido.")
-                )
-        return super().action_confirm()
 
 
 class SaleOrderLine(models.Model):
