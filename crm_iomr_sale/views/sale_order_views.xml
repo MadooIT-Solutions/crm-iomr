@@ -10,7 +10,7 @@
         <field name="convenio"/>
         <field name="doctor_id" groups="crm_commissions.group_crm_commission_user" />
         <field name="referred_partner" widget="many2many_tags" options="{'no_create': true}" groups="crm_commissions.group_crm_commission_user" />
-
+        <field name="nota_fiscal"/>
       </field>
     </field>
 

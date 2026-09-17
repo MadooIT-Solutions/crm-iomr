@@ -32,6 +32,8 @@ class SaleOrder(models.Model):
         copy=False,
         domain=[("type_partner", "!=", "convenio")],
     )
+    nota_fiscal = fields.Char(
+        string="Nota fiscal", )
 
     @api.onchange("opportunity_id")
     def _onchange_opportunity_id(self):
