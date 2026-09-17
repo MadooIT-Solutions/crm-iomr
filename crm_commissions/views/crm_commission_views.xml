@@ -147,6 +147,14 @@
                 <field name="min_margin" invisible="commission_type != 'progressive'" />
                 <field name="max_discount" invisible="commission_type != 'progressive'" />
                 <field name="categ_ids" invisible="commission_type != 'progressive'" widget="many2many_tags" />
+                <field
+                    name="tax_deduction_pct"
+                    invisible="amount_base_type != 'net_amount_deduction'"
+                />
+                <field
+                    name="deduct_card_fee"
+                    invisible="amount_base_type != 'net_amount_deduction'"
+                />
             </field>
             <field name="section_ids" position="after">
                 <field

@@ -20,8 +20,52 @@ class CommissionLineMixin(models.AbstractModel):
             categ = categ.parent_id
         return list(categ_ids)
 
+    def _get_card_fee_percent(self):
+        """Get the credit card fee percentage from the related sale order.
+
+        The fee lives on ``sale.order.credit_card_fee_percent`` (provided by
+        ``sale_credit_card_fee``), so the source commission line is
+        traced back to its order, either directly (sale.order.line) or through
+        the originating sale lines (account.move.line).
+        """
+        self.ensure_one()
+        line = self.object_id
+        if not line:
+            return 0.0
+        sale_lines = getattr(line, "sale_line_ids", False)
+        if sale_lines:
+            for sale_line in sale_lines:
+                order = sale_line.order_id
+                if order and order.credit_card_fee_percent:
+                    return order.credit_card_fee_percent
+            return 0.0
+        if getattr(line, "order_id", False):
+            order = line.order_id
+            if order and order.credit_card_fee_percent:
+                return order.credit_card_fee_percent
+        return 0.0
+
+    def _get_deducted_base_amount(self, commission, subtotal):
+        """Deduct fixed taxes and/or the card fee from the commission base.
+
+        Follows the repasse rule ``[preço - impostos - taxa cartão]``: the
+        applicable percentages are summed and applied on the gross amount.
+        """
+        self.ensure_one()
+        total_deduction_pct = 0.0
+        if commission.tax_deduction_pct:
+            total_deduction_pct += commission.tax_deduction_pct
+        if commission.deduct_card_fee:
+            total_deduction_pct += self._get_card_fee_percent()
+        return max(0.0, subtotal * (1 - total_deduction_pct / 100.0))
+
     def _get_commission_amount(self, commission, subtotal, product, quantity):
         self.ensure_one()
+        if (
+            commission
+            and commission.amount_base_type == "net_amount_deduction"
+        ):
+            subtotal = self._get_deducted_base_amount(commission, subtotal)
         if commission and commission.commission_type == "coordinator":
             policy = self.env["commission.policy"].search(
                 [("active", "=", True)], order="date_start desc", limit=1

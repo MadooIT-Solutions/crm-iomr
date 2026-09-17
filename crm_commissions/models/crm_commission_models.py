@@ -20,6 +20,27 @@ class Commission(models.Model):
             "coordinator": "set default",
         },
     )
+    amount_base_type = fields.Selection(
+        selection_add=[("net_amount_deduction", "Net (Gross - Taxes - Card Fee)")],
+        ondelete={"net_amount_deduction": "set default"},
+    )
+    tax_deduction_pct = fields.Float(
+        string="Tax Deduction (%)",
+        default=0.0,
+        help=(
+            "Fixed percentage of taxes to deduct from the commission base "
+            "before applying the commission rate (used with "
+            "'Net (Gross - Taxes - Card Fee)' base type)."
+        ),
+    )
+    deduct_card_fee = fields.Boolean(
+        string="Deduct Card Fee",
+        default=False,
+        help=(
+            "Deduct the credit card fee (sale_credit_card_fee) "
+            "from the commission base before applying the commission rate."
+        ),
+    )
     progressive_line_ids = fields.One2many(
         string="Progressive rates",
         comodel_name="commission.progressive.line",

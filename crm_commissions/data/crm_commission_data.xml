@@ -62,4 +62,37 @@
         <field name="amount_base_type">gross_amount</field>
         <field name="settlement_type">sale_invoice</field>
     </record>
+
+    <!-- Repasse Médico - Consulta: 60% sobre receita líquida (impostos 16.33% + taxa cartão) -->
+    <record id="commission_doctor_consulta" model="commission">
+        <field name="name">Repasse Médico - Consulta</field>
+        <field name="commission_type">fixed</field>
+        <field name="fix_qty">60.0</field>
+        <field name="amount_base_type">net_amount_deduction</field>
+        <field name="tax_deduction_pct">16.33</field>
+        <field name="deduct_card_fee" eval="True"/>
+        <field name="settlement_type">sale_invoice</field>
+    </record>
+
+    <!-- Repasse Médico - Exame: 50% sobre receita líquida (impostos 11.73% + taxa cartão) -->
+    <record id="commission_doctor_exame" model="commission">
+        <field name="name">Repasse Médico - Exame</field>
+        <field name="commission_type">fixed</field>
+        <field name="fix_qty">50.0</field>
+        <field name="amount_base_type">net_amount_deduction</field>
+        <field name="tax_deduction_pct">11.73</field>
+        <field name="deduct_card_fee" eval="True"/>
+        <field name="settlement_type">sale_invoice</field>
+    </record>
+
+    <!-- Repasse Médico - Cirurgia (honorário): 100% sobre receita líquida (impostos 11.73% + taxa cartão) -->
+    <record id="commission_doctor_cirurgia" model="commission">
+        <field name="name">Repasse Médico - Cirurgia (Honorário)</field>
+        <field name="commission_type">fixed</field>
+        <field name="fix_qty">100.0</field>
+        <field name="amount_base_type">net_amount_deduction</field>
+        <field name="tax_deduction_pct">11.73</field>
+        <field name="deduct_card_fee" eval="True"/>
+        <field name="settlement_type">sale_invoice</field>
+    </record>
 </odoo>

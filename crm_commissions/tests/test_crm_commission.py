@@ -551,3 +551,107 @@ class TestCrmCommission(TransactionCase):
         )
         self.assertEqual(len(coord_lines), 1)
         self.assertEqual(coord_lines.commission_id, coord_comm)
+
+    def _create_doctor_sale_line(self, customer, product, doctor):
+        order = self.env["sale.order"].create(
+            {"partner_id": customer.id, "doctor_id": doctor.id}
+        )
+        return self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product.id,
+                "product_uom_qty": 1,
+                "price_unit": 100.0,
+            }
+        )
+
+    def test_16_doctor_consulta_deduct_fixed_tax(self):
+        comm = self.Commission.create(
+            {
+                "name": "Repasse Médico - Consulta",
+                "commission_type": "fixed",
+                "fix_qty": 60.0,
+                "amount_base_type": "net_amount_deduction",
+                "tax_deduction_pct": 16.33,
+                "deduct_card_fee": False,
+            }
+        )
+        self.doctor.agent = True
+        self.doctor.commission_id = comm.id
+        cat = self.env["product.category"].create({"name": "CONSULTA TESTE"})
+        prod = self._create_product("Consulta", cat)
+        customer = self.ResPartner.create({"name": "Cliente Consulta"})
+        line = self._create_doctor_sale_line(customer, prod, self.doctor)
+        line._compute_agent_ids()
+
+        agent = line.agent_ids.filtered(
+            lambda a: a.agent_id == self.doctor
+        )
+        self.assertTrue(agent)
+        self.assertEqual(agent.commission_id, comm)
+        # base = 100 - 100 * 0.1633 = 83.67 ; 83.67 * 60% = 50.202
+        self.assertAlmostEqual(agent.amount, 50.202)
+
+    def test_17_doctor_exame_deduct_tax_and_card_fee(self):
+        comm = self.Commission.create(
+            {
+                "name": "Repasse Médico - Exame",
+                "commission_type": "fixed",
+                "fix_qty": 50.0,
+                "amount_base_type": "net_amount_deduction",
+                "tax_deduction_pct": 11.73,
+                "deduct_card_fee": True,
+            }
+        )
+        self.doctor.agent = True
+        self.doctor.commission_id = comm.id
+        pm = self.env["payment.method"].create(
+            {"name": "Cartão Teste", "code": "TEST_CARD"}
+        )
+        pm.credit_card_admin = True
+        self.env["credit.card.fee.range"].create(
+            {
+                "payment_method_id": pm.id,
+                "installments_from": 1,
+                "installments_to": 12,
+                "fee_percent": 2.5,
+            }
+        )
+        cat = self.env["product.category"].create({"name": "EXAME TESTE"})
+        prod = self._create_product("Exame", cat)
+        customer = self.ResPartner.create({"name": "Cliente Exame"})
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "doctor_id": self.doctor.id,
+                "payment_method_ids": [pm.id],
+            }
+        )
+        self.env["sale.invoice.plan"].create(
+            {
+                "sale_id": order.id,
+                "invoice_type": "installment",
+                "installment": 1,
+                "plan_date": order.date_order,
+                "percent": 100.0,
+            }
+        )
+        self.assertAlmostEqual(order.credit_card_fee_percent, 2.5)
+
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": prod.id,
+                "product_uom_qty": 1,
+                "price_unit": 100.0,
+            }
+        )
+        line._compute_agent_ids()
+
+        agent = line.agent_ids.filtered(
+            lambda a: a.agent_id == self.doctor
+        )
+        self.assertTrue(agent)
+        self.assertEqual(agent.commission_id, comm)
+        # base = 100 - 100*0.1173 - 100*0.025 = 85.77 ; 85.77 * 50% = 42.885
+        self.assertAlmostEqual(agent.amount, 42.885)
