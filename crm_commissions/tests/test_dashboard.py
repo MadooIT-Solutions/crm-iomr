@@ -161,7 +161,8 @@ class TestCommissionDashboard(TransactionCase):
         self.assertFalse(error)
 
     def test_02_period_uses_inclusive_supplied_boundaries(self):
-        date_from, date_to, error = _parse_dashboard_period(self.env,
+        date_from, date_to, error = _parse_dashboard_period(
+            self.env,
             {"date_from": "2026-08-15", "date_to": "2026-09-15"},
             date(2026, 9, 25),
         )
@@ -171,14 +172,14 @@ class TestCommissionDashboard(TransactionCase):
         self.assertFalse(error)
 
     def test_03_period_with_one_boundary_uses_its_month(self):
-        date_from, date_to, _error = _parse_dashboard_period(self.env,
-            {"date_from": "2026-02-10"}, date(2026, 9, 25)
+        date_from, date_to, _error = _parse_dashboard_period(
+            self.env, {"date_from": "2026-02-10"}, date(2026, 9, 25)
         )
         self.assertEqual(date_from, date(2026, 2, 10))
         self.assertEqual(date_to, date(2026, 2, 28))
 
-        date_from, date_to, _error = _parse_dashboard_period(self.env,
-            {"date_to": "2026-02-10"}, date(2026, 9, 25)
+        date_from, date_to, _error = _parse_dashboard_period(
+            self.env, {"date_to": "2026-02-10"}, date(2026, 9, 25)
         )
         self.assertEqual(date_from, date(2026, 2, 1))
         self.assertEqual(date_to, date(2026, 2, 10))
@@ -186,26 +187,26 @@ class TestCommissionDashboard(TransactionCase):
     def test_04_invalid_or_reversed_period_falls_back_to_current_month(self):
         today = date(2026, 9, 25)
 
-        date_from, date_to, error = _parse_dashboard_period(self.env,
-            {"date_from": "invalid", "date_to": "also-invalid"}, today
+        date_from, date_to, error = _parse_dashboard_period(
+            self.env, {"date_from": "invalid", "date_to": "also-invalid"}, today
         )
         self.assertEqual((date_from, date_to), (date(2026, 9, 1), date(2026, 9, 30)))
         self.assertTrue(error)
 
-        date_from, date_to, error = _parse_dashboard_period(self.env,
-            {"date_from": "2026-08-15", "date_to": "invalid"}, today
+        date_from, date_to, error = _parse_dashboard_period(
+            self.env, {"date_from": "2026-08-15", "date_to": "invalid"}, today
         )
         self.assertEqual((date_from, date_to), (date(2026, 9, 1), date(2026, 9, 30)))
         self.assertTrue(error)
 
-        date_from, date_to, error = _parse_dashboard_period(self.env,
-            {"date_from": "invalid", "date_to": "2026-09-15"}, today
+        date_from, date_to, error = _parse_dashboard_period(
+            self.env, {"date_from": "invalid", "date_to": "2026-09-15"}, today
         )
         self.assertEqual((date_from, date_to), (date(2026, 9, 1), date(2026, 9, 30)))
         self.assertTrue(error)
 
-        date_from, date_to, error = _parse_dashboard_period(self.env,
-            {"date_from": "2026-10-01", "date_to": "2026-09-30"}, today
+        date_from, date_to, error = _parse_dashboard_period(
+            self.env, {"date_from": "2026-10-01", "date_to": "2026-09-30"}, today
         )
         self.assertEqual((date_from, date_to), (date(2026, 9, 1), date(2026, 9, 30)))
         self.assertTrue(error)
@@ -345,7 +346,57 @@ class TestCommissionDashboard(TransactionCase):
         self.assertAlmostEqual(values["pipeline_total"], 250.0, places=2)
         self.assertAlmostEqual(values["estimated_pipeline_commission"], 50.0, places=2)
 
-    def test_10_target_totals_include_every_month_touched_by_period(self):
+    def test_10_sdr_scope_ignores_linked_other_agents(self):
+        self.own_partner.write({"type_partner": "orientadora"})
+        self.own_partner.sdr_agent_ids = [(4, self.other_partner.id)]
+        linked_lead = self.env["crm.lead"].create(
+            {
+                "name": "Oportunidade de SDR vinculado",
+                "type": "opportunity",
+                "partner_id": self.customer.id,
+                "user_id": self.other_user.id,
+                "probability": 50.0,
+                "expected_revenue": 2000.0,
+                "date_open": datetime(2026, 8, 15, 12, 0),
+            }
+        )
+        self.env.flush_all()
+
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 8, 1), date(2026, 8, 31)
+        )
+
+        self.assertNotIn(
+            linked_lead.name, [lead["name"] for lead in values["lead_data"]]
+        )
+
+        orientadora_group = self.env.ref(
+            "crm_commissions.group_crm_commission_orientadora"
+        )
+        self.own_user.write({"groups_id": [(4, orientadora_group.id)]})
+        self.env.flush_all()
+        values = get_dashboard_values(
+            self.env(user=self.own_user.id), date(2026, 8, 1), date(2026, 8, 31)
+        )
+        self.assertIn(linked_lead.name, [lead["name"] for lead in values["lead_data"]])
+
+        sales_group = self.env.ref("sales_team.group_sale_salesman")
+        self.own_user.write(
+            {
+                "groups_id": [
+                    (3, self.group_sdr.id),
+                    (3, orientadora_group.id),
+                    (4, sales_group.id),
+                ]
+            }
+        )
+        self.env.flush_all()
+        values = get_dashboard_values(
+            self.env(user=self.own_user.id), date(2026, 8, 1), date(2026, 8, 31)
+        )
+        self.assertIn(linked_lead.name, [lead["name"] for lead in values["lead_data"]])
+
+    def test_11_target_totals_include_every_month_touched_by_period(self):
         for target_date, amount in (
             (date(2026, 8, 1), 1000.0),
             (date(2026, 9, 1), 2000.0),
@@ -367,7 +418,7 @@ class TestCommissionDashboard(TransactionCase):
         self.assertEqual(values["target_amount"], 3000.0)
         self.assertEqual(values["target_amount_fmt"], "R$ 3,000.00")
 
-    def test_11_settlement_totals_are_complete_and_separate_performance(self):
+    def test_12_settlement_totals_are_complete_and_separate_performance(self):
         for _index in range(12):
             self._create_settlement(date(2026, 8, 1), date(2026, 8, 31), 10.0)
         self._create_settlement(
@@ -395,7 +446,7 @@ class TestCommissionDashboard(TransactionCase):
         self.assertAlmostEqual(values["performance_settlements_total"], 500.0, places=2)
         self.assertAlmostEqual(values["invoice_exception_total"], 25.0, places=2)
 
-    def test_12_quarterly_bonuses_are_not_truncated_or_filtered_by_lost(self):
+    def test_13_quarterly_bonuses_are_not_truncated_or_filtered_by_lost(self):
         for year in range(2020, 2026):
             self.env["crm.commission.quarterly.bonus"].create(
                 {
@@ -415,3 +466,148 @@ class TestCommissionDashboard(TransactionCase):
         self.assertIn(
             "lost", {bonus["state"] for bonus in values["quarterly_bonus_data"]}
         )
+
+    def test_14_progressive_pipeline_uses_policy_rate_and_crm_adjustment(self):
+        progressive = self.env["commission"].create(
+            {
+                "name": "Comissão progressiva do dashboard",
+                "commission_type": "progressive",
+                "amount_base_type": "gross_amount",
+                "is_crm_bonus": 5.0,
+                "is_crm_penalty": 3.0,
+                "progressive_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "sequence": 10,
+                            "percent_from": 0.0,
+                            "percent_to": 50.0,
+                            "commission_percent": 2.0,
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "sequence": 20,
+                            "percent_from": 50.0,
+                            "percent_to": 100.0,
+                            "commission_percent": 4.0,
+                        },
+                    ),
+                ],
+            }
+        )
+        self.own_partner.write({"commission_id": progressive.id})
+        lead = self.env["crm.lead"].create(
+            {
+                "name": "Oportunidade com política progressiva",
+                "type": "opportunity",
+                "partner_id": self.customer.id,
+                "user_id": self.own_user.id,
+                "probability": 50.0,
+                "expected_revenue": 1000.0,
+                "is_crm_score": 100.0,
+                "date_open": datetime(2026, 8, 15, 12, 0),
+            }
+        )
+        self.env.flush_all()
+
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 8, 1), date(2026, 8, 31)
+        )
+
+        # No target means the progressive policy uses its 100% band, then the
+        # IS-CRM bonus: 4% + 5%, applied to the weighted 50% revenue.
+        self.assertAlmostEqual(values["estimated_pipeline_commission"], 45.0, places=2)
+
+        lead.write({"is_crm_score": 0.0})
+        self.env.flush_all()
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 8, 1), date(2026, 8, 31)
+        )
+        self.assertAlmostEqual(values["estimated_pipeline_commission"], 5.0, places=2)
+
+        lead.write({"commission_percent": 12.0})
+        self.env.flush_all()
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 8, 1), date(2026, 8, 31)
+        )
+        self.assertAlmostEqual(values["estimated_pipeline_commission"], 60.0, places=2)
+
+    def test_15_quarterly_totals_ignore_other_company_targets(self):
+        other_company = self.env["res.company"].create({"name": "Empresa Secundária"})
+        self.env["crm.commission.target"].create(
+            {
+                "agent_id": self.own_partner.id,
+                "target_date": date(2026, 10, 1),
+                "target_amount": 1000.0,
+            }
+        )
+        self.env["crm.commission.target"].create(
+            {
+                "agent_id": self.own_partner.id,
+                "target_date": date(2026, 11, 1),
+                "target_amount": 2000.0,
+                "company_id": other_company.id,
+                "currency_id": other_company.currency_id.id,
+            }
+        )
+        self.env.flush_all()
+
+        bonus = self.env["crm.commission.quarterly.bonus"].search(
+            [
+                ("agent_id", "=", self.own_partner.id),
+                ("year", "=", 2026),
+                ("quarter", "=", "Q4"),
+            ],
+            limit=1,
+        )
+        self.assertTrue(bonus)
+        self.assertEqual(len(bonus.monthly_targets), 2)
+
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 10, 1), date(2026, 12, 31)
+        )
+
+        self.assertEqual(values["quarterly_total_target"], 1000.0)
+        self.assertEqual(values["quarterly_total_achieved"], 0.0)
+        self.assertEqual(values["quarterly_pct"], 0.0)
+        self.assertEqual(len(values["quarterly_bonus_data"]), 1)
+
+    def test_16_coordinator_pipeline_uses_active_policy_rate(self):
+        self.env["commission.policy"].create(
+            {
+                "name": "Política do coordinator",
+                "date_start": date(2099, 1, 1),
+                "coordinator_rate": 7.0,
+                "active": True,
+            }
+        )
+        coordinator = self.env["commission"].create(
+            {
+                "name": "Comissão coordinator do dashboard",
+                "commission_type": "coordinator",
+                "amount_base_type": "gross_amount",
+            }
+        )
+        self.own_partner.write({"commission_id": coordinator.id})
+        self.env["crm.lead"].create(
+            {
+                "name": "Oportunidade de coordinator",
+                "type": "opportunity",
+                "partner_id": self.customer.id,
+                "user_id": self.own_user.id,
+                "probability": 50.0,
+                "expected_revenue": 1000.0,
+                "date_open": datetime(2026, 8, 15, 12, 0),
+            }
+        )
+        self.env.flush_all()
+
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 8, 1), date(2026, 8, 31)
+        )
+
+        self.assertAlmostEqual(values["estimated_pipeline_commission"], 35.0, places=2)

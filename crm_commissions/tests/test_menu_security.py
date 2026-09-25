@@ -12,8 +12,15 @@ class TestRepassesMenuSecurity(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.group_sale_salesman = cls.env.ref("sales_team.group_sale_salesman")
+        cls.group_sale_manager = cls.env.ref("sales_team.group_sale_manager")
         cls.group_commission_user = cls.env.ref(
             "crm_commissions.group_crm_commission_user"
+        )
+        cls.group_commission_manager = cls.env.ref(
+            "crm_commissions.group_commission_manager"
+        )
+        cls.group_crm_commission_manager = cls.env.ref(
+            "crm_commissions.group_crm_commission_manager"
         )
         cls.group_sdr = cls.env.ref("crm_commissions.group_crm_commission_sdr")
 
@@ -42,6 +49,16 @@ class TestRepassesMenuSecurity(TransactionCase):
             }
         )
         cls.salesman_env = cls.env(user=cls.salesman_user.id)
+
+        cls.sale_manager_user = cls.env["res.users"].create(
+            {
+                "name": "Sales Manager Line Test",
+                "login": "sale_manager_line_test",
+                "partner_id": cls.agent_other.id,
+                "groups_id": [(6, 0, [cls.group_sale_manager.id])],
+            }
+        )
+        cls.sale_manager_env = cls.env(user=cls.sale_manager_user.id)
 
         cls.internal_user = cls.env["res.users"].create(
             {
@@ -128,6 +145,30 @@ class TestRepassesMenuSecurity(TransactionCase):
                 "agent_id": cls.sdr_partner.id,
                 "date_from": date(2026, 2, 1),
                 "date_to": date(2026, 2, 28),
+            }
+        )
+        cls.commission = cls.env["commission"].create(
+            {
+                "name": "Comissão de teste de acesso",
+                "commission_type": "fixed",
+                "amount_base_type": "gross_amount",
+                "fix_qty": 10.0,
+            }
+        )
+        cls.sdr_settlement_line_own = cls.env["commission.settlement.line"].create(
+            {
+                "settlement_id": cls.sdr_settlement_own.id,
+                "date": date(2026, 2, 1),
+                "commission_id": cls.commission.id,
+                "settled_amount": 100.0,
+            }
+        )
+        cls.settlement_line_other = cls.env["commission.settlement.line"].create(
+            {
+                "settlement_id": cls.settlement_other.id,
+                "date": date(2026, 1, 1),
+                "commission_id": cls.commission.id,
+                "settled_amount": 100.0,
             }
         )
 
@@ -228,18 +269,31 @@ class TestRepassesMenuSecurity(TransactionCase):
         settlement = self.sdr_env["commission.settlement"].browse(
             self.sdr_settlement_own.id
         )
+        settlement_line = self.sdr_env["commission.settlement.line"].browse(
+            self.sdr_settlement_line_own.id
+        )
 
         target.check_access("read")
         bonus.check_access("read")
         settlement.check_access("read")
+        settlement_line.check_access("read")
 
-    def test_09_sdr_cannot_read_other_agent_dashboard_records(self):
+    def test_09_crm_commission_manager_implies_commission_manager(self):
+        self.assertIn(
+            self.group_commission_manager,
+            self.group_crm_commission_manager.implied_ids,
+        )
+
+    def test_10_sdr_cannot_read_other_agent_dashboard_records(self):
         target = self.sdr_env["crm.commission.target"].browse(self.target_other.id)
         bonus = self.sdr_env["crm.commission.quarterly.bonus"].browse(
             self.bonus_other.id
         )
         settlement = self.sdr_env["commission.settlement"].browse(
             self.settlement_other.id
+        )
+        settlement_line = self.sdr_env["commission.settlement.line"].browse(
+            self.settlement_line_other.id
         )
 
         with self.assertRaises(AccessError):
@@ -248,6 +302,30 @@ class TestRepassesMenuSecurity(TransactionCase):
             bonus.check_access("read")
         with self.assertRaises(AccessError):
             settlement.check_access("read")
+        with self.assertRaises(AccessError):
+            settlement_line.check_access("read")
+
+    def test_11_legacy_own_rules_include_sdr_after_upgrade(self):
+        rule_xmlids = (
+            "crm_commissions.rule_commission_member_orientadora_own",
+            "crm_commissions.rule_commission_target_orientadora_own",
+            "crm_commissions.rule_commission_sale_orientadora_own",
+            "crm_commissions.rule_commission_sale_line_orientadora_own",
+            "crm_commissions.rule_commission_result_orientadora_own",
+            "crm_commissions.rule_commission_recovery_orientadora_own",
+        )
+        for rule_xmlid in rule_xmlids:
+            with self.subTest(rule=rule_xmlid):
+                rule = self.env.ref(rule_xmlid)
+                self.assertIn(self.group_sdr, rule.groups)
+
+    def test_12_sales_manager_can_read_all_settlement_lines(self):
+        settlement_line = self.sale_manager_env["commission.settlement.line"].browse(
+            self.settlement_line_other.id
+        )
+
+        settlement_line.check_access("read")
+
 
 class TestCommissionDashboardRoute(HttpCase):
     @classmethod

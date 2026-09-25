@@ -51,6 +51,7 @@ O rótulo **Fatura Gerada** significa que o settlement já possui uma fatura cri
 -   Exclusão de oportunidades com probabilidade zero ou 100
 -   Receita esperada, probabilidade e receita ponderada
 -   Para Orientadoras, inclui as oportunidades próprias e dos SDRs vinculados; para SDRs, apenas as próprias
+-   Para políticas progressivas, aplica a performance do período e o bônus ou a penalidade IS-CRM; sem meta no período, a política é avaliada em 100% de performance
 
 ### 5. Pedidos do período
 

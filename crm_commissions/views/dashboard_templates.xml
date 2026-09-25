@@ -313,7 +313,7 @@
                         <h4>Prévia de Recebimento</h4>
                         <div class="card text-bg-light mb-3 h-100">
                             <div class="card-body">
-                                <h6>Repasse dos Pedidos</h6>
+                                <h6>Meu Repasse (Pedidos)</h6>
                                 <h3><t t-esc="current_commission_total_fmt"/></h3>
                             </div>
                         </div>
