@@ -236,6 +236,7 @@ class TestRepassesMenuSecurity(TransactionCase):
         self.assertIn(self.group_sdr, crm_dashboard.groups_id)
         self.assertIn(self.group_sdr, top_root.groups_id)
         self.assertIn(self.group_sdr, top_dashboard.groups_id)
+        self.assertFalse(top_dashboard.active)
 
         self.assertFalse(
             self.sdr_user.has_group("commission_oca.group_commission_user")
@@ -244,7 +245,7 @@ class TestRepassesMenuSecurity(TransactionCase):
         self.assertIn(crm_root.id, visible)
         self.assertIn(crm_dashboard.id, visible)
         self.assertIn(top_root.id, visible)
-        self.assertIn(top_dashboard.id, visible)
+        self.assertNotIn(top_dashboard.id, visible)
 
     def test_07_sdr_is_authorized_for_dashboard(self):
         from ..controllers.dashboard import _dashboard_user_allowed
@@ -288,7 +289,6 @@ class TestRepassesMenuSecurity(TransactionCase):
             "crm_commissions.menu_crm_quarterly_bonus",
             "crm_commissions.menu_crm_lios_config",
             "crm_commissions.menu_commission_root",
-            "crm_commissions.menu_commission_dashboard",
             "crm_commissions.menu_commission_sales",
             "crm_commissions.menu_commission_targets",
             "crm_commissions.menu_commission_results",
@@ -301,6 +301,10 @@ class TestRepassesMenuSecurity(TransactionCase):
         for xmlid in menu_xmlids:
             with self.subTest(xmlid=xmlid):
                 self.assertIn(self.env.ref(xmlid).id, visible)
+        self.assertNotIn(
+            self.env.ref("crm_commissions.menu_commission_dashboard").id,
+            visible,
+        )
         self.assertEqual(self.commission_manager_user.crm_role, "manager")
 
     def test_11_commission_user_sees_operational_repasse_menus_only(self):
