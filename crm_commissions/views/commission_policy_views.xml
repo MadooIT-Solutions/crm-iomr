@@ -67,6 +67,6 @@
     <record id="action_commission_policy" model="ir.actions.act_window">
         <field name="name">Commission Policies</field>
         <field name="res_model">commission.policy</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>

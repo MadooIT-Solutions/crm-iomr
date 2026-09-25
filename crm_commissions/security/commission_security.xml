@@ -69,4 +69,12 @@
             <field name="perm_unlink" eval="False"/>
         </record>
     </data>
+
+    <!-- CRM Commission Managers also get full Commission Manager rights.
+         This makes the Repasses menu (and its Vendas/Metas/Resultados/Equipe/
+         Política/Configurações items) visible to managers and administrators,
+         matching the "manager" role granted on the user form. -->
+    <record id="crm_commissions.group_crm_commission_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_commission_manager'))]"/>
+    </record>
 </odoo>

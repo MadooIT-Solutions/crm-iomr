@@ -64,7 +64,7 @@
     <record id="action_commission_target" model="ir.actions.act_window">
         <field name="name">Targets</field>
         <field name="res_model">commission.target</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="commission_target_search"/>
     </record>
 </odoo>

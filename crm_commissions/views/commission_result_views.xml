@@ -111,7 +111,7 @@
     <record id="action_commission_result" model="ir.actions.act_window">
         <field name="name">Commission Results</field>
         <field name="res_model">commission.result</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="commission_result_search"/>
     </record>
 
