@@ -446,3 +446,19 @@ class TestCommissionDashboardRoute(HttpCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Dashboard de Repasses", response.text)
         self.assertIn(self.orientadora_partner.name, response.text)
+
+    def test_03_payment_preview_cards_do_not_stretch_over_the_pipeline(self):
+        self.authenticate(self.orientadora_user.login, "dashboard-route-test")
+
+        response = self.url_open(
+            "/dashboard/commission?date_from=2026-02-01&date_to=2026-02-28"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("o_commission_preview", response.text)
+        self.assertIn("Meu Repasse (Pedidos)", response.text)
+        self.assertIn("Repasse Estimado (Pipeline)", response.text)
+        preview_html = response.text.split("o_commission_preview")[1].split(
+            "Pedidos do Período"
+        )[0]
+        self.assertNotIn("h-100", preview_html)

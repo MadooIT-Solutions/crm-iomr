@@ -6,11 +6,19 @@
         <field name="arch" type="xml">
             <list>
                 <field name="member_id"/>
-                <field name="period_code"/>
-                <field name="individual_target_amount"/>
-                <field name="team_target_amount"/>
-                <field name="state"/>
-                <field name="origin_type"/>
+                <field name="target_date"/>
+                <field name="individual_target_amount" widget="monetary"/>
+                <field name="achieved_amount" widget="monetary"/>
+                <field name="performance_pct" widget="progressbar"/>
+                <field name="is_crm_score" optional="show"/>
+                <field name="is_crm_ok" widget="boolean_toggle" optional="hide"/>
+                <field name="quarterly_target_amount" widget="monetary" optional="show"/>
+                <field name="quarter" optional="show"/>
+                <field name="team_id" optional="hide"/>
+                <field name="team_target_amount" widget="monetary" optional="hide"/>
+                <field name="state" widget="badge"/>
+                <field name="origin_type" optional="show"/>
+                <field name="period_code" optional="hide"/>
             </list>
         </field>
     </record>
@@ -27,12 +35,27 @@
                             <field name="year"/>
                             <field name="month"/>
                             <field name="period_code" readonly="1"/>
+                            <field name="target_date" readonly="1"/>
+                            <field name="quarter" readonly="1"/>
+                            <field name="team_id" readonly="1"/>
                         </group>
                         <group>
-                            <field name="individual_target_amount"/>
-                            <field name="team_target_amount"/>
-                            <field name="origin_type"/>
+                            <field name="individual_target_amount" widget="monetary"/>
+                            <field name="team_target_amount" widget="monetary"/>
+                            <field name="achieved_amount" widget="monetary"/>
+                            <field name="performance_pct" widget="progressbar"/>
+                            <field name="quarterly_target_amount" widget="monetary"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="is_crm_score"/>
+                            <field name="is_crm_ok"/>
+                        </group>
+                        <group>
                             <field name="state"/>
+                            <field name="origin_type"/>
+                            <field name="crm_target_id" readonly="1"/>
                         </group>
                     </group>
                 </sheet>
@@ -49,6 +72,11 @@
                 <field name="period_code"/>
                 <filter name="in_progress" string="In Progress"
                         domain="[('state','=','in_progress')]"/>
+                <separator/>
+                <filter name="auto_origin" string="Automáticas"
+                        domain="[('origin_type','=','auto')]"/>
+                <filter name="manual_origin" string="Manuais"
+                        domain="[('origin_type','=','manual')]"/>
                 <group expand="0" string="Group By">
                     <filter name="group_by_member" string="Member"
                             context="{'group_by': 'member_id'}"/>

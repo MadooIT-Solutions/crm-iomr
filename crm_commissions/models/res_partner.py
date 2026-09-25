@@ -68,8 +68,9 @@ class ResPartner(models.Model):
         "commission.agent.rule",
         inverse_name="agent_id",
         string="Commission rules per category",
-        help="Specific commission rules for this agent based on product category. "
-             "When a sale order line matches a category, this commission is used instead of the default.",
+        help="Specific commission rules for this agent based on product "
+        "category. When a sale order line matches a category, this commission "
+        "is used instead of the default.",
     )
     show_repasse_table = fields.Boolean(
         string="Ver Tabela de Repasses",
@@ -77,7 +78,8 @@ class ResPartner(models.Model):
     )
     show_all_values = fields.Boolean(
         string="Ver todos os valores",
-        help="Se marcado, o médico pode visualizar todos os valores (Expectativa, Repasse e Valor) no portal.",
+        help="Se marcado, o médico pode visualizar todos os valores "
+        "(Expectativa, Repasse e Valor) no portal.",
     )
 
     @api.onchange("type_partner")
@@ -95,3 +97,21 @@ class ResPartner(models.Model):
         elif self.type_partner in ("doctorint", "doctorext"):
             self.agent = True
             self.agent_type = "doctor"
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "crm_team_id" in vals and not self.env.context.get(
+            "crm_commissions_skip_member_team_sync"
+        ):
+            members = (
+                self.env["commission.member"]
+                .sudo()
+                .search(
+                    [
+                        ("partner_id", "in", self.ids),
+                        ("team_id", "=", False),
+                    ]
+                )
+            )
+            members._sync_team_from_partner()
+        return result

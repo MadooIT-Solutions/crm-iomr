@@ -4,18 +4,18 @@
    ======================================== */
 
 :root {
-  --iomr-primary: #8EBAA6;
+  --iomr-primary: #8ebaa6;
   --iomr-primary-medium: #749888;
-  --iomr-primary-dark: #8EBAA6;
-  --iomr-silver: #3E3F41;
-  --iomr-light-silver: #6A6D70;
-  --iomr-dark: #2A2A2A;
-  --iomr-white: #FFFFFF;
+  --iomr-primary-dark: #8ebaa6;
+  --iomr-silver: #3e3f41;
+  --iomr-light-silver: #6a6d70;
+  --iomr-dark: #2a2a2a;
+  --iomr-white: #ffffff;
   --iomr-text: #dadada;
-  --iomr-gradient: linear-gradient(90deg, #A4D4C0 0%, #7EAE96 100%);
-  --iomr-gradient-reverse: linear-gradient(90deg, #7EAE96 0%, #A4D4C0 100%);
-  --iomr-outline: #7EAE96;
-  --iomr-font: 'Nunito Sans', sans-serif;
+  --iomr-gradient: linear-gradient(90deg, #a4d4c0 0%, #7eae96 100%);
+  --iomr-gradient-reverse: linear-gradient(90deg, #7eae96 0%, #a4d4c0 100%);
+  --iomr-outline: #7eae96;
+  --iomr-font: "Nunito Sans", sans-serif;
 }
 
 .o_portal_doctor {
@@ -103,7 +103,9 @@
   background-color: var(--iomr-dark);
   border: 1px solid var(--iomr-light-silver);
   border-radius: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   color: var(--iomr-white);
 }
 
@@ -212,13 +214,13 @@
 
 .o_portal_doctor .badge.bg-warning,
 .o_portal_doctor .badge.text-bg-warning {
-  background-color: #D4A373 !important;
+  background-color: #d4a373 !important;
   color: var(--iomr-white) !important;
 }
 
 .o_portal_doctor .badge.bg-danger,
 .o_portal_doctor .badge.text-bg-danger {
-  background-color: #C14A4A !important;
+  background-color: #c14a4a !important;
   color: var(--iomr-white) !important;
 }
 
@@ -343,12 +345,12 @@
 
 .o_portal_doctor .alert-warning {
   background-color: rgba(212, 163, 115, 0.15);
-  color: #D4A373;
+  color: #d4a373;
 }
 
 .o_portal_doctor .alert-danger {
   background-color: rgba(193, 74, 74, 0.15);
-  color: #C14A4A;
+  color: #c14a4a;
 }
 
 /* List group */
@@ -534,11 +536,11 @@
 }
 
 .o_portal_doctor .text-warning {
-  color: #D4A373 !important;
+  color: #d4a373 !important;
 }
 
 .o_portal_doctor .text-danger {
-  color: #C14A4A !important;
+  color: #c14a4a !important;
 }
 
 .o_portal_doctor .text-info {
@@ -604,7 +606,7 @@
 }
 
 .o_portal_dashboard .card.text-bg-warning {
-  background-color: #D4A373 !important;
+  background-color: #d4a373 !important;
   color: var(--iomr-white) !important;
   border: none;
 }
@@ -626,6 +628,31 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Cards empilhados na coluna de prévia: sem `h-100` eles ocupam apenas a
+   própria altura, evitando cobrir os campos das colunas vizinhas. */
+.o_portal_dashboard .o_commission_preview {
+  min-width: 0;
+}
+
+.o_portal_dashboard .o_commission_preview .card {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.o_portal_dashboard .o_commission_preview .card-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.o_portal_dashboard .o_commission_preview h3,
+.o_portal_dashboard .o_commission_preview h6,
+.o_portal_dashboard .o_commission_preview_value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .o_portal_dashboard .table {
@@ -676,11 +703,11 @@
 }
 
 .o_portal_dashboard .progress-bar.bg-warning {
-  background-color: #D4A373 !important;
+  background-color: #d4a373 !important;
 }
 
 .o_portal_dashboard .progress-bar.bg-danger {
-  background-color: #C14A4A !important;
+  background-color: #c14a4a !important;
 }
 
 .o_portal_dashboard .text-success {
@@ -688,11 +715,11 @@
 }
 
 .o_portal_dashboard .text-warning {
-  color: #D4A373 !important;
+  color: #d4a373 !important;
 }
 
 .o_portal_dashboard .text-danger {
-  color: #C14A4A !important;
+  color: #c14a4a !important;
 }
 
 .o_portal_dashboard .text-info {
@@ -730,9 +757,17 @@
   background-color: var(--iomr-silver) !important;
 }
 
-.o_portal h1, .o_portal h2, .o_portal h3, .o_portal h4, .o_portal h5, .o_portal h6,
-.o_portal p, .o_portal li, .o_portal label,
-.o_portal .card-title, .o_portal .text-muted {
+.o_portal h1,
+.o_portal h2,
+.o_portal h3,
+.o_portal h4,
+.o_portal h5,
+.o_portal h6,
+.o_portal p,
+.o_portal li,
+.o_portal label,
+.o_portal .card-title,
+.o_portal .text-muted {
   color: var(--iomr-primary) !important;
 }
 
@@ -800,7 +835,9 @@
 .o_portal_doctor_home .o_portal_index_card {
   border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .o_portal_doctor_home .o_portal_index_card:hover {
@@ -857,5 +894,3 @@
 .o_portal_doctor details[open] summary {
   border-radius: 8px 8px 0 0;
 }
-
-

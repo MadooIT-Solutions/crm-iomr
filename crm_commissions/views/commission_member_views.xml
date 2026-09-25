@@ -8,7 +8,7 @@
                 <field name="name"/>
                 <field name="member_type"/>
                 <field name="user_id"/>
-                <field name="team_id"/>
+                <field name="team_id" optional="show"/>
                 <field name="active"/>
             </list>
         </field>
@@ -53,8 +53,10 @@
                         <page name="targets" string="Targets">
                             <field name="target_ids">
                                 <list>
-                                    <field name="period_code"/>
-                                    <field name="individual_target_amount"/>
+                                    <field name="target_date"/>
+                                    <field name="individual_target_amount" widget="monetary"/>
+                                    <field name="achieved_amount" widget="monetary"/>
+                                    <field name="performance_pct" widget="progressbar"/>
                                     <field name="state"/>
                                 </list>
                             </field>

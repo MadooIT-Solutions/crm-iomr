@@ -271,7 +271,7 @@
                     </div>
                 </div>
 
-                <div class="row mt-4">
+                <div class="row mt-4 align-items-start">
                     <div class="col-lg-8">
                         <h4>Pipeline de Oportunidades</h4>
                         <p class="text-muted">
@@ -311,27 +311,35 @@
                         </t>
                     </div>
 
-                    <div class="col-lg-4">
+                    <div class="col-lg-4 o_commission_preview">
                         <h4>Prévia de Recebimento</h4>
-                        <div class="card text-bg-light mb-3 h-100">
-                            <div class="card-body">
-                                <h6>Meu Repasse (Pedidos)</h6>
-                                <h3><t t-esc="current_commission_total_fmt"/></h3>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="card text-bg-light">
+                                <div class="card-body">
+                                    <h6>Meu Repasse (Pedidos)</h6>
+                                    <h3 class="o_commission_preview_value">
+                                        <t t-esc="current_commission_total_fmt"/>
+                                    </h3>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card text-bg-light mb-3 h-100">
-                            <div class="card-body">
-                                <h6>Repasse Estimado (Pipeline)</h6>
-                                <h3><t t-esc="estimated_pipeline_commission_fmt"/></h3>
-                                <p class="card-text">
-                                    <small>Baseado na receita ponderada, no percentual da oportunidade ou na taxa da política do agente.</small>
-                                </p>
+                            <div class="card text-bg-light">
+                                <div class="card-body">
+                                    <h6>Repasse Estimado (Pipeline)</h6>
+                                    <h3 class="o_commission_preview_value">
+                                        <t t-esc="estimated_pipeline_commission_fmt"/>
+                                    </h3>
+                                    <p class="card-text">
+                                        <small>Baseado na receita ponderada, no percentual da oportunidade ou na taxa da política do agente.</small>
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card text-bg-light h-100">
-                            <div class="card-body">
-                                <h6>Total a Liquidar</h6>
-                                <h3><t t-esc="pending_total_fmt"/></h3>
+                            <div class="card text-bg-light">
+                                <div class="card-body">
+                                    <h6>Total a Liquidar</h6>
+                                    <h3 class="o_commission_preview_value">
+                                        <t t-esc="pending_total_fmt"/>
+                                    </h3>
+                                </div>
                             </div>
                         </div>
                     </div>

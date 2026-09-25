@@ -15,5 +15,6 @@ def _ensure_commission_manager_implication(env):
 def post_init_hook(env):
     """Initialize group implications and backfill commission aggregates."""
     _ensure_commission_manager_implication(env)
+    env["commission.member"]._sync_team_from_partner()
     env["crm.commission.target"]._sync_all_legacy_targets()
     env["crm.commission.quarterly.bonus"]._cron_sync_and_finalize_quarterly_bonuses()

@@ -6,3 +6,5 @@ from . import test_sale_sync
 from . import test_target_team
 from . import test_quarterly_bonus
 from . import test_target_sync
+from . import test_member_team
+from . import test_legacy_target_fields
