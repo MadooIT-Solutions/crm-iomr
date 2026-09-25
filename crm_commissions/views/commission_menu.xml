@@ -8,9 +8,6 @@
     </record>
 
     <!-- Main Menu -->
-    <menuitem id="menu_commission_root"
-              name="Repasses"
-              sequence="90"/>
 
     <menuitem id="menu_commission_dashboard"
               name="Dashboard"
