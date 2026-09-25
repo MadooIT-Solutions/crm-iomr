@@ -14,7 +14,7 @@ As duas datas são incluídas no filtro e interpretadas no fuso horário do usu�
 
 ## Quem pode acessar
 
-Usuários dos grupos **CRM Commission User**, **Orientadora** e **SDR**, bem como usuários dos grupos padrão de Vendas, podem abrir o dashboard. As permissões do SDR são somente de leitura e as regras de acesso mantêm cada usuário restrito aos próprios registros.
+Usuários dos grupos **Commission User** e **Commission Manager** do `commission_oca`, além dos grupos **Orientadora** e **SDR** do módulo, bem como usuários dos grupos padrão de Vendas, podem abrir o dashboard. As permissões do SDR são somente de leitura e as regras de acesso mantêm cada usuário restrito aos próprios registros.
 
 ## Indicadores do período
 
@@ -51,7 +51,6 @@ O rótulo **Fatura Gerada** significa que o settlement já possui uma fatura cri
 -   Exclusão de oportunidades com probabilidade zero ou 100
 -   Receita esperada, probabilidade e receita ponderada
 -   Para Orientadoras, inclui as oportunidades próprias e dos SDRs vinculados; para SDRs, apenas as próprias
--   Para políticas progressivas, aplica a performance do período e o bônus ou a penalidade IS-CRM; sem meta no período, a política é avaliada em 100% de performance
 
 ### 5. Pedidos do período
 

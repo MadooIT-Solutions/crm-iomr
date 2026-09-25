@@ -310,7 +310,6 @@ msgstr ""
 
 #. module: crm_commissions
 #: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__manager
-#: model:res.groups,name:crm_commissions.group_commission_manager
 msgid "Commission Manager"
 msgstr ""
 
@@ -553,14 +552,8 @@ msgid "CRM Comissões: sincronizar e fechar bônus trimestrais"
 msgstr ""
 
 #. module: crm_commissions
-#: model:res.groups,name:crm_commissions.group_crm_commission_manager
-msgid "CRM Commission Manager"
-msgstr ""
-
-#. module: crm_commissions
 #: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__commission_user
-#: model:res.groups,name:crm_commissions.group_crm_commission_user
-msgid "CRM Commission User"
+msgid "Commission User"
 msgstr ""
 
 #. module: crm_commissions

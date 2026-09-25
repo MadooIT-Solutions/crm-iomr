@@ -23,3 +23,10 @@
 10. Assign the *SDR* group from the user form to grant read-only access to
     *Repasses*. The dashboard, monthly targets, quarterly bonuses, settlements,
     and commission records remain restricted to the signed-in agent's own data.
+11. The base *Commission User* and *Commission Manager* roles come from
+    `commission_oca`. Do not create duplicate CRM commission groups; use
+    `commission_oca.group_commission_user` and
+    `commission_oca.group_commission_manager` when granting access.
+    Orientadora, SDR, Doctor, and Coordinator remain separate CRM roles. In
+    particular, do not add `commission_oca.group_commission_user` to those
+    restricted roles: that OCA group is allowed to read all settlements.

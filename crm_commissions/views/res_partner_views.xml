@@ -15,7 +15,7 @@
                 <page
                     name="crm_commission"
                     string="CRM Repasses"
-                    groups="crm_commissions.group_crm_commission_user"
+                    groups="commission_oca.group_commission_user"
                     invisible="type_partner not in ('orientadora', 'sdr', 'coordenadora')"
                 >
                     <group>

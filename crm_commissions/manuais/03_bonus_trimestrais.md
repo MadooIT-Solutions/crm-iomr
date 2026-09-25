@@ -3,7 +3,7 @@
 **Localização:** CRM > Comissões > Bônus Trimestrais  
 **Modelo:** `crm.commission.quarterly.bonus`  
 **Origem:** metas mensais em `crm.commission.target`  
-**Grupo de gestão:** CRM Commission Manager
+**Grupo de gestão:** Commission Manager (`commission_oca.group_commission_manager`)
 
 ## Objetivo
 

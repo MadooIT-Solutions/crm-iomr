@@ -3,7 +3,7 @@
 {
     "name": "CRM Commissions IOMR",
     "version": "18.0.1.5.0",
-    "author": "Madooit,Odoo Community Association (OCA)",
+    "author": "IOMR, Odoo Community Association (OCA)",
     "category": "Sales/Commission",
     "license": "AGPL-3",
     "depends": [
@@ -20,7 +20,7 @@
         "sale_credit_card_fee",
     ],
     "website": "https://github.com/OCA/commission",
-    "maintainers": ["rodrigo-iomr", "rodmad85"],
+    "maintainers": ["rodrigo-iomr"],
     "data": [
         "security/crm_commission_security.xml",
         "security/commission_security.xml",

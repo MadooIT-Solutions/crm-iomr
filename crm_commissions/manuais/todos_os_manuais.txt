@@ -166,7 +166,7 @@ Registrar as metas mensais de faturamento para cada orientadora. As metas servem
 
 **Localização:** CRM > Comissões > Bônus Trimestrais
 **Modelo:** crm.commission.quarterly.bonus
-**Grupo:** Apenas CRM Commission Manager
+**Grupo:** Apenas Commission Manager (`commission_oca.group_commission_manager`)
 
 ## Propósito
 
@@ -210,7 +210,7 @@ Gerenciar o bônus trimestral das orientadoras. Quando a performance acumulada d
 
 **Localização:** CRM > Comissões > Config. Comissão LIOs
 **Modelo:** commission (herdado de commission_oca)
-**Grupo:** Apenas CRM Commission Manager
+**Grupo:** Apenas Commission Manager (`commission_oca.group_commission_manager`)
 
 ## Propósito
 

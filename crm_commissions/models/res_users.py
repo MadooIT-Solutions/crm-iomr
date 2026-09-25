@@ -14,7 +14,7 @@ class ResUsers(models.Model):
             ("sdr", "SDR"),
             ("orientadora", "Orientadora"),
             ("coordenadora", "Coordenadora"),
-            ("commission_user", "CRM Commission User"),
+            ("commission_user", "Commission User"),
             ("manager", "Commission Manager"),
             ("doctor", "Doctor (Portal)"),
             ("readonly", "Visualização Total (CRM/Vendas)"),
@@ -29,16 +29,16 @@ class ResUsers(models.Model):
     @api.depends("groups_id")
     def _compute_crm_role(self):
         for user in self:
-            if user.has_group("crm_commissions.group_crm_commission_manager"):
+            if user.has_group("commission_oca.group_commission_manager"):
                 user.crm_role = "manager"
             elif user.has_group("crm_commissions.group_crm_commission_orientadora"):
                 user.crm_role = "orientadora"
             elif user.has_group("crm_commissions.group_crm_commission_sdr"):
                 user.crm_role = "sdr"
-            elif user.has_group("crm_commissions.group_crm_commission_user"):
-                user.crm_role = "commission_user"
             elif user.has_group("crm_commissions.group_crm_commission_doctor"):
                 user.crm_role = "doctor"
+            elif user.has_group("commission_oca.group_commission_user"):
+                user.crm_role = "commission_user"
             elif user.has_group("crm_commissions.group_crm_readonly"):
                 user.crm_role = "readonly"
             elif user.has_group("sales_team.group_sale_manager"):
@@ -50,16 +50,20 @@ class ResUsers(models.Model):
 
     def _inverse_crm_role(self):
         crm_groups_xml_ids = {
-            "crm_commissions.group_crm_commission_user",
-            "crm_commissions.group_crm_commission_manager",
+            "commission_oca.group_commission_user",
+            "commission_oca.group_commission_manager",
             "crm_commissions.group_crm_commission_orientadora",
             "crm_commissions.group_crm_commission_sdr",
             "crm_commissions.group_crm_commission_doctor",
             "crm_commissions.group_crm_readonly",
-            "crm_commissions.group_commission_manager",
             "crm_commissions.group_commission_coordinator",
             "sales_team.group_sale_salesman",
             "sales_team.group_sale_manager",
+            # Keep removing memberships left by the pre-OCA implementation
+            # while an existing database is being upgraded.
+            "crm_commissions.group_crm_commission_user",
+            "crm_commissions.group_crm_commission_manager",
+            "crm_commissions.group_commission_manager",
         }
         role_group_map = {
             "sdr": {"crm_commissions.group_crm_commission_sdr"},
@@ -67,15 +71,9 @@ class ResUsers(models.Model):
                 "crm_commissions.group_crm_commission_orientadora",
             },
             "coordenadora": {"crm_commissions.group_commission_coordinator"},
-            "commission_user": {"crm_commissions.group_crm_commission_user"},
-            "manager": {
-                "crm_commissions.group_crm_commission_manager",
-                "crm_commissions.group_commission_manager",
-            },
-            "doctor": {
-                "crm_commissions.group_crm_commission_doctor",
-                "crm_commissions.group_crm_commission_user",
-            },
+            "commission_user": {"commission_oca.group_commission_user"},
+            "manager": {"commission_oca.group_commission_manager"},
+            "doctor": {"crm_commissions.group_crm_commission_doctor"},
             "readonly": {"crm_commissions.group_crm_readonly"},
             "salesman": {"sales_team.group_sale_salesman"},
             "sale_manager": {"sales_team.group_sale_manager"},
@@ -160,15 +158,19 @@ class ResGroups(models.Model):
         if not (view and view._name == 'ir.ui.view'):
             return
 
+        # Keep the CRM-specific roles controlled by ``crm_role``. The OCA
+        # commission groups stay visible in the standard access-rights view so
+        # they can be assigned directly as well.
         managed_xml_ids = {
-            "crm_commissions.group_crm_commission_user",
-            "crm_commissions.group_crm_commission_manager",
             "crm_commissions.group_crm_commission_orientadora",
             "crm_commissions.group_crm_commission_sdr",
             "crm_commissions.group_crm_commission_doctor",
             "crm_commissions.group_crm_readonly",
-            "crm_commissions.group_commission_manager",
             "crm_commissions.group_commission_coordinator",
+            # Legacy groups are hidden/removed during an upgrade.
+            "crm_commissions.group_crm_commission_user",
+            "crm_commissions.group_crm_commission_manager",
+            "crm_commissions.group_commission_manager",
         }
 
         managed_group_ids = set()

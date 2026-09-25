@@ -189,7 +189,7 @@ class TestTargetTeam(TransactionCase):
                         0,
                         [
                             self.env.ref(
-                                "crm_commissions.group_crm_commission_manager"
+                                "commission_oca.group_commission_manager"
                             ).id,
                             self.env.ref("sales_team.group_sale_salesman").id,
                         ],
@@ -245,7 +245,7 @@ class TestTargetTeam(TransactionCase):
                         0,
                         [
                             self.env.ref(
-                                "crm_commissions.group_crm_commission_user"
+                                "commission_oca.group_commission_user"
                             ).id,
                             self.env.ref("sales_team.group_sale_salesman").id,
                         ],

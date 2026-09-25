@@ -11,8 +11,8 @@ from odoo.http import request
 from odoo.tools import format_date
 
 _DASHBOARD_GROUPS = (
-    "crm_commissions.group_crm_commission_user",
-    "crm_commissions.group_crm_commission_manager",
+    "commission_oca.group_commission_user",
+    "commission_oca.group_commission_manager",
     "crm_commissions.group_crm_commission_orientadora",
     "crm_commissions.group_crm_commission_sdr",
     "sales_team.group_sale_salesman",
@@ -99,49 +99,6 @@ def _agent_commissions_by_order(orders, partner):
     return amounts
 
 
-def _estimate_lead_commission(env, lead, commission, performance_pct):
-    """Estimate the commission of one opportunity at its current probability.
-
-    An opportunity-specific percentage always wins. Otherwise progressive
-    policies reuse the same calculator as the commission lines, including the
-    IS-CRM bonus or penalty and evaluates the policy at 100% when no target
-    is present in the selected period.
-    """
-    probability_factor = lead.probability / 100.0
-    if lead.commission_percent:
-        return (
-            lead.expected_revenue * probability_factor * lead.commission_percent / 100.0
-        )
-    if commission and commission.commission_type == "coordinator":
-        policy = (
-            env["commission.policy"]
-            .sudo()
-            .search([("active", "=", True)], order="date_start desc", limit=1)
-        )
-        rate = policy.coordinator_rate if policy else 0.0
-        return lead.expected_revenue * probability_factor * rate / 100.0
-    if commission and commission.commission_type == "progressive":
-        base_commission = commission.compute_progressive_commission(
-            lead.expected_revenue,
-            performance_pct,
-            lead.is_crm_score >= 95.0,
-        )
-        return base_commission * probability_factor
-    rate = commission.fix_qty if commission else 0.0
-    return lead.expected_revenue * probability_factor * rate / 100.0
-
-
-def _get_company_quarterly_totals(env, bonus):
-    """Return quarterly totals restricted to the current company."""
-    targets = bonus.monthly_targets.filtered(
-        lambda target: target.company_id == env.company
-    )
-    total_target = sum(targets.mapped("target_amount"))
-    total_achieved = sum(targets.mapped("achieved_amount"))
-    quarterly_pct = total_achieved / total_target * 100.0 if total_target else 0.0
-    return total_target, total_achieved, quarterly_pct
-
-
 def _get_datetime_period_bounds(env, date_from, date_to):
     """Return UTC-naive bounds for an inclusive local-date period."""
     local_start = datetime.combine(date_from, time.min)
@@ -203,15 +160,7 @@ def get_dashboard_values(env, date_from, date_to):
     achieved_amount = sum(targets.mapped("achieved_amount"))
     target_pct = achieved_amount / target_amount * 100.0 if target_amount else 0.0
 
-    # SDRs only see their own opportunities. Only Orientadoras may see the
-    # opportunities of the SDRs linked to them.
-    lead_owner_ids = [partner.id]
-    is_sdr = env.user.has_group("crm_commissions.group_crm_commission_sdr")
-    is_orientadora = env.user.has_group(
-        "crm_commissions.group_crm_commission_orientadora"
-    ) or (partner.type_partner == "orientadora" and not is_sdr)
-    if is_orientadora:
-        lead_owner_ids.extend(partner.sudo().sdr_agent_ids.ids)
+    lead_owner_ids = [partner.id, *partner.sdr_agent_ids.ids]
     open_leads = (
         env["crm.lead"]
         .sudo()
@@ -233,9 +182,14 @@ def get_dashboard_values(env, date_from, date_to):
         lead.expected_revenue * (lead.probability / 100.0) for lead in open_leads
     )
     commission = partner.sudo().commission_id
-    pipeline_performance_pct = target_pct if targets else 100.0
+    pipeline_rate = commission.fix_qty or 0.0
+    if commission.commission_type == "progressive":
+        progressive_rate = commission._get_progressive_rate(target_pct)
+        pipeline_rate = progressive_rate.commission_percent if progressive_rate else 0.0
     estimated_pipeline_commission = sum(
-        _estimate_lead_commission(env, lead, commission, pipeline_performance_pct)
+        lead.expected_revenue
+        * (lead.probability / 100.0)
+        * ((lead.commission_percent or pipeline_rate) / 100.0)
         for lead in open_leads
     )
 
@@ -318,16 +272,8 @@ def get_dashboard_values(env, date_from, date_to):
             order="year desc, quarter desc",
         )
     )
-    quarterly_bonus_totals = {
-        bonus.id: _get_company_quarterly_totals(env, bonus)
-        for bonus in quarterly_bonuses
-    }
-    quarterly_total_target = sum(
-        totals[0] for totals in quarterly_bonus_totals.values()
-    )
-    quarterly_total_achieved = sum(
-        totals[1] for totals in quarterly_bonus_totals.values()
-    )
+    quarterly_total_target = sum(quarterly_bonuses.mapped("total_target"))
+    quarterly_total_achieved = sum(quarterly_bonuses.mapped("total_achieved"))
     quarterly_pct = (
         quarterly_total_achieved / quarterly_total_target * 100.0
         if quarterly_total_target
@@ -376,7 +322,7 @@ def get_dashboard_values(env, date_from, date_to):
     quarterly_bonus_data = [
         {
             "name": bonus.name,
-            "quarterly_pct": quarterly_bonus_totals[bonus.id][2],
+            "quarterly_pct": bonus.quarterly_pct,
             "recovered_amount_fmt": _fmt(bonus.lost_commission_recovered),
             "bonus_amount_fmt": _fmt(bonus.bonus_amount),
             "state": bonus.state,

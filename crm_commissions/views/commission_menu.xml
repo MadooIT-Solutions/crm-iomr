@@ -12,14 +12,14 @@
               name="Repasses"
               sequence="90"
               web_icon="crm_commissions,static/src/img/icon.png"
-              groups="group_crm_commission_user,group_commission_manager,group_commission_coordinator,group_crm_commission_orientadora,group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
+              groups="commission_oca.group_commission_user,commission_oca.group_commission_manager,crm_commissions.group_commission_coordinator,crm_commissions.group_crm_commission_orientadora,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
 
     <menuitem id="menu_commission_dashboard"
               name="Dashboard"
               parent="menu_commission_root"
               action="action_crm_commission_dashboard"
               sequence="10"
-              groups="group_crm_commission_user,group_commission_manager,group_commission_coordinator,group_crm_commission_orientadora,group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
+              groups="commission_oca.group_commission_user,commission_oca.group_commission_manager,crm_commissions.group_commission_coordinator,crm_commissions.group_crm_commission_orientadora,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
 
     <menuitem id="menu_commission_sales"
               name="Vendas"
@@ -56,11 +56,12 @@
               parent="menu_commission_root"
               action="action_commission_policy"
               sequence="70"
-              groups="crm_commissions.group_commission_manager"/>
+              groups="commission_oca.group_commission_manager"/>
 
     <menuitem id="menu_commission_config"
               name="Configurações"
               parent="menu_commission_root"
+              action="commission_oca.action_commission"
               sequence="80"
-              groups="crm_commissions.group_commission_manager"/>
+              groups="commission_oca.group_commission_manager"/>
 </odoo>

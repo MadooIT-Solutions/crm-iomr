@@ -2,7 +2,7 @@
 
 **Localização:** Comissionamento > Política
 **Modelo:** commission.policy
-**Grupo:** Apenas Commission Manager
+**Grupo:** Apenas Commission Manager (`commission_oca.group_commission_manager`)
 
 ## Propósito
 

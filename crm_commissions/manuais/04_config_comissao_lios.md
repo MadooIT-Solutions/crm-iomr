@@ -2,7 +2,7 @@
 
 **Localização:** CRM > Comissões > Config. Comissão LIOs
 **Modelo:** commission (herdado de commission_oca)
-**Grupo:** Apenas CRM Commission Manager
+**Grupo:** Apenas Commission Manager (`commission_oca.group_commission_manager`)
 
 ## Propósito
 
