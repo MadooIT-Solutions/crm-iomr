@@ -25,11 +25,29 @@
         <field name="model">crm.commission.target</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button
+                        name="action_apply_team"
+                        string="Aplicar à Equipe"
+                        type="object"
+                        class="btn-primary"
+                        confirm="Criar a meta mensal para todos os vendedores (orientadoras) da equipe selecionada?"
+                        invisible="target_scope != 'team'"
+                    />
+                </header>
                 <sheet>
                     <group>
+                        <field name="target_scope" widget="radio" options="{'horizontal': True}" />
+                    </group>
+                    <group>
                         <group>
-                            <field name="name" />
-                            <field name="agent_id" />
+                            <field name="name" readonly="1" />
+                            <field name="agent_id" invisible="target_scope != 'salesperson'" />
+                            <field
+                                name="team_id"
+                                invisible="target_scope != 'team'"
+                                required="target_scope == 'team'"
+                            />
                             <field name="target_date" />
                         </group>
                         <group>
@@ -87,13 +105,23 @@
         <field name="model">crm.commission.quarterly.bonus</field>
         <field name="arch" type="xml">
             <list>
+                <field name="name" />
                 <field name="agent_id" />
-                <field name="quarter" />
-                <field name="year" />
+                <field name="team_id" optional="show" />
+                <field name="date_from" />
+                <field name="date_to" />
+                <field name="target_count" />
+                <field name="has_all_months" widget="boolean_toggle" />
                 <field name="total_target" widget="monetary" />
                 <field name="total_achieved" widget="monetary" />
                 <field name="quarterly_pct" widget="progressbar" />
-                <field name="state" />
+                <field name="is_eligible" widget="boolean_toggle" />
+                <field name="is_team_eligible" widget="boolean_toggle" optional="show" />
+                <field name="lost_commission_recovered" widget="monetary" optional="show" />
+                <field name="bonus_amount" widget="monetary" optional="show" />
+                <field name="state" widget="badge" />
+                <field name="auto_generated" widget="boolean_toggle" optional="hide" />
+                <field name="currency_id" invisible="1" />
             </list>
         </field>
     </record>
@@ -103,24 +131,71 @@
         <field name="model">crm.commission.quarterly.bonus</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button
+                        name="action_finalize_quarter"
+                        string="Atualizar e finalizar trimestre"
+                        type="object"
+                        class="btn-primary"
+                        invisible="not date_to or date_to >= current_date"
+                        confirm="Atualizar os totais e finalizar este trimestre?"
+                    />
+                    <field name="state" widget="statusbar" statusbar_visible="pending,eligible,recovered,lost" />
+                </header>
                 <sheet>
+                    <div class="alert alert-info" role="alert" invisible="auto_generated">
+                        Registro criado manualmente. Ao cadastrar uma meta mensal da vendedora, o sistema vinculará e manterá os três meses automaticamente.
+                    </div>
                     <group>
-                        <field name="agent_id" />
-                        <field name="quarter" />
-                        <field name="year" />
+                        <group>
+                            <field name="agent_id" readonly="auto_generated" />
+                            <field name="team_id" readonly="auto_generated" />
+                            <field name="quarter" readonly="auto_generated" />
+                            <field name="year" readonly="auto_generated" />
+                            <field name="date_from" />
+                            <field name="date_to" />
+                            <field name="auto_generated" />
+                        </group>
+                        <group>
+                            <field name="target_count" />
+                            <field name="has_all_months" />
+                            <field name="missing_months" invisible="has_all_months" />
+                            <field name="is_finalized" />
+                            <field name="is_eligible" />
+                            <field name="currency_id" invisible="1" />
+                        </group>
                     </group>
-                    <group>
-                        <field name="total_target" widget="monetary" />
-                        <field name="total_achieved" widget="monetary" />
-                        <field name="quarterly_pct" widget="progressbar" />
+                    <group string="Performance individual">
+                        <group>
+                            <field name="total_target" widget="monetary" />
+                            <field name="total_achieved" widget="monetary" />
+                            <field name="quarterly_pct" widget="progressbar" />
+                        </group>
+                        <group>
+                            <field name="lost_commission_recovered" widget="monetary" />
+                            <field name="bonus_amount" widget="monetary" />
+                            <field name="prize_type" />
+                            <field name="prize_description" />
+                        </group>
                     </group>
-                    <group string="Monthly breakdown">
+                    <group string="Elegibilidade coletiva / coordenadora">
+                        <group>
+                            <field name="team_total_target" widget="monetary" />
+                            <field name="team_total_achieved" widget="monetary" />
+                        </group>
+                        <group>
+                            <field name="team_quarterly_pct" widget="progressbar" />
+                            <field name="is_team_eligible" />
+                        </group>
+                    </group>
+                    <group string="Metas mensais vinculadas">
                         <field name="monthly_targets" nolabel="1">
                             <list>
                                 <field name="target_date" />
-                                <field name="target_amount" />
-                                <field name="achieved_amount" />
-                                <field name="performance_pct" />
+                                <field name="target_amount" widget="monetary" />
+                                <field name="achieved_amount" widget="monetary" />
+                                <field name="performance_pct" widget="progressbar" />
+                                <field name="state" />
                             </list>
                         </field>
                     </group>

@@ -70,7 +70,6 @@ class TestRepassesMenuSecurity(TransactionCase):
                 "agent_id": cls.agent_own.id,
                 "quarter": "Q1",
                 "year": 2026,
-                "total_target": 3000.0,
             }
         )
         cls.bonus_other = cls.env["crm.commission.quarterly.bonus"].create(
@@ -78,7 +77,6 @@ class TestRepassesMenuSecurity(TransactionCase):
                 "agent_id": cls.agent_other.id,
                 "quarter": "Q1",
                 "year": 2026,
-                "total_target": 3000.0,
             }
         )
         cls.settlement_own = cls.env["commission.settlement"].create(
@@ -137,12 +135,15 @@ class TestRepassesMenuSecurity(TransactionCase):
             self.settlement_own.id
         )
 
-        self.assertTrue(target.check_access_rights("read"))
-        target.check_access_rule("read")
-        self.assertTrue(bonus.check_access_rights("read"))
-        bonus.check_access_rule("read")
-        self.assertTrue(settlement.check_access_rights("read"))
-        settlement.check_access_rule("read")
+        # Odoo 18: check_access()/has_access() replace the V17-era
+        # check_access_rights/check_access_rule API. check_access() raises
+        # AccessError when forbidden and returns None when allowed.
+        self.assertTrue(target.has_access("read"))
+        target.check_access("read")
+        self.assertTrue(bonus.has_access("read"))
+        bonus.check_access("read")
+        self.assertTrue(settlement.has_access("read"))
+        settlement.check_access("read")
 
     def test_05_salesman_cannot_read_other_agent_dashboard_records(self):
         target = self.salesman_env["crm.commission.target"].browse(
@@ -156,8 +157,8 @@ class TestRepassesMenuSecurity(TransactionCase):
         )
 
         with self.assertRaises(AccessError):
-            target.check_access_rule("read")
+            target.check_access("read")
         with self.assertRaises(AccessError):
-            bonus.check_access_rule("read")
+            bonus.check_access("read")
         with self.assertRaises(AccessError):
-            settlement.check_access_rule("read")
+            settlement.check_access("read")

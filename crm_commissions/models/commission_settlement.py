@@ -17,3 +17,16 @@ class CommissionSettlement(models.Model):
     )
     is_crm_score = fields.Float(string="IS-CRM score")
     performance_pct = fields.Float(string="Performance (%)")
+
+
+class CommissionSettlementLine(models.Model):
+    _inherit = "commission.settlement.line"
+
+    target_id = fields.Many2one(
+        "crm.commission.target",
+        string="Related target",
+        index=True,
+        copy=False,
+        readonly=True,
+        ondelete="set null",
+    )

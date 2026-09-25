@@ -74,3 +74,39 @@ class CommissionMember(models.Model):
             [("partner_id", operator, value)]
         ).mapped("partner_id.id")
         return [("partner_id", "in", partners)]
+
+    @api.model
+    def _sync_crm_targets_for_partners(self, partners):
+        """Synchronize monthly targets after a member link changes."""
+        if not partners:
+            return self.browse()
+        targets = self.env["crm.commission.target"].sudo().search([
+            ("target_scope", "=", "salesperson"),
+            ("agent_id", "in", partners.ids),
+        ])
+        return self.env["commission.target"].sudo()._sync_from_crm_targets(targets)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        members = super().create(vals_list)
+        members._sync_crm_targets_for_partners(members.mapped("partner_id"))
+        return members
+
+    def write(self, vals):
+        old_partners = self.mapped("partner_id")
+        result = super().write(vals)
+        if {"partner_id", "member_type", "active"}.intersection(vals):
+            partners = old_partners | self.mapped("partner_id")
+            self._sync_crm_targets_for_partners(partners)
+        return result
+
+    def unlink(self):
+        partners = self.mapped("partner_id")
+        linked_targets = self.env["commission.target"].sudo().search([
+            ("member_id", "in", self.ids),
+            ("crm_target_id", "!=", False),
+        ])
+        linked_targets.unlink()
+        result = super().unlink()
+        self._sync_crm_targets_for_partners(partners)
+        return result

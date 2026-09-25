@@ -21,6 +21,13 @@
         action="action_crm_commission_dashboard"
         sequence="5"
     />
+    <!-- Keep the Dashboard menu in sync with the root: visible to the same
+         groups (CRM Commission User + Salesman). Command.set() replaces any
+         leftover group assignments that may exist in a database, so this stays
+         consistent across installs/upgrades. -->
+    <record id="menu_crm_commission_dashboard" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_crm_commission_user'), ref('sales_team.group_sale_salesman')])]"/>
+    </record>
     <menuitem
         id="menu_crm_commission_targets"
         name="Metas Mensais"

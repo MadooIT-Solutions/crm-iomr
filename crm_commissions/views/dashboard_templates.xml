@@ -167,8 +167,10 @@ t-esc="'%d' % quarterly_pct"/>%
 <td><t t-esc="'%d' % qb.quarterly_pct"/>%</td>
 <td>
 <t t-if="qb.state == 'pending'">Pendente</t>
-<t t-if="qb.state == 'recovered'">Recuperado</t>
-<t t-if="qb.state == 'lost'">Perdido</t>
+<t t-if="qb.state == 'incomplete'">Metas incompletas</t>
+<t t-if="qb.state == 'eligible'">Elegível</t>
+<t t-if="qb.state == 'recovered'">Recuperado/Pago</t>
+<t t-if="qb.state == 'lost'">Não atingido</t>
 </td>
 </tr>
 </tbody>

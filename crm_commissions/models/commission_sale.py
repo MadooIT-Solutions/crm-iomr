@@ -6,10 +6,27 @@ class CommissionSale(models.Model):
     _description = "Commission Sale/Conversion"
     _order = "date desc, id desc"
 
+    _sql_constraints = [
+        (
+            "source_order_unique",
+            "UNIQUE (owner_member_id, source_order_id)",
+            "Só pode existir uma venda de comissão por membro e pedido de origem.",
+        ),
+    ]
+
     name = fields.Char(
         string="Reference",
         required=True,
         default="/",
+    )
+    source_order_id = fields.Many2one(
+        "sale.order",
+        string="Source Order",
+        readonly=True,
+        copy=False,
+        index=True,
+        help="Pedido de origem. Preenchido pela sincronização automática a "
+             "partir de sale.order; fica vazio em lançamentos manuais.",
     )
     date = fields.Date(
         string="Sale Date",

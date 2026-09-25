@@ -47,6 +47,17 @@
             <field name="perm_unlink" eval="False"/>
         </record>
 
+        <record id="rule_commission_sale_line_orientadora_own" model="ir.rule">
+            <field name="name">Orientadora: see only own sale detail lines</field>
+            <field name="model_id" ref="model_commission_sale_line"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="domain_force">[('sale_id.owner_member_id.partner_id.user_ids', 'in', [user.id])]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
         <record id="rule_commission_result_orientadora_own" model="ir.rule">
             <field name="name">Orientadora: see only own results</field>
             <field name="model_id" ref="model_commission_result"/>

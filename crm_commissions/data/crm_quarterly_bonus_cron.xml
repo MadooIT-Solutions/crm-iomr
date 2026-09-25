@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo noupdate="1">
+
+    <record id="cron_crm_quarterly_bonus_daily" model="ir.cron">
+        <field name="name">CRM Comissões: sincronizar e fechar bônus trimestrais</field>
+        <field name="model_id" ref="model_crm_commission_quarterly_bonus" />
+        <field name="state">code</field>
+        <field name="code">model._cron_sync_and_finalize_quarterly_bonuses()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-01-01 00:05:00</field>
+        <field name="active" eval="True" />
+    </record>
+
+</odoo>

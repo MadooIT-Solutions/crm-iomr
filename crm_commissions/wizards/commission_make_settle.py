@@ -20,16 +20,19 @@ class CommissionMakeSettle(models.TransientModel):
                     ("agent_id", "=", agent.id),
                     ("target_date", "<=", date_to_agent),
                     ("state", "in", ["achieved", "in_progress"]),
-                ]
+                ],
+                order="target_date asc",
             )
         return super()._get_agent_lines(agent, date_to_agent)
 
     def _prepare_settlement_line_vals(self, settlement, line):
+        values = super()._prepare_settlement_line_vals(settlement, line)
         if self.settlement_type == "crm_performance":
-            return {
+            values.update({
                 "settlement_id": settlement.id,
+                "target_id": line.id,
                 "date": line.target_date,
                 "commission_id": line.commission_id.id,
                 "settled_amount": line.achieved_amount,
-            }
-        return super()._prepare_settlement_line_vals(settlement, line)
+            })
+        return values

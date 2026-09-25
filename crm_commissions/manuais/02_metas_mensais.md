@@ -27,13 +27,27 @@ Registrar as metas mensais de faturamento para cada orientadora. As metas servem
 
 ## Como criar uma meta
 
+### Meta individual (Vendedor(a))
+
 1. Vá para **CRM > Comissões > Metas Mensais**
 2. Clique em **Criar**
-3. Selecione a **orientadora**
-4. Defina o **mês** (Target Date)
-5. Informe o **valor da meta** (Target Amount)
-6. Ajuste o **IS-CRM Score** se necessário (padrão 100%)
-7. Salve
+3. Mantenha o seletor em **Vendedor(a)**
+4. Selecione a **orientadora**
+5. Defina o **mês** (Target Date)
+6. Informe o **valor da meta** (Target Amount)
+7. Ajuste o **IS-CRM Score** se necessário (padrão 100%)
+8. Salve
+
+### Meta para toda a equipe (Equipe de Vendas)
+
+1. Clique em **Criar**
+2. No seletor **Aplicar meta a**, escolha **Equipe de Vendas** (radio)
+3. Selecione a **Equipe de Vendas**
+4. Defina o mês e o valor da meta
+5. Clique em **Aplicar à Equipe**: o sistema cria uma meta individual para
+   **todos os vendedores (orientadoras)** da equipe com os mesmos mês, valor e
+   IS-CRM. Vendedores que já possuem meta no mês não são duplicados.
+6. O registro temporário de equipe é removido e a lista mostra as metas criadas.
 
 ## Comportamento
 

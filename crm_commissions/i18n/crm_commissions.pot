@@ -6,54 +6,86 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-12 14:00+0000\n"
+"POT-Creation-Date: 2026-09-25 06:04+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 
 #. module: crm_commissions
-#: model:ir.model,name:crm_commissions.model_commission
-msgid "Commission"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid ""
+"* O médico cooperado recebe o pagamento e é realizado um encontro de contas "
+"com a Clínica."
 msgstr ""
 
 #. module: crm_commissions
-#. odoo-python
-#: code:addons/crm_commissions/models/crm_commission_models.py:0
-msgid "Commission progressive rate line"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "<small>Baseado na receita ponderada do pipeline</small>"
 msgstr ""
 
 #. module: crm_commissions
-#. odoo-python
-#: code:addons/crm_commissions/models/crm_commission_models.py:0
-msgid "Commission monthly/quarterly target"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "<span class=\"text-info\">Upselling</span>"
 msgstr ""
 
 #. module: crm_commissions
-#. odoo-python
-#: code:addons/crm_commissions/models/crm_commission_models.py:0
-msgid "Commission team"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "<span class=\"text-muted\">-</span>"
 msgstr ""
 
 #. module: crm_commissions
-#. odoo-python
-#: code:addons/crm_commissions/models/crm_commission_models.py:0
-msgid "Quarterly commission bonus/recovery"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "<span class=\"text-muted\">Nada a Faturar</span>"
 msgstr ""
 
 #. module: crm_commissions
-#: selection:commission,commission_type:0
-msgid "Progressive by performance"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "<span class=\"text-success\">Faturado</span>"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission__progressive_line_ids
-msgid "Progressive rates"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "<span class=\"text-warning\">A Faturar</span>"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission__is_crm_bonus
-msgid "IS-CRM bonus (%)"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "a"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "A Liquidar"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.constraint,message:crm_commissions.constraint_commission_target_crm_commissions_unique_target
+msgid "A meta automática deve estar vinculada a apenas uma meta mensal."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_res_groups
+msgid "Access Groups"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__achieved_amount
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_target__state__achieved
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_target__state__achieved
+msgid "Achieved"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__active
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__active
+msgid "Active"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_policy__crm_bonus_rate
+msgid "Additional commission rate when IS-CRM >= minimum"
 msgstr ""
 
 #. module: crm_commissions
@@ -62,48 +94,90 @@ msgid "Additional percentage when IS-CRM >= 95%"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission__is_crm_penalty
-msgid "IS-CRM penalty (%)"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__agent_id
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__agent_id
+msgid "Agent"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,help:crm_commissions.field_commission__is_crm_penalty
-msgid "Penalty percentage when IS-CRM < 95%"
+#: model:ir.model,name:crm_commissions.model_account_invoice_line_agent
+msgid "Agent detail of commission line in invoice lines"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission__min_margin
-msgid "Minimum margin (%)"
+#: model:ir.model,name:crm_commissions.model_sale_order_line_agent
+msgid "Agent detail of commission line in order lines"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,help:crm_commissions.field_commission__min_margin
-msgid "Minimum profit margin for full commission validation"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__agent_rule_ids
+msgid "Agent Rules"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission__max_discount
-msgid "Max discount (%)"
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__has_all_months
+msgid "All quarterly goals present"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,help:crm_commissions.field_commission__max_discount
-msgid "Maximum discount allowed without management approval"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__amount
+msgid "Amount"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__percent_from
-msgid "Performance from (%)"
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__target_scope
+msgid "Aplicar meta a"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__percent_to
-msgid "Performance to (%)"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_commission_target_form
+msgid "Aplicar à Equipe"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__commission_percent
-msgid "Commission rate (%)"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_form
+msgid "Approve"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_result__state__approved
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_search
+msgid "Approved"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Atingido"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Atingido:"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
+msgid "Atualizar e finalizar trimestre"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
+msgid "Atualizar os totais e finalizar este trimestre?"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_target__origin_type__auto
+msgid "Auto"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__auto_generated
+msgid "Automatically generated"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__amount_base_type
+msgid "Base"
 msgstr ""
 
 #. module: crm_commissions
@@ -112,167 +186,101 @@ msgid "Base commission percentage for this range"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__agent_id
-msgid "Salesperson"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Base de Cálculo"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__target_date
-msgid "Target month"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__base_rate
+msgid "Base Rate (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__target_amount
-msgid "Monthly target"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Base utilizada para calcular o valor do repasse"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__quarterly_target_amount
-msgid "Quarterly target"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Bem-vindo(a),"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__achieved_amount
-msgid "Achieved"
+#: model:ir.actions.act_window,name:crm_commissions.action_crm_quarterly_bonus
+#: model:ir.ui.menu,name:crm_commissions.menu_crm_quarterly_bonus
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
+msgid "Bônus Trimestrais"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__performance_pct
-msgid "Performance (%)"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_form
+msgid "Calculate"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__is_crm_score
-msgid "IS-CRM score (%)"
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_result__state__calculated
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_search
+msgid "Calculated"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,help:crm_commissions.field_crm_commission_target__is_crm_score
-msgid "CRM Health Index score for this period"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__calculated_commission_amount
+msgid "Calculated Commission"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__is_crm_ok
-msgid "IS-CRM OK"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Cancel"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__commission_id
-msgid "Commission rule"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Cancelado"
 msgstr ""
 
 #. module: crm_commissions
-#: selection:crm.commission.target,state:0
-msgid "Draft"
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__status__cancelled
+msgid "Cancelled"
 msgstr ""
 
 #. module: crm_commissions
-#: selection:crm.commission.target,state:0
-msgid "In progress"
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__surgery_type__catarata
+msgid "Catarata"
 msgstr ""
 
 #. module: crm_commissions
-#: selection:crm.commission.target,state:0
-msgid "Achieved"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__categ_ids
+msgid "Categories"
 msgstr ""
 
 #. module: crm_commissions
-#: selection:crm.commission.target,state:0
-msgid "Lost"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_search
+msgid "Category"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__agent_id
-msgid "Agent"
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__prize_type__celebration
+msgid "Celebração coletiva"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__monthly_targets
-msgid "Monthly targets"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Cliente"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__total_target
-msgid "Total quarterly target"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__color
+msgid "Color"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__total_achieved
-msgid "Total achieved"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__quarterly_pct
-msgid "Quarterly performance (%)"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__lost_commission_recovered
-msgid "Lost commission recovered"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__bonus_amount
-msgid "Bonus amount"
-msgstr ""
-
-#. module: crm_commissions
-#: selection:crm.commission.quarterly.bonus,state:0
-msgid "Pending"
-msgstr ""
-
-#. module: crm_commissions
-#: selection:crm.commission.quarterly.bonus,state:0
-msgid "Recovered/Paid"
-msgstr ""
-
-#. module: crm_commissions
-#: selection:crm.commission.quarterly.bonus,state:0
-msgid "Lost"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__orientadora_id
-#: model:ir.model.fields,field_description:crm_commissions.field_sale_order__orientadora_id
-#: selection:res.partner,agent_type:0
-msgid "Orientadora"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__sdr_id
-#: model:ir.model.fields,field_description:crm_commissions.field_sale_order__sdr_id
-#: selection:res.partner,agent_type:0
-msgid "SDR"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__sdr_id
-msgid "SDR (Pr\u00e9-orientadora)"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__coordinator_id
-#: selection:res.partner,agent_type:0
-msgid "Coordenadora"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__doctor_id
-#: model:ir.model.fields,field_description:crm_commissions.field_sale_order__doctor_id
-#: selection:res.partner,agent_type:0
-msgid "Doctor/M\u00e9dico"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__is_crm_score
-#: model:ir.model.fields,field_description:crm_commissions.field_sale_order__is_crm_score
-#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__is_crm_score
-msgid "IS-CRM score"
-msgstr ""
-
-#. module: crm_commissions
-#: model:ir.model.fields,help:crm_commissions.field_crm_lead__is_crm_score
-msgid "CRM quality score for this lead"
+#: model:ir.model,name:crm_commissions.model_commission
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__commission_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__commission_id
+msgid "Commission"
 msgstr ""
 
 #. module: crm_commissions
@@ -281,13 +289,448 @@ msgid "Commission (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,help:crm_commissions.field_crm_lead__commission_percent
-msgid "Fixed commission percentage for this opportunity"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__commission_amount
+msgid "Commission Amount"
 msgstr ""
 
 #. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__commission_base_amount
+msgid "Commission Base"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_form
+msgid "Commission Calculation"
+msgstr ""
+
+#. module: crm_commissions
+#: model:res.groups,name:crm_commissions.group_commission_coordinator
+msgid "Commission Coordinator"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__manager
+#: model:res.groups,name:crm_commissions.group_commission_manager
+msgid "Commission Manager"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_result
+msgid "Commission Monthly Result"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_crm_commission_target
+msgid "Commission monthly/quarterly target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_window,name:crm_commissions.action_commission_policy
+msgid "Commission Policies"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_policy
+msgid "Commission Policy"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_policy_line
+msgid "Commission Policy Rate Band"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_progressive_line
+msgid "Commission progressive rate line"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__base_rate
+msgid "Commission Rate (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__commission_percent
+msgid "Commission rate (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_policy__crm_penalty_rate
+msgid "Commission rate deduction when IS-CRM < minimum"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_window,name:crm_commissions.action_commission_result
+msgid "Commission Results"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__commission_id
+msgid "Commission rule"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_agent_rule
+msgid "Commission rule per agent and product category"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__agent_rule_ids
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__agent_rule_ids
+msgid "Commission rules per category"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_sale_line
+msgid "Commission Sale Line Detail"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_sale
+msgid "Commission Sale/Conversion"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_settlement_manager_all
+msgid "Commission Settlement: manager all"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_settlement_own_only_sales
+msgid "Commission Settlement: own only (sales)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_account_invoice_line_agent__commission_split_percent
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_line_mixin__commission_split_percent
+#: model:ir.model.fields,field_description:crm_commissions.field_sale_order_line_agent__commission_split_percent
+msgid "Commission Split (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_target
+msgid "Commission Target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_member
+msgid "Commission Team Member"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_settlement_doctor_own
+msgid "commission.settlement: doctor own only"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__company_id
+msgid "Company"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_crm_lios_config
+msgid "Config. Repasse LIOs"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_config
+msgid "Configurações"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Confirm"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__status__confirmed
+msgid "Confirmed"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_commission_opportunities
+msgid "Consulte as regras de repasse por tipo de serviço."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__sale_category__convenio
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Convênio"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Convênio ou forma de pagamento"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__coordenadora_id
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__coordenadora_id
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_member__member_type__coordenadora
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__agent_type__coordenadora
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__type_partner__coordenadora
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__coordenadora
+msgid "Coordenadora"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_search
+msgid "Coordenadoras"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission__commission_type__coordinator
+msgid "Coordinator (via policy)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__coordinator_rate
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__coordinator_rate
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "Coordinator Rate (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__create_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__create_date
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_commission_target_form
+msgid ""
+"Criar a meta mensal para todos os vendedores (orientadoras) da equipe "
+"selecionada?"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__crm_bonus_rate
+msgid "CRM Bonus (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__crm_bonus_rate
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "CRM Bonus Rate (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.server,name:crm_commissions.cron_crm_quarterly_bonus_daily_ir_actions_server
+msgid "CRM Comissões: sincronizar e fechar bônus trimestrais"
+msgstr ""
+
+#. module: crm_commissions
+#: model:res.groups,name:crm_commissions.group_crm_commission_manager
+msgid "CRM Commission Manager"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__commission_user
+#: model:res.groups,name:crm_commissions.group_crm_commission_user
+msgid "CRM Commission User"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_commission_target__is_crm_score
+msgid "CRM Health Index score for this period"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__crm_penalty_rate
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "CRM Penalty Rate (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_make_settle__settlement_type__crm_performance
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_settlement__settlement_type__crm_performance
+msgid "CRM Performance"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_lead__is_crm_score
+msgid "CRM quality score for this lead"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_crm_quarterly_bonus_manager_all
+msgid "CRM Quarterly Bonus: manager all"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_crm_quarterly_bonus_own_only_sales
+msgid "CRM Quarterly Bonus: own only (sales)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
+msgid "CRM Repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
+msgid "CRM Repasses"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_crm_target_manager_all
+msgid "CRM Target: manager all"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_crm_target_own_only
+msgid "CRM Target: own only (orientadora)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_crm_target_own_only_sales
+msgid "CRM Target: own only (sales)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_crm_lead_doctor_own
+msgid "crm.lead: doctor own only"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__currency_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__currency_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__currency_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__currency_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__currency_id
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__currency_id
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_url,name:crm_commissions.action_crm_commission_dashboard
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_dashboard
+#: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_dashboard
+msgid "Dashboard"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Dashboard de Repasses"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data da Indicação"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data de criação do pedido"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data do Pedido"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data do pedido de venda"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data em que a oportunidade foi criada"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data Fim"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Data Início"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__date_end
+msgid "Date End"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__date_start
+msgid "Date Start"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__deduct_card_fee
+msgid "Deduct Card Fee"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__deduct_card_fee
+msgid ""
+"Deduct the credit card fee (sale_credit_card_fee) from the commission base "
+"before applying the commission rate."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__delivery_pct
+msgid "Delivery (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__line_ids
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Detail Lines"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__discount_pct
 #: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__discount_percent
 msgid "Discount (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__discount_approved
+msgid "Discount Approved"
 msgstr ""
 
 #. module: crm_commissions
@@ -297,6 +740,556 @@ msgid "Discount approved"
 msgstr ""
 
 #. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__display_name
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__doctor
+#: model:res.groups,name:crm_commissions.group_crm_commission_doctor
+msgid "Doctor (Portal)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_result__state__draft
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__status__draft
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_target__state__draft
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_target__state__draft
+msgid "Draft"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
+msgid "Elegibilidade coletiva / coordenadora"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Elegível"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__state__eligible
+msgid "Eligible"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__eligible_for_commission
+msgid "Eligible for Commission"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Em Pagamento"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Equação"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_team
+msgid "Equipe"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_commission_target__team_id
+msgid "Equipe cujos vendedores (orientadoras) receberão esta meta."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__team_id
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_target__target_scope__team
+msgid "Equipe de Vendas"
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "Esta ação só se aplica a metas no modo 'Equipe de Vendas'."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Estado"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
+msgid "Este mês"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Estornado"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Estágio"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Exceção"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__exclusion_reason
+msgid "Exclusion Reason"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Expectativa"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__expected_commission_amount
+msgid "Expected Commission"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Falta para Meta"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Faturado"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Faturamento"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Filtrar"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Filtrar oportunidades a partir desta data"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Filtrar oportunidades até esta data"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__final_rate
+msgid "Final Rate (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Financials"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_lead__commission_percent
+msgid "Fixed commission percentage for this opportunity"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_policy__coordinator_rate
+msgid "Fixed commission rate for coordinators on total Orientadora sales"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__tax_deduction_pct
+msgid ""
+"Fixed percentage of taxes to deduct from the commission base before applying"
+" the commission rate (used with 'Net (Gross - Taxes - Card Fee)' base type)."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__crm_role
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_users_form_inherit_crm
+msgid "Função CRM"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Fórmula aplicada para calcular o repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Ganhos e Não Faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__lens_type__gelatinous
+msgid "Gelatinous"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__sale_manager
+msgid "Gerente de Vendas"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__surgery_type__glaucoma
+msgid "Glaucoma"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_target_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
+msgid "Group By"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__has_lio_upgrade
+msgid "Has Lio Upgrade"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Home"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__hospital_cost_pct
+msgid "Hospital Cost (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__hospital_gross_amount
+msgid "Hospital Gross Amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__hospital_net_amount
+msgid "Hospital Net Amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale_line__line_type__hospital
+msgid "Hospital Portion"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__hospital_sales_amount
+msgid "Hospital Sales"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__hospital_tax_pct
+msgid "Hospital Tax (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__id
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__id
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__id
+msgid "ID"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Identificação do repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_target__state__in_progress
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_target_search
+msgid "In Progress"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_target__state__in_progress
+msgid "In progress"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__state__incomplete
+msgid "Incomplete goals"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Indicação"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Indicações"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__is_eligible
+msgid "Individual eligible"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__individual_target_amount
+msgid "Individual Target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_commission_target__target_scope
+msgid ""
+"Individual: meta para um/a vendedor(a) específico/a. Equipe de Vendas: a "
+"meta é aplicada a todos os vendedores (orientadoras) da equipe selecionada "
+"ao clicar em 'Aplicar à Equipe'."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Informações adicionais sobre a regra"
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "Informe um ano válido para o trimestre."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__status__invoiced
+msgid "Invoiced"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__crm_pct
+msgid "IS-CRM (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__is_crm_bonus
+msgid "IS-CRM bonus (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "IS-CRM Min. (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__crm_min_pct
+msgid "IS-CRM Minimum (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__is_crm_ok
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__is_crm_ok
+msgid "IS-CRM OK"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__is_crm_penalty
+msgid "IS-CRM penalty (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__is_crm_score
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__is_crm_score
+#: model:ir.model.fields,field_description:crm_commissions.field_sale_order__is_crm_score
+msgid "IS-CRM score"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__is_crm_score
+msgid "IS-CRM Score (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__is_crm_score
+msgid "IS-CRM score (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__is_crm_target
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__is_crm_target
+msgid "IS-CRM target (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_account_move_line
+msgid "Journal Item"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.constraint,message:crm_commissions.constraint_crm_commission_quarterly_bonus_unique_agent_quarter
+msgid "Já existe um bônus trimestral para esta vendedora neste trimestre."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.constraint,message:crm_commissions.constraint_crm_commission_target_unique_agent_target_month
+msgid "Já existe uma meta mensal para esta vendedora neste mês."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__write_uid
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__write_date
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_crm_lead
+msgid "Lead/Opportunity"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Lens Commission"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__lens_commission_type
+msgid "Lens Commission Type"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__is_lens_sale
+msgid "Lens Sale?"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__lens_type
+msgid "Lens Type"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_settlement_line
+msgid "Line of a commission settlement"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__line_type
+msgid "Line Type"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__sdr_ids
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__sdr_agent_ids
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__sdr_agent_ids
+msgid "Linked SDRs"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale_line__line_type__lio_package
+msgid "LIO Package"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__lio_package_amount
+msgid "LIO Package Amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__lio_sales_amount
+msgid "LIO Sales"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale_line__line_type__lio_upgrade
+msgid "LIO Upgrade"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__lio_upgrade_amount
+msgid "LIO Upgrade Amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Liquidado"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__state__lost
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_target__state__lost
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__state__lost
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_target__state__lost
+msgid "Lost"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__lost_commission_recovered
+msgid "Lost commission recovered"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_agent_rule__sequence
+msgid "Lower sequence = higher priority when multiple rules match."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_target__origin_type__manual
+msgid "Manual"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__margin_pct
 #: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__margin_percent
 #: model:ir.model.fields,field_description:crm_commissions.field_sale_order__margin_percent
 msgid "Margin (%)"
@@ -308,196 +1301,1424 @@ msgid "Margin OK"
 msgstr ""
 
 #. module: crm_commissions
-#: selection:commission.settlement,settlement_type:0
-#: selection:commission.make.settle,settlement_type:0
-msgid "CRM Performance"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__max_discount_pct
+msgid "Max Discount (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__target_id
-msgid "Related target"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__max_discount
+msgid "Max discount (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__performance_pct
-msgid "Performance (%)"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "Max. Discount (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__crm_team_id
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__target_ids
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__quarterly_bonus_ids
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__sdr_agent_ids
-msgid "Monthly targets"
+#: model:ir.model.fields,help:crm_commissions.field_commission__max_discount
+#: model:ir.model.fields,help:crm_commissions.field_commission_policy__max_discount_pct
+msgid "Maximum discount allowed without management approval"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__quarterly_bonus_ids
-msgid "Quarterly bonuses"
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale_line__line_type__medical_fee
+msgid "Medical Fee"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__sdr_agent_ids
-msgid "Linked SDRs"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__medical_fee_amount
+msgid "Medical Fee Amount"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__is_crm_target
-msgid "IS-CRM target (%)"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__member_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__member_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__member_id
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_target_search
+msgid "Member"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_crm_lead__coordinator_id
-msgid "Coordenadora"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__member_type
+msgid "Member Type"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_root
-#: model:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
-msgid "CRM Repasses"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__member_ids
+msgid "Members"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_targets
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Meta do Mês"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Meta Trimestral"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_targets
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
+msgid "Metas"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Metas incompletas"
+msgstr ""
+
+#. module: crm_commissions
 #: model:ir.actions.act_window,name:crm_commissions.action_crm_commission_target
-#: model:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
+#: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_targets
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
 msgid "Metas Mensais"
 msgstr ""
 
 #. module: crm_commissions
-#. module: crm_commissions
-#: model:ir.ui.menu,name:crm_commissions.menu_crm_quarterly_bonus
-#: model:ir.actions.act_window,name:crm_commissions.action_crm_quarterly_bonus
-#: model:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
-msgid "B\u00f4nus Trimestrais"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
+msgid "Metas mensais vinculadas"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.menu,name:crm_commissions.menu_crm_lios_config
-msgid "Config. Repasse LIOs"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Meus Repasses"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
-msgid "Este m\u00eas"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "Min. Margin (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
-msgid "Group By"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_commission_opportunities
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Minhas Oportunidades e Repasses"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
-msgid "Vendedor"
+#: model:ir.model.fields,help:crm_commissions.field_commission_policy__crm_min_pct
+msgid "Minimum CRM health index score for bonus eligibility"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
-msgid "Trimestre"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__margin_min_pct
+msgid "Minimum Margin (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
-msgid "Monthly breakdown"
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__min_margin
+msgid "Minimum margin (%)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
-msgid "CRM Repasse"
+#: model:ir.model.fields,help:crm_commissions.field_commission_policy__margin_min_pct
+msgid "Minimum profit margin for commission eligibility"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
-msgid "Equipe Comercial"
+#: model:ir.model.fields,help:crm_commissions.field_commission__min_margin
+msgid "Minimum profit margin for full commission validation"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
-msgid "Repasse"
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__missing_months
+msgid "Missing months"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.model.fields,field_description:crm_commissions.field_commission__name
+#: model:ir.model,name:crm_commissions.model_commission_line_mixin
+msgid ""
+"Mixin model for having commission agent lines in any object inheriting from "
+"this one"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__month
+msgid "Month"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__crm_target_id
+msgid "Monthly CRM target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__target_count
+msgid "Monthly goals"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__target_amount
+msgid "Monthly target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__monthly_targets
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__target_ids
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__target_ids
+msgid "Monthly targets"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Motivo"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Motivo pelo qual a oportunidade foi perdida"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__agent_type__doctor
+msgid "Médico(a)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__name
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__name
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__name
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__name
 msgid "Name"
 msgstr ""
 
 #. module: crm_commissions
-#. odoo-python
-#: code:addons/crm_commissions/models/crm_commission_models.py:0
-msgid "Upper limit cannot be lower than lower limit."
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Nenhum bônus trimestral."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Nenhum pedido faturado."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Nenhum pedido não faturado."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nenhum repasse registrado no período."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Nenhum repasse registrado."
 msgstr ""
 
 #. module: crm_commissions
 #. odoo-python
 #: code:addons/crm_commissions/models/crm_commission_models.py:0
-msgid "Percentages must be non-negative."
+msgid "Nenhum/a vendedor(a) (orientadora) encontrado/a na equipe selecionada."
 msgstr ""
 
 #. module: crm_commissions
-#: model:res.groups,name:crm_commissions.group_crm_commission_user
-msgid "CRM Commission User"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Nenhuma meta configurada para este mês."
 msgstr ""
 
 #. module: crm_commissions
-#: model:res.groups,name:crm_commissions.group_crm_commission_manager
-msgid "CRM Commission Manager"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nenhuma oportunidade convertida no período."
 msgstr ""
 
 #. module: crm_commissions
-#: model:res.groups,name:crm_commissions.group_crm_commission_orientadora
-msgid "Orientadora"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nenhuma oportunidade em aberto no período."
 msgstr ""
 
 #. module: crm_commissions
-#: model:res.groups,name:crm_commissions.group_crm_commission_sdr
-msgid "SDR"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Nenhuma oportunidade em aberto."
 msgstr ""
 
 #. module: crm_commissions
-#: model:res.groups,name:crm_commissions.group_crm_commission_doctor
-msgid "Doctor (Portal)"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nenhuma oportunidade perdida no período."
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.rule,name:crm_commissions.rule_crm_target_own_only
-msgid "CRM Target: own only (orientadora)"
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission__amount_base_type__net_amount_deduction
+msgid "Net (Gross - Taxes - Card Fee)"
 msgstr ""
 
 #. module: crm_commissions
-#: model:ir.rule,name:crm_commissions.rule_crm_team_member
-msgid "CRM Team: coordinator can see team"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nome da oportunidade perdida"
 msgstr ""
 
 #. module: crm_commissions
-#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_commission_opportunities
-msgid "Minhas Oportunidades"
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nome do cliente no pedido"
 msgstr ""
 
 #. module: crm_commissions
-#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_commission_opportunities
-msgid "Visualize as oportunidades vinculadas a voce."
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Nome do paciente"
 msgstr ""
 
 #. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__notes
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Notes"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Não atingido"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Não Faturado"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Não Faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Não Pago"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Número do pedido de venda"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Número do pedido de venda gerado"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_commission_quarterly_bonus__bonus_amount
+msgid ""
+"O prêmio especial não possui fórmula na política; preencha após a decisão da"
+" equipe."
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "O trimestre deve ser Q1, Q2, Q3 ou Q4."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Observação"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__categ_ids
+msgid ""
+"Only apply this commission to products in these categories. Leave empty to "
+"apply to all."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
 #: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
 msgid "Oportunidade"
 msgstr ""
 
 #. module: crm_commissions
 #: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
-#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunity_detail
-msgid "Expectativa"
+msgid "Oportunidade (CRM)"
 msgstr ""
 
 #. module: crm_commissions
 #: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
-#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunity_detail
-msgid "Probabilidade"
+msgid "Oportunidade de origem no CRM"
 msgstr ""
 
 #. module: crm_commissions
 #: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
-#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunity_detail
-msgid "Estagio"
+msgid "Oportunidades Convertidas"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Oportunidades em Aberto"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Oportunidades Perdidas"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__orientadora_id
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_member__member_type__orientadora
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__agent_type__orientadora
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__type_partner__orientadora
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__orientadora
+#: model:res.groups,name:crm_commissions.group_crm_commission_orientadora
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
+msgid "Orientadora"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_member_orientadora_own
+msgid "Orientadora: see only own member record"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_recovery_orientadora_own
+msgid "Orientadora: see only own recovery"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_result_orientadora_own
+msgid "Orientadora: see only own results"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_sale_line_orientadora_own
+msgid "Orientadora: see only own sale detail lines"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_sale_orientadora_own
+msgid "Orientadora: see only own sales"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.rule,name:crm_commissions.rule_commission_target_orientadora_own
+msgid "Orientadora: see only own targets"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__orientadora_count
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_search
+msgid "Orientadoras"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__origin_type
+msgid "Origin Type"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__sale_category__outras
+msgid "Outras"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__prize_type__other
+msgid "Outro"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__surgery_type__outros
+msgid "Outros"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__owner_member_id
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_search
+msgid "Owner"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Paciente"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Pago"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_result__state__paid
+msgid "Paid"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Parcial"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__sale_category__particular
+msgid "Particular"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__patient_name
+msgid "Patient Name"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_form
+msgid "Pay"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Pedido"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_sale__source_order_id
+msgid ""
+"Pedido de origem. Preenchido pela sincronização automática a partir de "
+"sale.order; fica vazio em lançamentos manuais."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Pedido de venda vinculado ao repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "pedido(s) faturado(s)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "pedido(s) não faturado(s)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Pedidos Confirmados Não Faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Pedidos do Mês"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Pedidos Faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Pedidos Não Faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__is_crm_penalty
+msgid "Penalty percentage when IS-CRM < 95%"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Pendente"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__state__pending
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__state__pending
+msgid "Pending"
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/commission_policy_line.py:0
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "Percentages must be non-negative."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Percentual ou valor fixo de repasse ao médico"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Performance"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__performance_pct
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__performance_pct
+msgid "Performance (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__delivery_pct_from
+msgid "Performance From (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__percent_from
+msgid "Performance from (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
+msgid "Performance individual"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__delivery_pct_to
+msgid "Performance To (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__percent_to
+msgid "Performance to (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__period_code
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_target_search
+msgid "Period"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recompute_wizard__period_code
+msgid "Period (YYYY-MM)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__period_code
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__period_code
+msgid "Period Code"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Período"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Período de competência do repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Pipeline de Oportunidades"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__policy_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__policy_id
+msgid "Policy"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_policy
+msgid "Política"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Ponderado"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__prize_description
+msgid "Prize description"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__prize_type
+msgid "Prize type"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Prob."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__categ_ids
+msgid "Product Categories"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_agent_rule__categ_ids
+msgid "Product categories that trigger this commission rule for this agent."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Profissionais que indicaram o paciente"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Profissional que indicou o paciente"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission__commission_type__progressive
+msgid "Progressive by performance"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__progressive_line_ids
+msgid "Progressive rates"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Progresso da Meta"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Prévia de Recebimento"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__quarter__q1
+msgid "Q1"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__quarter__q2
+msgid "Q2"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__quarter__q3
+msgid "Q3"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__quarter__q4
+msgid "Q4"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__quarter
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__quarter
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__quarter
+msgid "Quarter"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__date_to
+msgid "Quarter end"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__is_finalized
+msgid "Quarter finalized"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__quarter_delivery_pct
+msgid "Quarter Performance (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_window,name:crm_commissions.action_commission_recovery
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__quarter_recovery_amount
+msgid "Quarter Recovery"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__quarter_sales_amount
+msgid "Quarter Sales"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__date_from
+msgid "Quarter start"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__quarter_target_amount
+msgid "Quarter Target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__quarterly_bonus_ids
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__quarterly_bonus_ids
+msgid "Quarterly bonuses"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_crm_commission_quarterly_bonus
+msgid "Quarterly commission bonus/recovery"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_recovery
+msgid "Quarterly Commission Recovery"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__quarterly_pct
+msgid "Quarterly performance (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__quarterly_target_amount
+msgid "Quarterly target"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "R$"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__range_label
+msgid "Range Label"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy__line_ids
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_policy_form
+msgid "Rate Bands"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Receita Esperada"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Receita esperada para esta oportunidade"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Receita ponderada total:"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_recompute_wizard
+msgid "Recompute Commission for Period"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_recovery__state__recovered
+msgid "Recovered"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__state__recovered
+msgid "Recovered/Paid"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__recovery_amount
+msgid "Recovery Amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Recuperado/Pago"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_quarter
+msgid "Recuperação Trimestral"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__name
+msgid "Reference"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__surgery_type__refrativa
+msgid "Refrativa"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_quarterly_bonus_form
+msgid ""
+"Registro criado manualmente. Ao cadastrar uma meta mensal da vendedora, o "
+"sistema vinculará e manterá os três meses automaticamente."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Regras de repasse para médicos sócios"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_partner_form_crm_commission
+msgid "Regras de Repasse por Categoria"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__partner_id
+msgid "Related Contact"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__target_id
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement_line__target_id
+msgid "Related target"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_lead_form_inherit_commission
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Repasse do Período"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Repasse do Período (Pedidos)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Repasse Estimado (Pipeline)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_root
+#: model:ir.ui.menu,name:crm_commissions.menu_crm_commission_root
+msgid "Repasses"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Repasses Pendentes"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_form
+msgid "Reset to Draft"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_results
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
+msgid "Resultados"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__result_ids
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
+msgid "Results"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Resumo por Estágio"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__lens_type__rigid
+msgid "Rigid"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale_line__sale_id
+msgid "Sale"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__sale_category
+msgid "Sale Category"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__date
+msgid "Sale Date"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_window,name:crm_commissions.action_commission_sale
+msgid "Sales"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_sale_order
+msgid "Sales Order"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_sale_order_line
+msgid "Sales Order Line"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__team_id
+msgid "Sales Team"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__team_id
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__crm_team_id
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__crm_team_id
+msgid "Sales team"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__agent_id
+msgid "Salesperson"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__sale_category__saude_todos
+msgid "Saúde para Todos"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_member__member_type__sdr
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__agent_type__sdr
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__sdr
+#: model:res.groups,name:crm_commissions.group_crm_commission_sdr
+msgid "SDR"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__type_partner__sdr
+msgid "SDR (Pré-orientadora)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
+msgid "SDR Configuration"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_search
+msgid "SDRs"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_res_partner__show_repasse_table
+#: model:ir.model.fields,help:crm_commissions.field_res_users__show_repasse_table
+msgid "Se marcado, o médico pode visualizar a Tabela de Repasses no portal."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_res_partner__show_all_values
+#: model:ir.model.fields,help:crm_commissions.field_res_users__show_all_values
+msgid ""
+"Se marcado, o médico pode visualizar todos os valores (Expectativa, Repasse "
+"e Valor) no portal."
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "Selecione a equipe de vendas para aplicar a meta coletiva."
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "Selecione o/a vendedor(a) para a meta individual."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__amount_base_type
+msgid ""
+"Select the base amount for computing the percentage:\n"
+"* 'Sale/Invoice Amount': percentage is computed from the amount put on sales order/invoice.\n"
+"* 'Margin (Amount - Cost)': percentage is computed from the profit only, taken the cost from the product."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__commission_type
+msgid ""
+"Select the percentage type of the commission:\n"
+"* 'Fixed percentage': all commissions are computed with a fixed percentage. You can fill the percentage in the field \"Fixed percentage\".\n"
+"* 'By sections': percentage varies depending amount intervals. You can fill intervals and percentages in the section \"Rate definition\"."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_agent_rule__sequence
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_policy_line__sequence
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_progressive_line__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_settlement
+msgid "Settlement"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__invoice_date
+msgid "Settlement date"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_make_settle__settlement_type
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_settlement__settlement_type
+msgid "Settlement Type"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Situação atual do repasse (liquidado, faturado, exceção ou cancelado)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Situação do pagamento da fatura"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Soma total de todos os repasses pendentes"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_quarterly_bonus__prize_type__raffle
+msgid "Sorteio"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__source_order_id
+msgid "Source Order"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__bonus_amount
+msgid "Special bonus amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_res_partner__agent_rule_ids
+#: model:ir.model.fields,help:crm_commissions.field_res_users__agent_rule_ids
+msgid ""
+"Specific commission rules for this agent based on product category. When a "
+"sale order line matches a category, this commission is used instead of the "
+"default."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission__agent_rule_ids
+msgid "Specific rules linking agents and categories to this commission."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__state
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__state
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__state
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__state
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__state
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_result_search
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_target_search
+msgid "State"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__status
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_search
+msgid "Status"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Status Pagamento"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_sale__surgery_type
+msgid "Surgery Type"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.constraint,message:crm_commissions.constraint_commission_sale_source_order_unique
+msgid "Só pode existir uma venda de comissão por membro e pedido de origem."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_commission_opportunities
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Tabela de Repasses"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__target_id
+msgid "Target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_result__target_amount
+msgid "Target Amount"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_target__target_date
+msgid "Target month"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_window,name:crm_commissions.action_commission_target
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__target_ids
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
+msgid "Targets"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__tax_deduction_pct
+msgid "Tax Deduction (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_search
+msgid "Team"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__team_total_achieved
+msgid "Team achieved"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.actions.act_window,name:crm_commissions.action_commission_member
+msgid "Team Members"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__team_quarterly_pct
+msgid "Team performance (%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__team_target_amount
+msgid "Team Target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__team_total_target
+msgid "Team target"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__is_team_eligible
+msgid "Team/coordinator eligible"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_commission_settlement__settlement_type
+msgid ""
+"The source of the settlement, e.g. 'Sales invoice', 'Sales order', 'Purchase"
+" order'..."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,help:crm_commissions.field_crm_commission_target__commission_id
+msgid ""
+"This is the default commission used in the sales where this agent is "
+"assigned. It can be changed on each operation if needed."
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_search
+msgid "This Month"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Tipo"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__type_partner
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__type_partner
+msgid "Tipo de Contato"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_repasse_rules
+msgid "Tipo de serviço ou honorário"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Todos os Pedidos"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Total a Receber (Liquidado)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__total_achieved
+msgid "Total achieved"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Total dos repasses ainda não faturados"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Total dos repasses já faturados (com nota fiscal emitida)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Total Ganhos"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__total_target
+msgid "Total quarterly target"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
+msgid "Trimestre"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+msgid "Trimestre Atual"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission__commission_type
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__agent_type
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__agent_type
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_search
+msgid "Type"
+msgstr ""
+
+#. module: crm_commissions
+#. odoo-python
+#: code:addons/crm_commissions/models/commission_policy_line.py:0
+#: code:addons/crm_commissions/models/crm_commission_models.py:0
+msgid "Upper limit cannot be lower than lower limit."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_res_users
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_member__user_id
+msgid "User"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_sale_form
+msgid "Validation"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.commission_dashboard
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Valor"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Valor do repasse gerado pelo pedido"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Valor estimado do repasse para este pedido"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_my_opportunities_list
+msgid "Valor líquido do repasse"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.ui.menu,name:crm_commissions.menu_commission_sales
+msgid "Vendas"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__salesman
+#: model_terms:ir.ui.view,arch_db:crm_commissions.crm_commission_target_search
+msgid "Vendedor"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__crm_commission_target__target_scope__salesperson
+msgid "Vendedor(a)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__show_repasse_table
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__show_repasse_table
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_users_form_inherit_crm
+msgid "Ver Tabela de Repasses"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_res_partner__show_all_values
+#: model:ir.model.fields,field_description:crm_commissions.field_res_users__show_all_values
+#: model_terms:ir.ui.view,arch_db:crm_commissions.view_users_form_inherit_crm
+msgid "Ver todos os valores"
+msgstr ""
+
+#. module: crm_commissions
+#: model:res.groups,comment:crm_commissions.group_crm_readonly
+msgid ""
+"Visualiza todos os documentos de CRM e Vendas, sem permissão de editar ou "
+"excluir"
+msgstr ""
+
+#. module: crm_commissions
+#: model:res.groups,name:crm_commissions.group_crm_readonly
+msgid "Visualização Total"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__readonly
+msgid "Visualização Total (CRM/Vendas)"
+msgstr ""
+
+#. module: crm_commissions
+#: model_terms:ir.ui.view,arch_db:crm_commissions.portal_commission_opportunities
+msgid "Visualize suas oportunidades e repasses vinculados."
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__surgery_type__vitrectomia
+msgid "Vitrectomia"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__lens_commission_type__with_exam
+msgid "With Exam (1.5%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields.selection,name:crm_commissions.selection__commission_sale__lens_commission_type__without_exam
+msgid "Without Exam (5%)"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model,name:crm_commissions.model_commission_make_settle
+msgid "Wizard for settling commissions"
+msgstr ""
+
+#. module: crm_commissions
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_recovery__year
+#: model:ir.model.fields,field_description:crm_commissions.field_commission_target__year
+#: model:ir.model.fields,field_description:crm_commissions.field_crm_commission_quarterly_bonus__year
+msgid "Year"
 msgstr ""
