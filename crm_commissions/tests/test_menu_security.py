@@ -1,7 +1,7 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from datetime import date
+from datetime import date, datetime
 
 from odoo.exceptions import AccessError
 from odoo.tests.common import HttpCase, TransactionCase
@@ -237,7 +237,9 @@ class TestRepassesMenuSecurity(TransactionCase):
         self.assertIn(self.group_sdr, top_root.groups_id)
         self.assertIn(self.group_sdr, top_dashboard.groups_id)
 
-        self.assertFalse(self.sdr_user.has_group("commission_oca.group_commission_user"))
+        self.assertFalse(
+            self.sdr_user.has_group("commission_oca.group_commission_user")
+        )
         visible = self._visible_menu_ids(self.sdr_env)
         self.assertIn(crm_root.id, visible)
         self.assertIn(crm_dashboard.id, visible)
@@ -330,6 +332,81 @@ class TestCommissionDashboardRoute(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.orientadora_partner = cls.env["res.partner"].create(
+            {
+                "name": "Orientadora Dashboard Route Test",
+                "type_partner": "orientadora",
+                "agent": True,
+                "agent_type": "orientadora",
+            }
+        )
+        cls.orientadora_user = cls.env["res.users"].create(
+            {
+                "name": "Orientadora Dashboard Route Test",
+                "login": "orientadora_dashboard_route_test",
+                "partner_id": cls.orientadora_partner.id,
+                "groups_id": [
+                    (
+                        6,
+                        0,
+                        [
+                            cls.env.ref(
+                                "crm_commissions.group_crm_commission_orientadora"
+                            ).id
+                        ],
+                    )
+                ],
+            }
+        )
+        cls.route_commission = cls.env["commission"].create(
+            {
+                "name": "Comissão da rota do dashboard",
+                "commission_type": "fixed",
+                "amount_base_type": "gross_amount",
+                "fix_qty": 10.0,
+            }
+        )
+        cls.route_product = cls.env["product.product"].create(
+            {
+                "name": "Produto da rota do dashboard",
+                "type": "consu",
+                "sale_ok": True,
+                "list_price": 100.0,
+                "invoice_policy": "order",
+            }
+        )
+        cls.route_customer = cls.env["res.partner"].create(
+            {"name": "Cliente da rota do dashboard"}
+        )
+        cls.route_order = cls.env["sale.order"].create(
+            {
+                "partner_id": cls.route_customer.id,
+                "date_order": datetime(2026, 2, 15, 12, 0),
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": cls.route_product.id,
+                            "product_uom_qty": 1.0,
+                            "price_unit": 100.0,
+                            "agent_ids": [
+                                (
+                                    0,
+                                    0,
+                                    {
+                                        "agent_id": cls.orientadora_partner.id,
+                                        "commission_id": cls.route_commission.id,
+                                        "commission_split_percent": 100.0,
+                                    },
+                                )
+                            ],
+                        },
+                    )
+                ],
+            }
+        )
+        cls.route_order.write({"state": "sale"})
         cls.sdr_user = cls.env["res.users"].create(
             {
                 "name": "SDR Dashboard Route Test",
@@ -354,3 +431,14 @@ class TestCommissionDashboardRoute(HttpCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Dashboard de Repasses", response.text)
         self.assertIn(self.sdr_user.partner_id.name, response.text)
+
+    def test_02_orientadora_can_open_and_render_dashboard(self):
+        self.authenticate(self.orientadora_user.login, "dashboard-route-test")
+
+        response = self.url_open(
+            "/dashboard/commission?date_from=2026-02-01&date_to=2026-02-28"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Dashboard de Repasses", response.text)
+        self.assertIn(self.orientadora_partner.name, response.text)

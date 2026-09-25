@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="commission_dashboard" name="Commission Dashboard">
+        <t t-set="order" t-value="False"/>
+        <t t-set="page_name" t-value="commission_dashboard"/>
         <t t-call="portal.portal_layout">
             <t t-set="breadcrumbs">
                 <ol class="breadcrumb">
@@ -386,27 +388,27 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr t-foreach="order_data" t-as="order">
-                                            <td><t t-esc="order['name']"/></td>
-                                            <td><t t-esc="order['partner_name']"/></td>
-                                            <td><t t-esc="order['date_order_fmt']"/></td>
-                                            <td><t t-esc="order['amount_total_fmt']"/></td>
-                                            <td><t t-esc="order['commission_total_fmt']"/></td>
+                                        <tr t-foreach="order_data" t-as="dashboard_order">
+                                            <td><t t-esc="dashboard_order['name']"/></td>
+                                            <td><t t-esc="dashboard_order['partner_name']"/></td>
+                                            <td><t t-esc="dashboard_order['date_order_fmt']"/></td>
+                                            <td><t t-esc="dashboard_order['amount_total_fmt']"/></td>
+                                            <td><t t-esc="dashboard_order['commission_total_fmt']"/></td>
                                             <td>
-                                                <t t-if="order['invoice_status'] == 'invoiced'">
+                                                <t t-if="dashboard_order['invoice_status'] == 'invoiced'">
                                                     <span class="text-success">Faturado</span>
                                                 </t>
-                                                <t t-if="order['invoice_status'] == 'upselling'">
+                                                <t t-if="dashboard_order['invoice_status'] == 'upselling'">
                                                     <span class="text-success">Faturado / upselling</span>
                                                 </t>
-                                                <t t-if="order['invoice_status'] == 'to invoice'">
+                                                <t t-if="dashboard_order['invoice_status'] == 'to invoice'">
                                                     <span class="text-warning">A Faturar</span>
                                                 </t>
-                                                <t t-if="order['invoice_status'] == 'no'">
+                                                <t t-if="dashboard_order['invoice_status'] == 'no'">
                                                     <span class="text-muted">Nada a Faturar</span>
                                                 </t>
-                                                <t t-if="order['invoice_status'] not in ('invoiced', 'upselling', 'to invoice', 'no')">
-                                                    <span class="text-muted">Outro: <t t-esc="order['invoice_status'] or 'Não informado'"/></span>
+                                                <t t-if="dashboard_order['invoice_status'] not in ('invoiced', 'upselling', 'to invoice', 'no')">
+                                                    <span class="text-muted">Outro: <t t-esc="dashboard_order['invoice_status'] or 'Não informado'"/></span>
                                                 </t>
                                             </td>
                                         </tr>
@@ -432,12 +434,12 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr t-foreach="invoiced_order_data" t-as="order">
-                                                <td><t t-esc="order['name']"/></td>
-                                                <td><t t-esc="order['partner_name']"/></td>
-                                                <td><t t-esc="order['date_order_fmt']"/></td>
-                                                <td><t t-esc="order['amount_total_fmt']"/></td>
-                                                <td><t t-esc="order['commission_total_fmt']"/></td>
+                                            <tr t-foreach="invoiced_order_data" t-as="dashboard_order">
+                                                <td><t t-esc="dashboard_order['name']"/></td>
+                                                <td><t t-esc="dashboard_order['partner_name']"/></td>
+                                                <td><t t-esc="dashboard_order['date_order_fmt']"/></td>
+                                                <td><t t-esc="dashboard_order['amount_total_fmt']"/></td>
+                                                <td><t t-esc="dashboard_order['commission_total_fmt']"/></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -462,12 +464,12 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr t-foreach="uninvoiced_order_data" t-as="order">
-                                                <td><t t-esc="order['name']"/></td>
-                                                <td><t t-esc="order['partner_name']"/></td>
-                                                <td><t t-esc="order['date_order_fmt']"/></td>
-                                                <td><t t-esc="order['amount_total_fmt']"/></td>
-                                                <td><t t-esc="order['commission_total_fmt']"/></td>
+                                            <tr t-foreach="uninvoiced_order_data" t-as="dashboard_order">
+                                                <td><t t-esc="dashboard_order['name']"/></td>
+                                                <td><t t-esc="dashboard_order['partner_name']"/></td>
+                                                <td><t t-esc="dashboard_order['date_order_fmt']"/></td>
+                                                <td><t t-esc="dashboard_order['amount_total_fmt']"/></td>
+                                                <td><t t-esc="dashboard_order['commission_total_fmt']"/></td>
                                             </tr>
                                         </tbody>
                                     </table>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <data noupdate="1">
+<odoo noupdate="1">
         <!-- CRM-specific roles. Base commission User/Manager come from
              commission_oca. -->
         <record id="group_commission_coordinator" model="res.groups">
@@ -75,5 +74,4 @@
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>
         </record>
-    </data>
 </odoo>
