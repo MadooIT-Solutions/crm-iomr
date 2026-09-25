@@ -49,6 +49,28 @@
         <field name="groups" eval="[(4, ref('group_crm_commission_orientadora'))]" />
     </record>
 
+    <!-- Sales users: read-only access to Dashboard data, restricted to own records -->
+    <record id="rule_crm_target_own_only_sales" model="ir.rule">
+        <field name="name">CRM Target: own only (sales)</field>
+        <field name="model_id" ref="model_crm_commission_target" />
+        <field name="domain_force">[('agent_id.user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]" />
+    </record>
+
+    <record id="rule_crm_quarterly_bonus_own_only_sales" model="ir.rule">
+        <field name="name">CRM Quarterly Bonus: own only (sales)</field>
+        <field name="model_id" ref="model_crm_commission_quarterly_bonus" />
+        <field name="domain_force">[('agent_id.user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]" />
+    </record>
+
+    <record id="rule_commission_settlement_own_only_sales" model="ir.rule">
+        <field name="name">Commission Settlement: own only (sales)</field>
+        <field name="model_id" ref="model_commission_settlement" />
+        <field name="domain_force">[('agent_id.user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]" />
+    </record>
+
     <!-- Portal/Doctor: can only see their own leads -->
     <record id="rule_crm_lead_doctor_own" model="ir.rule">
         <field name="name">crm.lead: doctor own only</field>

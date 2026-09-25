@@ -18,6 +18,11 @@ class CommissionDashboard(http.Controller):
         website=True,
     )
     def commission_dashboard(self):
+        if not (
+            request.env.user.has_group("crm_commissions.group_crm_commission_user")
+            or request.env.user.has_group("sales_team.group_sale_salesman")
+        ):
+            return request.not_found()
         partner = request.env.user.partner_id
         today = date.today()
         month_start = today.replace(day=1)

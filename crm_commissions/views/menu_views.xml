@@ -7,7 +7,7 @@
         name="Repasses"
         parent="crm.crm_menu_root"
         sequence="50"
-        groups="group_crm_commission_user"
+        groups="group_crm_commission_user,sales_team.group_sale_salesman"
     />
     <record id="action_crm_commission_dashboard" model="ir.actions.act_url">
         <field name="name">Dashboard</field>
@@ -27,6 +27,7 @@
         parent="menu_crm_commission_root"
         action="action_crm_commission_target"
         sequence="10"
+        groups="group_crm_commission_user"
     />
     <menuitem
         id="menu_crm_quarterly_bonus"
