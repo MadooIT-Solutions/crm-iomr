@@ -1,371 +1,488 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-<template id="commission_dashboard" name="Commission Dashboard">
-<t t-call="portal.portal_layout">
-<t t-set="breadcrumbs">
-<ol class="breadcrumb">
-<li class="breadcrumb-item"><a href="/">Home</a></li>
-<li class="breadcrumb-item active">Dashboard de Repasses</li>
-</ol>
-</t>
+    <template id="commission_dashboard" name="Commission Dashboard">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Início</a></li>
+                    <li class="breadcrumb-item active">Dashboard de Repasses</li>
+                </ol>
+            </t>
 
-    <div class="o_portal_dashboard">
-    <div class="row mb-4">
-      <div class="col-12">
-        <h3>Dashboard de Repasses</h3>
-        <p class="text-muted">Bem-vindo(a), <t t-esc="partner.name"/></p>
-      </div>
-    </div>
+            <div class="o_portal_dashboard">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h3>Dashboard de Repasses</h3>
+                        <p class="text-muted">
+                            Bem-vindo(a), <t t-esc="partner.name"/>
+                            <span t-if="date_from == date_to">
+                                · Período de <t t-esc="date_from_fmt"/>
+                            </span>
+                            <span t-if="date_from != date_to">
+                                · Período de <t t-esc="date_from_fmt"/> a <t t-esc="date_to_fmt"/>
+                            </span>
+                        </p>
+                    </div>
+                </div>
 
-<div class="row mb-4">
-<div class="col-md-3">
-<div class="card text-bg-primary">
-<div class="card-body">
-                    <h5 class="card-title">Meta do Mês</h5>
-                    <h3><t t-esc="target_amount_fmt"/></h3>
-                    <p class="card-text">
-                        Atingido: <t t-esc="achieved_amount_fmt"/>
-                    </p>
-</div>
-</div>
-</div>
+                <div t-if="date_error" class="alert alert-warning" role="alert">
+                    <t t-esc="date_error"/>
+                </div>
 
-<div class="col-md-3">
-<div class="card text-bg-success">
-<div class="card-body">
-<h5 class="card-title">Performance</h5>
-<h3><t t-esc="'%d' % (current_target and current_target.performance_pct or 0)"/>%</h3>
-</div>
-</div>
-</div>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="get" action="/dashboard/commission" class="row g-3 align-items-end">
+                            <div class="col-sm-6 col-lg-4">
+                                <label for="date_from" class="form-label">Data inicial</label>
+                                <input
+                                    type="date"
+                                    id="date_from"
+                                    name="date_from"
+                                    class="form-control"
+                                    t-att-value="date_from_str"
+                                />
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <label for="date_to" class="form-label">Data final</label>
+                                <input
+                                    type="date"
+                                    id="date_to"
+                                    name="date_to"
+                                    class="form-control"
+                                    t-att-value="date_to_str"
+                                />
+                            </div>
+                            <div class="col-lg-4">
+                                <button type="submit" class="btn btn-primary">Aplicar período</button>
+                            </div>
+                        </form>
+                        <div class="form-text">
+                            As datas inicial e final são incluídas no filtro. Ao sair sem informar um período, o dashboard usa o mês atual.
+                        </div>
+                    </div>
+                </div>
 
-<div class="col-md-3">
-<div class="card text-bg-warning">
-<div class="card-body">
-                    <h5 class="card-title">Falta para Meta</h5>
-                    <h3><t t-esc="gap_fmt"/></h3>
-</div>
-</div>
-</div>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-bg-primary h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Meta do Período</h5>
+                                <h3><t t-esc="target_amount_fmt"/></h3>
+                                <p class="card-text">
+                                    Atingido: <t t-esc="achieved_amount_fmt"/>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="col-md-3">
-<div class="card text-bg-info">
-<div class="card-body">
-                    <h5 class="card-title">Repasse do Período</h5>
-                    <h3><t t-esc="current_commission_total_fmt"/></h3>
-</div>
-</div>
-</div>
-</div>
+                    <div class="col-md-3">
+                        <div class="card text-bg-success h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Performance</h5>
+                                <h3><t t-esc="target_pct_fmt"/>%</h3>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="row mb-4">
-<div class="col-12">
-<h4>Progresso da Meta</h4>
-<t t-if="current_target">
-<div class="progress" style="height: 30px;">
-<div
-class="progress-bar"
-t-attf-class="progress-bar #{'bg-success' if current_target.performance_pct >= 100 else 'bg-info' if current_target.performance_pct >= 50 else 'bg-warning' if current_target.performance_pct >= 25 else 'bg-danger'}"
-role="progressbar"
-t-attf-aria-valuenow="{{ current_target.performance_pct }}"
-t-attf-style="width: {{ min(current_target.performance_pct, 100) }}%;"
-t-esc="'%d' % current_target.performance_pct"/>%
-</div>
-</t>
-<t t-if="not current_target">
-<p class="text-muted">Nenhuma meta configurada para este mês.</p>
-</t>
-</div>
-</div>
+                    <div class="col-md-3">
+                        <div class="card text-bg-warning h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Falta para Meta</h5>
+                                <h3><t t-esc="gap_fmt"/></h3>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="row mb-4">
-<div class="col-lg-6">
-<h4>Repasses Pendentes</h4>
+                    <div class="col-md-3">
+                        <div class="card text-bg-info h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Repasse do Período</h5>
+                                <h3><t t-esc="current_commission_total_fmt"/></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4>Progresso das Metas</h4>
+                        <t t-if="has_targets">
+                            <div class="progress" style="height: 30px;">
+                                <div
+                                    class="progress-bar"
+                                    t-attf-class="progress-bar #{'bg-success' if target_pct >= 100 else 'bg-info' if target_pct >= 50 else 'bg-warning' if target_pct >= 25 else 'bg-danger'}"
+                                    role="progressbar"
+                                    t-att-aria-valuenow="target_pct"
+                                    t-attf-style="width: {{ min(target_pct, 100) }}%;"
+                                >
+                                    <t t-esc="target_pct_fmt"/>%
+                                </div>
+                            </div>
+                        </t>
+                        <t t-if="not has_targets">
+                            <p class="text-muted">Nenhuma meta configurada para o período selecionado.</p>
+                        </t>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <h4>Repasses do Período</h4>
+                        <p class="text-muted">
+                            <t t-esc="settlement_count"/> repasse(s) no período; a tabela mostra até 10.
+                        </p>
                         <t t-if="settlement_data">
-<table class="table table-sm table-striped">
-<thead>
-<tr>
-<th>Período</th>
-<th>Valor</th>
-<th>Estado</th>
-</tr>
-</thead>
-<tbody>
-                    <tr t-foreach="settlement_data" t-as="s">
-                        <td><t t-esc="s['date_from']"/> a <t t-esc="s['date_to']"/></td>
-                        <td><t t-esc="s['total_fmt']"/></td>
-                        <td>
-                            <t t-if="s['state'] == 'settled'">A Liquidar</t>
-                            <t t-if="s['state'] == 'invoiced'">Faturado</t>
-                            <t t-if="s['state'] == 'cancel'">Cancelado</t>
-                        </td>
-                    </tr>
-</tbody>
-</table>
-</t>
-<t t-if="not settlement_data">
-<p class="text-muted">Nenhum repasse registrado.</p>
-</t>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Período</th>
+                                            <th>Valor</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="settlement_data" t-as="settlement">
+                                            <td>
+                                                <t t-esc="settlement['date_from_fmt']"/> a <t t-esc="settlement['date_to_fmt']"/>
+                                            </td>
+                                            <td><t t-esc="settlement['total_fmt']"/></td>
+                                            <td>
+                                                <t t-if="settlement['state'] == 'settled'">A Liquidar</t>
+                                                <t t-if="settlement['state'] == 'invoiced'">Fatura Gerada</t>
+                                                <t t-if="settlement['state'] == 'except_invoice'">Exceção de Faturamento</t>
+                                                <t t-if="settlement['state'] == 'cancel'">Cancelado</t>
+                                                <t t-if="settlement['state'] not in ('settled', 'invoiced', 'except_invoice', 'cancel')">
+                                                    <t t-esc="settlement['state']"/>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                        <t t-if="not settlement_data">
+                            <p class="text-muted">Nenhum repasse registrado no período.</p>
+                        </t>
 
-<div class="row mt-3">
-<div class="col-6">
-<div class="card text-bg-light">
-<div class="card-body">
-                    <h6>A Liquidar</h6>
-                    <h4><t t-esc="pending_total_fmt"/></h4>
-</div>
-</div>
-</div>
-<div class="col-6">
-<div class="card text-bg-light">
-<div class="card-body">
-                    <h6>Faturado</h6>
-                    <h4><t t-esc="invoiced_total_fmt"/></h4>
-</div>
-</div>
-</div>
-</div>
-</div>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <div class="card text-bg-light h-100">
+                                    <div class="card-body">
+                                        <h6>A Liquidar</h6>
+                                        <h4><t t-esc="pending_total_fmt"/></h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card text-bg-light h-100">
+                                    <div class="card-body">
+                                        <h6>Fatura Gerada</h6>
+                                        <h4><t t-esc="invoiced_settlements_total_fmt"/></h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card text-bg-light h-100">
+                                    <div class="card-body">
+                                        <h6>Performance Realizada</h6>
+                                        <h4><t t-esc="performance_settlements_total_fmt"/></h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card text-bg-light h-100">
+                                    <div class="card-body">
+                                        <h6>Exceção de Faturamento</h6>
+                                        <h4><t t-esc="invoice_exception_total_fmt"/></h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="col-lg-6">
-<h4>Trimestre Atual</h4>
-<div class="progress mb-3" style="height: 25px;">
-<div
-class="progress-bar bg-info"
-role="progressbar"
-t-attf-style="width: {{ min(quarterly_pct, 100) }}%;"
-t-esc="'%d' % quarterly_pct"/>%
-</div>
-<table class="table table-sm">
-                    <tr>
-                        <th>Meta Trimestral</th>
-                        <td><t t-esc="quarterly_total_target_fmt"/></td>
-                    </tr>
-                    <tr>
-                        <th>Atingido</th>
-                        <td><t t-esc="quarterly_total_achieved_fmt"/></td>
-                    </tr>
-<tr>
-<th>Performance</th>
-<td><t t-esc="'%d' % quarterly_pct"/>%</td>
-</tr>
-</table>
+                    <div class="col-lg-6">
+                        <h4>Desempenho Trimestral</h4>
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div
+                                class="progress-bar bg-info"
+                                role="progressbar"
+                                t-attf-style="width: {{ min(quarterly_pct, 100) }}%;"
+                            >
+                                <t t-esc="quarterly_pct_fmt"/>%
+                            </div>
+                        </div>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Meta dos Trimestres</th>
+                                    <td><t t-esc="quarterly_total_target_fmt"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Atingido</th>
+                                    <td><t t-esc="quarterly_total_achieved_fmt"/></td>
+                                </tr>
+                                <tr>
+                                    <th>Performance</th>
+                                    <td><t t-esc="quarterly_pct_fmt"/>%</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-<h4 class="mt-4">Bônus Trimestrais</h4>
-<t t-if="quarterly_bonus">
-<table class="table table-sm table-striped">
-<thead>
-<tr>
-<th>Trimestre</th>
-<th>Performance</th>
-<th>Estado</th>
-</tr>
-</thead>
-<tbody>
-<tr t-foreach="quarterly_bonus" t-as="qb">
-<td><t t-esc="qb.name"/></td>
-<td><t t-esc="'%d' % qb.quarterly_pct"/>%</td>
-<td>
-<t t-if="qb.state == 'pending'">Pendente</t>
-<t t-if="qb.state == 'incomplete'">Metas incompletas</t>
-<t t-if="qb.state == 'eligible'">Elegível</t>
-<t t-if="qb.state == 'recovered'">Recuperado/Pago</t>
-<t t-if="qb.state == 'lost'">Não atingido</t>
-</td>
-</tr>
-</tbody>
-</table>
-</t>
-<t t-if="not quarterly_bonus">
-<p class="text-muted">Nenhum bônus trimestral.</p>
-</t>
-</div>
-</div>
+                        <h4 class="mt-4">Bônus Trimestrais</h4>
+                        <t t-if="quarterly_bonus_data">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Trimestre</th>
+                                            <th>Performance</th>
+                                            <th>Recuperado</th>
+                                            <th>Prêmio</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="quarterly_bonus_data" t-as="bonus">
+                                            <td><t t-esc="bonus['name']"/></td>
+                                            <td><t t-esc="bonus['quarterly_pct']"/>%</td>
+                                            <td><t t-esc="bonus['recovered_amount_fmt']"/></td>
+                                            <td><t t-esc="bonus['bonus_amount_fmt']"/></td>
+                                            <td>
+                                                <t t-if="bonus['state'] == 'pending'">Pendente</t>
+                                                <t t-if="bonus['state'] == 'incomplete'">Metas incompletas</t>
+                                                <t t-if="bonus['state'] == 'eligible'">Elegível</t>
+                                                <t t-if="bonus['state'] == 'recovered'">Recuperado/Pago</t>
+                                                <t t-if="bonus['state'] == 'lost'">Não atingido</t>
+                                                <t t-if="bonus['state'] not in ('pending', 'incomplete', 'eligible', 'recovered', 'lost')">
+                                                    <t t-esc="bonus['state'] or 'Não informado'"/>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                        <t t-if="not quarterly_bonus_data">
+                            <p class="text-muted">Nenhum bônus trimestral no período selecionado.</p>
+                        </t>
+                    </div>
+                </div>
 
-<div class="row mt-4">
-<div class="col-lg-8">
-<h4>Pipeline de Oportunidades</h4>
-<t t-if="lead_data">
-<p class="text-muted">
-                    Receita ponderada total: <strong><t t-esc="pipeline_total_fmt"/></strong>
-</p>
-<table class="table table-striped">
-<thead>
-<tr>
-<th>Oportunidade</th>
-<th>Cliente</th>
-<th>Receita Esperada</th>
-<th>Prob.</th>
-<th>Ponderado</th>
-<th>Estágio</th>
-</tr>
-</thead>
-<tbody>
-                    <tr t-foreach="lead_data" t-as="lead">
-                        <td><t t-esc="lead['name']"/></td>
-                        <td><t t-esc="lead['partner_name']"/></td>
-                        <td><t t-esc="lead['expected_revenue_fmt']"/></td>
-                        <td><t t-esc="lead['probability']"/>%</td>
-                        <td><t t-esc="lead['weighted_fmt']"/></td>
-                        <td><t t-esc="lead['stage_name']"/></td>
-                    </tr>
-</tbody>
-</table>
-</t>
-<t t-if="not lead_data">
-<p class="text-muted">Nenhuma oportunidade em aberto.</p>
-</t>
-</div>
+                <div class="row mt-4">
+                    <div class="col-lg-8">
+                        <h4>Pipeline de Oportunidades</h4>
+                        <p class="text-muted">
+                            Oportunidades ainda abertas, atribuídas ao período selecionado.
+                        </p>
+                        <t t-if="lead_data">
+                            <p class="text-muted">
+                                Receita ponderada total: <strong><t t-esc="pipeline_total_fmt"/></strong>
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Oportunidade</th>
+                                            <th>Cliente</th>
+                                            <th>Receita Esperada</th>
+                                            <th>Prob.</th>
+                                            <th>Ponderado</th>
+                                            <th>Estágio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="lead_data" t-as="lead">
+                                            <td><t t-esc="lead['name']"/></td>
+                                            <td><t t-esc="lead['partner_name']"/></td>
+                                            <td><t t-esc="lead['expected_revenue_fmt']"/></td>
+                                            <td><t t-esc="lead['probability']"/>%</td>
+                                            <td><t t-esc="lead['weighted_fmt']"/></td>
+                                            <td><t t-esc="lead['stage_name']"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                        <t t-if="not lead_data">
+                            <p class="text-muted">Nenhuma oportunidade aberta no período selecionado.</p>
+                        </t>
+                    </div>
 
-<div class="col-lg-4">
-<h4>Prévia de Recebimento</h4>
-<div class="card text-bg-light mb-3">
-<div class="card-body">
-                    <h6>Repasse do Período (Pedidos)</h6>
-                    <h3><t t-esc="current_commission_total_fmt"/></h3>
-</div>
-</div>
-<div class="card text-bg-light mb-3">
-<div class="card-body">
-                    <h6>Repasse Estimado (Pipeline)</h6>
-                    <h3><t t-esc="estimated_pipeline_commission_fmt"/></h3>
-<p class="card-text">
-<small>Baseado na receita ponderada do pipeline</small>
-</p>
-</div>
-</div>
-<div class="card text-bg-light">
-<div class="card-body">
-                    <h6>Total a Receber (Liquidado)</h6>
-                    <h3><t t-esc="pending_total_fmt"/></h3>
-</div>
-</div>
-</div>
-</div>
+                    <div class="col-lg-4">
+                        <h4>Prévia de Recebimento</h4>
+                        <div class="card text-bg-light mb-3 h-100">
+                            <div class="card-body">
+                                <h6>Repasse dos Pedidos</h6>
+                                <h3><t t-esc="current_commission_total_fmt"/></h3>
+                            </div>
+                        </div>
+                        <div class="card text-bg-light mb-3 h-100">
+                            <div class="card-body">
+                                <h6>Repasse Estimado (Pipeline)</h6>
+                                <h3><t t-esc="estimated_pipeline_commission_fmt"/></h3>
+                                <p class="card-text">
+                                    <small>Baseado na receita ponderada, no percentual da oportunidade ou na taxa da política do agente.</small>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="card text-bg-light h-100">
+                            <div class="card-body">
+                                <h6>Total a Liquidar</h6>
+                                <h3><t t-esc="pending_total_fmt"/></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<div class="row mt-4">
-<div class="col-12">
-<h4>Pedidos do Mês</h4>
-</div>
-</div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h4>Pedidos do Período</h4>
+                        <p class="text-muted">
+                            <t t-esc="order_count"/> pedido(s) confirmado(s) com o usuário como agente.
+                        </p>
+                    </div>
+                </div>
 
-<div class="row mb-4">
-<div class="col-md-6">
-<div class="card text-bg-success">
-<div class="card-body">
-<h5 class="card-title">Pedidos Faturados</h5>
-<h3><t t-esc="invoiced_month_total_fmt"/></h3>
-<p class="card-text">
-<t t-esc="invoiced_month_count"/> pedido(s) faturado(s)
-</p>
-</div>
-</div>
-</div>
-<div class="col-md-6">
-<div class="card text-bg-warning">
-<div class="card-body">
-<h5 class="card-title">Pedidos Confirmados Não Faturados</h5>
-<h3><t t-esc="uninvoiced_month_total_fmt"/></h3>
-<p class="card-text">
-<t t-esc="uninvoiced_month_count"/> pedido(s) não faturado(s)
-</p>
-</div>
-</div>
-</div>
-</div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card text-bg-success h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Pedidos Faturados</h5>
+                                <h3><t t-esc="invoiced_total_fmt"/></h3>
+                                <p class="card-text">
+                                    <t t-esc="invoiced_count"/> pedido(s) faturado(s) ou em upselling
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card text-bg-warning h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Pedidos Confirmados Não Faturados</h5>
+                                <h3><t t-esc="uninvoiced_total_fmt"/></h3>
+                                <p class="card-text">
+                                    <t t-esc="uninvoiced_count"/> pedido(s) a faturar ou sem valor a faturar
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<t t-if="order_data">
-<div class="row mb-3">
-<div class="col-12">
-<h5>Todos os Pedidos</h5>
-<table class="table table-sm table-striped">
-<thead>
-<tr>
-<th>Pedido</th>
-<th>Cliente</th>
-<th>Data</th>
-<th>Valor</th>
-<th>Repasse</th>
-<th>Faturamento</th>
-</tr>
-</thead>
-<tbody>
-<tr t-foreach="order_data" t-as="o">
-<td><t t-esc="o['name']"/></td>
-<td><t t-esc="o['partner_name']"/></td>
-<td><t t-esc="o['date_order']"/></td>
-<td><t t-esc="o['amount_total_fmt']"/></td>
-<td><t t-esc="o['commission_total_fmt']"/></td>
-<td>
-<t t-if="o['invoice_status'] == 'invoiced'"><span class="text-success">Faturado</span></t>
-<t t-if="o['invoice_status'] == 'to invoice'"><span class="text-warning">A Faturar</span></t>
-<t t-if="o['invoice_status'] == 'no'"><span class="text-muted">Nada a Faturar</span></t>
-<t t-if="o['invoice_status'] == 'upselling'"><span class="text-info">Upselling</span></t>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</t>
+                <t t-if="order_data">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h5>Todos os Pedidos</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Pedido</th>
+                                            <th>Cliente</th>
+                                            <th>Data</th>
+                                            <th>Valor</th>
+                                            <th>Meu Repasse</th>
+                                            <th>Faturamento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="order_data" t-as="order">
+                                            <td><t t-esc="order['name']"/></td>
+                                            <td><t t-esc="order['partner_name']"/></td>
+                                            <td><t t-esc="order['date_order_fmt']"/></td>
+                                            <td><t t-esc="order['amount_total_fmt']"/></td>
+                                            <td><t t-esc="order['commission_total_fmt']"/></td>
+                                            <td>
+                                                <t t-if="order['invoice_status'] == 'invoiced'">
+                                                    <span class="text-success">Faturado</span>
+                                                </t>
+                                                <t t-if="order['invoice_status'] == 'upselling'">
+                                                    <span class="text-success">Faturado / upselling</span>
+                                                </t>
+                                                <t t-if="order['invoice_status'] == 'to invoice'">
+                                                    <span class="text-warning">A Faturar</span>
+                                                </t>
+                                                <t t-if="order['invoice_status'] == 'no'">
+                                                    <span class="text-muted">Nada a Faturar</span>
+                                                </t>
+                                                <t t-if="order['invoice_status'] not in ('invoiced', 'upselling', 'to invoice', 'no')">
+                                                    <span class="text-muted">Outro: <t t-esc="order['invoice_status'] or 'Não informado'"/></span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
-<div class="row">
-<div class="col-lg-6">
-<h5>Faturados</h5>
-<t t-if="invoiced_order_data">
-<table class="table table-sm table-striped">
-<thead>
-<tr>
-<th>Pedido</th>
-<th>Cliente</th>
-<th>Data</th>
-<th>Valor</th>
-</tr>
-</thead>
-<tbody>
-<tr t-foreach="invoiced_order_data" t-as="o">
-<td><t t-esc="o['name']"/></td>
-<td><t t-esc="o['partner_name']"/></td>
-<td><t t-esc="o['date_order']"/></td>
-<td><t t-esc="o['amount_total_fmt']"/></td>
-</tr>
-</tbody>
-</table>
-</t>
-<t t-if="not invoiced_order_data">
-<p class="text-muted">Nenhum pedido faturado.</p>
-</t>
-</div>
-<div class="col-lg-6">
-<h5>Não Faturados</h5>
-<t t-if="uninvoiced_order_data">
-<table class="table table-sm table-striped">
-<thead>
-<tr>
-<th>Pedido</th>
-<th>Cliente</th>
-<th>Data</th>
-<th>Valor</th>
-</tr>
-</thead>
-<tbody>
-<tr t-foreach="uninvoiced_order_data" t-as="o">
-<td><t t-esc="o['name']"/></td>
-<td><t t-esc="o['partner_name']"/></td>
-<td><t t-esc="o['date_order']"/></td>
-<td><t t-esc="o['amount_total_fmt']"/></td>
-</tr>
-</tbody>
-</table>
-</t>
-<t t-if="not uninvoiced_order_data">
-<p class="text-muted">Nenhum pedido não faturado.</p>
-</t>
-</div>
-</div>
-
-</div>
-</t>
-  </template>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h5>Faturados</h5>
+                            <t t-if="invoiced_order_data">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Pedido</th>
+                                                <th>Cliente</th>
+                                                <th>Data</th>
+                                                <th>Valor</th>
+                                                <th>Meu Repasse</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr t-foreach="invoiced_order_data" t-as="order">
+                                                <td><t t-esc="order['name']"/></td>
+                                                <td><t t-esc="order['partner_name']"/></td>
+                                                <td><t t-esc="order['date_order_fmt']"/></td>
+                                                <td><t t-esc="order['amount_total_fmt']"/></td>
+                                                <td><t t-esc="order['commission_total_fmt']"/></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </t>
+                            <t t-if="not invoiced_order_data">
+                                <p class="text-muted">Nenhum pedido faturado ou em upselling.</p>
+                            </t>
+                        </div>
+                        <div class="col-lg-6">
+                            <h5>Não Faturados</h5>
+                            <t t-if="uninvoiced_order_data">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Pedido</th>
+                                                <th>Cliente</th>
+                                                <th>Data</th>
+                                                <th>Valor</th>
+                                                <th>Meu Repasse</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr t-foreach="uninvoiced_order_data" t-as="order">
+                                                <td><t t-esc="order['name']"/></td>
+                                                <td><t t-esc="order['partner_name']"/></td>
+                                                <td><t t-esc="order['date_order_fmt']"/></td>
+                                                <td><t t-esc="order['amount_total_fmt']"/></td>
+                                                <td><t t-esc="order['commission_total_fmt']"/></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </t>
+                            <t t-if="not uninvoiced_order_data">
+                                <p class="text-muted">Nenhum pedido não faturado.</p>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+                <t t-if="not order_data">
+                    <p class="text-muted">Nenhum pedido confirmado no período selecionado.</p>
+                </t>
+            </div>
+        </t>
+    </template>
 </odoo>
-

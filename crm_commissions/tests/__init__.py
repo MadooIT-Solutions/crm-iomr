@@ -1,4 +1,5 @@
 from . import test_crm_commission
+from . import test_dashboard
 from . import test_menu_security
 from . import test_view_modes
 from . import test_sale_sync

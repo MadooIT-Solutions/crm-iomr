@@ -35,7 +35,6 @@ class Commission(models.Model):
         ),
     )
     deduct_card_fee = fields.Boolean(
-        string="Deduct Card Fee",
         default=False,
         help=(
             "Deduct the credit card fee (sale_credit_card_fee) "
@@ -70,7 +69,10 @@ class Commission(models.Model):
     categ_ids = fields.Many2many(
         "product.category",
         string="Product Categories",
-        help="Only apply this commission to products in these categories. Leave empty to apply to all.",
+        help=(
+            "Only apply this commission to products in these categories. "
+            "Leave empty to apply to all."
+        ),
     )
     agent_rule_ids = fields.One2many(
         "commission.agent.rule",
@@ -159,8 +161,8 @@ class CommissionTarget(models.Model):
         default="salesperson",
         required=True,
         help="Individual: meta para um/a vendedor(a) específico/a. "
-             "Equipe de Vendas: a meta é aplicada a todos os vendedores "
-             "(orientadoras) da equipe selecionada ao clicar em 'Aplicar à Equipe'.",
+        "Equipe de Vendas: a meta é aplicada a todos os vendedores "
+        "(orientadoras) da equipe selecionada ao clicar em 'Aplicar à Equipe'.",
     )
     team_id = fields.Many2one(
         "crm.team",
@@ -170,7 +172,7 @@ class CommissionTarget(models.Model):
     agent_id = fields.Many2one(
         "res.partner",
         string="Salesperson",
-        domain=[("type_partner", "=", "orientadora")],
+        domain=[("type_partner", "in", ["orientadora", "sdr"])],
     )
     target_date = fields.Date(string="Target month", required=True)
     target_amount = fields.Monetary(
@@ -298,9 +300,15 @@ class CommissionTarget(models.Model):
     def unlink(self):
         keys = self._get_quarterly_bonus_keys()
         if not self.env.context.get("crm_commissions_skip_legacy_target_sync"):
-            linked_targets = self.env["commission.target"].sudo().search([
-                ("crm_target_id", "in", self.ids),
-            ])
+            linked_targets = (
+                self.env["commission.target"]
+                .sudo()
+                .search(
+                    [
+                        ("crm_target_id", "in", self.ids),
+                    ]
+                )
+            )
             for linked_target in linked_targets:
                 if linked_target.origin_type != "manual":
                     linked_target.unlink()
@@ -342,11 +350,13 @@ class CommissionTarget(models.Model):
             first_month = (int(quarter[1:]) - 1) * 3 + 1
             date_from = fields.Date.from_string(f"{year}-{first_month:02d}-01")
             date_to = date_from + relativedelta(months=3, days=-1)
-            key_domains.append([
-                ("agent_id", "=", agent_id),
-                ("target_date", ">=", date_from),
-                ("target_date", "<=", date_to),
-            ])
+            key_domains.append(
+                [
+                    ("agent_id", "=", agent_id),
+                    ("target_date", ">=", date_from),
+                    ("target_date", "<=", date_to),
+                ]
+            )
         if not key_domains:
             return
         domain = [("target_scope", "=", "salesperson")] + expression.OR(key_domains)
@@ -362,10 +372,16 @@ class CommissionTarget(models.Model):
             return
         self._invalidate_quarterly_target_values(keys, refresh_achieved=True)
         self.env["commission.target"].sudo()._sync_from_crm_targets(self)
-        bonuses = self.env["crm.commission.quarterly.bonus"].sudo().search([
-            ("agent_id", "in", self.agent_id.ids),
-            ("is_finalized", "=", True),
-        ])
+        bonuses = (
+            self.env["crm.commission.quarterly.bonus"]
+            .sudo()
+            .search(
+                [
+                    ("agent_id", "in", self.agent_id.ids),
+                    ("is_finalized", "=", True),
+                ]
+            )
+        )
         bonuses.modified(["monthly_targets"])
         bonuses._finalize_if_closed()
 
@@ -376,24 +392,32 @@ class CommissionTarget(models.Model):
         targets_without_company = targets.filtered(lambda target: not target.company_id)
         if targets_without_company:
             targets_without_company.write({"company_id": self.env.company.id})
-        legacy_targets = self.env["commission.target"].sudo()._sync_from_crm_targets(
-            targets
+        legacy_targets = (
+            self.env["commission.target"].sudo()._sync_from_crm_targets(targets)
         )
         self._sync_settlement_line_targets()
         return legacy_targets
 
     def _sync_settlement_line_targets(self):
         """Link existing CRM performance settlement lines to their source target."""
-        lines = self.env["commission.settlement.line"].sudo().search([
-            ("target_id", "=", False),
-            ("settlement_id.settlement_type", "=", "crm_performance"),
-        ])
+        lines = (
+            self.env["commission.settlement.line"]
+            .sudo()
+            .search(
+                [
+                    ("target_id", "=", False),
+                    ("settlement_id.settlement_type", "=", "crm_performance"),
+                ]
+            )
+        )
         if not lines:
             return
-        targets = self.sudo().search([
-            ("target_scope", "=", "salesperson"),
-            ("agent_id", "in", lines.mapped("settlement_id.agent_id").ids),
-        ])
+        targets = self.sudo().search(
+            [
+                ("target_scope", "=", "salesperson"),
+                ("agent_id", "in", lines.mapped("settlement_id.agent_id").ids),
+            ]
+        )
         targets_by_key = {
             (target.agent_id.id, target.target_date): target for target in targets
         }
@@ -416,8 +440,10 @@ class CommissionTarget(models.Model):
             .search([("monthly_targets", "=", False)])
             ._get_quarterly_bonus_keys()
         )
-        return self.env["crm.commission.quarterly.bonus"].sudo()._sync_for_keys(
-            keys | manual_keys
+        return (
+            self.env["crm.commission.quarterly.bonus"]
+            .sudo()
+            ._sync_for_keys(keys | manual_keys)
         )
 
     @api.depends("target_date")
@@ -457,24 +483,38 @@ class CommissionTarget(models.Model):
             if not rec.agent_id or not rec.target_date:
                 continue
             period_code = rec.target_date.strftime("%Y-%m")
-            members = self.env["commission.member"].sudo().search([
-                ("partner_id", "=", rec.agent_id.id),
-                ("member_type", "=", "orientadora"),
-            ])
-            sales = self.env["commission.sale"].sudo().search([
-                ("owner_member_id", "in", members.ids),
-                ("period_code", "=", period_code),
-                ("status", "in", ("confirmed", "invoiced")),
-            ])
+            members = (
+                self.env["commission.member"]
+                .sudo()
+                .search(
+                    [
+                        ("partner_id", "=", rec.agent_id.id),
+                        ("member_type", "=", "orientadora"),
+                    ]
+                )
+            )
+            sales = (
+                self.env["commission.sale"]
+                .sudo()
+                .search(
+                    [
+                        ("owner_member_id", "in", members.ids),
+                        ("period_code", "=", period_code),
+                        ("status", "in", ("confirmed", "invoiced")),
+                    ]
+                )
+            )
             if sales:
                 rec.achieved_amount = sum(sales.mapped("hospital_gross_amount"))
                 continue
             month_start = rec.target_date.replace(day=1)
             next_month = month_start + relativedelta(months=1)
-            agent_domain = expression.OR([
-                [("partner_id.agent_ids", "=", rec.agent_id.id)],
-                [("order_line.agent_ids.agent_id", "=", rec.agent_id.id)],
-            ])
+            agent_domain = expression.OR(
+                [
+                    [("partner_id.agent_ids", "=", rec.agent_id.id)],
+                    [("order_line.agent_ids.agent_id", "=", rec.agent_id.id)],
+                ]
+            )
             orders = self.env["sale.order"].search(
                 agent_domain
                 + [
@@ -515,16 +555,18 @@ class CommissionTarget(models.Model):
         """Return whether this target already has an active settlement line."""
         self.ensure_one()
         return bool(
-            self.env["commission.settlement.line"].search_count([
-                ("settlement_id.settlement_type", "=", "crm_performance"),
-                ("settlement_id.state", "!=", "cancel"),
-                "|",
-                ("target_id", "=", self.id),
-                "&",
-                ("target_id", "=", False),
-                ("settlement_id.agent_id", "=", self.agent_id.id),
-                ("date", "=", self.target_date),
-            ])
+            self.env["commission.settlement.line"].search_count(
+                [
+                    ("settlement_id.settlement_type", "=", "crm_performance"),
+                    ("settlement_id.state", "!=", "cancel"),
+                    "|",
+                    ("target_id", "=", self.id),
+                    "&",
+                    ("target_id", "=", False),
+                    ("settlement_id.agent_id", "=", self.agent_id.id),
+                    ("date", "=", self.target_date),
+                ]
+            )
         )
 
     @api.constrains("target_scope", "agent_id", "team_id")
@@ -543,9 +585,7 @@ class CommissionTarget(models.Model):
         """Vendedores(as) (orientadoras) que são membros da equipe."""
         self.ensure_one()
         users = self.team_id.crm_team_member_ids.user_id
-        return users.partner_id.filtered(
-            lambda p: p.type_partner == "orientadora"
-        )
+        return users.partner_id.filtered(lambda p: p.type_partner == "orientadora")
 
     def action_apply_team(self):
         """Aplica a meta a todos os vendedores (orientadoras) da equipe.
@@ -562,28 +602,34 @@ class CommissionTarget(models.Model):
         partners = self._get_team_orientadora_partners()
         if not partners:
             raise UserError(
-                _("Nenhum/a vendedor(a) (orientadora) encontrado/a na equipe "
-                  "selecionada.")
+                _(
+                    "Nenhum/a vendedor(a) (orientadora) encontrado/a na equipe "
+                    "selecionada."
+                )
             )
-        existing = self.env["crm.commission.target"].search([
-            ("target_date", "=", self.target_date),
-            ("agent_id", "in", partners.ids),
-        ])
+        existing = self.env["crm.commission.target"].search(
+            [
+                ("target_date", "=", self.target_date),
+                ("agent_id", "in", partners.ids),
+            ]
+        )
         existing_agent_ids = set(existing.mapped("agent_id.id"))
 
         created = self.env["crm.commission.target"]
         for partner in partners:
             if partner.id in existing_agent_ids:
                 continue
-            created |= self.env["crm.commission.target"].create({
-                "target_scope": "salesperson",
-                "agent_id": partner.id,
-                "team_id": self.team_id.id,
-                "target_date": self.target_date,
-                "target_amount": self.target_amount,
-                "is_crm_score": self.is_crm_score,
-                "currency_id": self.currency_id.id,
-            })
+            created |= self.env["crm.commission.target"].create(
+                {
+                    "target_scope": "salesperson",
+                    "agent_id": partner.id,
+                    "team_id": self.team_id.id,
+                    "target_date": self.target_date,
+                    "target_amount": self.target_amount,
+                    "is_crm_score": self.is_crm_score,
+                    "currency_id": self.currency_id.id,
+                }
+            )
 
         target_date = self.target_date
         partner_ids = partners.ids
@@ -829,9 +875,16 @@ class CommissionQuarterlyBonus(models.Model):
         for rec in self:
             team = rec.team_id or rec.agent_id.crm_team_id
             if not team and rec.agent_id:
-                team = self.env["crm.team"].search([
-                    ("crm_team_member_ids.user_id.partner_id", "=", rec.agent_id.id),
-                ], limit=1)
+                team = self.env["crm.team"].search(
+                    [
+                        (
+                            "crm_team_member_ids.user_id.partner_id",
+                            "=",
+                            rec.agent_id.id,
+                        ),
+                    ],
+                    limit=1,
+                )
             if not team or not rec.date_from or not rec.date_to:
                 rec.team_total_target = 0.0
                 rec.team_total_achieved = 0.0
@@ -843,12 +896,18 @@ class CommissionQuarterlyBonus(models.Model):
             ).ids
             if rec.agent_id.id not in agent_ids:
                 agent_ids.append(rec.agent_id.id)
-            targets = self.env["crm.commission.target"].sudo().search([
-                ("target_scope", "=", "salesperson"),
-                ("agent_id", "in", agent_ids),
-                ("target_date", ">=", rec.date_from),
-                ("target_date", "<=", rec.date_to),
-            ])
+            targets = (
+                self.env["crm.commission.target"]
+                .sudo()
+                .search(
+                    [
+                        ("target_scope", "=", "salesperson"),
+                        ("agent_id", "in", agent_ids),
+                        ("target_date", ">=", rec.date_from),
+                        ("target_date", "<=", rec.date_to),
+                    ]
+                )
+            )
             rec.team_total_target = sum(targets.mapped("target_amount"))
             rec.team_total_achieved = sum(targets.mapped("achieved_amount"))
             rec.team_quarterly_pct = (
@@ -910,17 +969,23 @@ class CommissionQuarterlyBonus(models.Model):
             first_month = (int(quarter[1:]) - 1) * 3 + 1
             date_from = fields.Date.from_string(f"{year}-{first_month:02d}-01")
             date_to = date_from + relativedelta(months=3, days=-1)
-            targets = target_model.search([
-                ("target_scope", "=", "salesperson"),
-                ("agent_id", "=", agent_id),
-                ("target_date", ">=", date_from),
-                ("target_date", "<=", date_to),
-            ], order="target_date")
-            bonuses = self.search([
-                ("agent_id", "=", agent_id),
-                ("year", "=", year),
-                ("quarter", "=", quarter),
-            ], order="id")
+            targets = target_model.search(
+                [
+                    ("target_scope", "=", "salesperson"),
+                    ("agent_id", "=", agent_id),
+                    ("target_date", ">=", date_from),
+                    ("target_date", "<=", date_to),
+                ],
+                order="target_date",
+            )
+            bonuses = self.search(
+                [
+                    ("agent_id", "=", agent_id),
+                    ("year", "=", year),
+                    ("quarter", "=", quarter),
+                ],
+                order="id",
+            )
             bonus = bonuses[:1]
             duplicates = bonuses[1:]
             if duplicates and duplicates.filtered(
@@ -942,30 +1007,38 @@ class CommissionQuarterlyBonus(models.Model):
             if bonus:
                 bonus.write(values)
             else:
-                bonus = self.create({
-                    **values,
-                    "agent_id": agent_id,
-                    "year": year,
-                    "quarter": quarter,
-                    "auto_generated": True,
-                })
+                bonus = self.create(
+                    {
+                        **values,
+                        "agent_id": agent_id,
+                        "year": year,
+                        "quarter": quarter,
+                        "auto_generated": True,
+                    }
+                )
             bonus._finalize_if_closed()
 
     def _get_rate_for_performance(self, performance_pct):
         self.ensure_one()
         date_from = self.date_from or fields.Date.context_today(self)
         date_to = self.date_to or fields.Date.context_today(self)
-        policy = self.env["commission.policy"].sudo().search(
-            [
-                ("active", "=", True),
-                ("date_start", "<=", date_to),
-            ]
-            + expression.OR([
-                [("date_end", "=", False)],
-                [("date_end", ">=", date_from)],
-            ]),
-            order="date_start desc",
-            limit=1,
+        policy = (
+            self.env["commission.policy"]
+            .sudo()
+            .search(
+                [
+                    ("active", "=", True),
+                    ("date_start", "<=", date_to),
+                ]
+                + expression.OR(
+                    [
+                        [("date_end", "=", False)],
+                        [("date_end", ">=", date_from)],
+                    ]
+                ),
+                order="date_start desc",
+                limit=1,
+            )
         )
         if policy:
             line = self._select_rate_line(
@@ -998,15 +1071,27 @@ class CommissionQuarterlyBonus(models.Model):
 
     def _get_monthly_commission_base(self, target):
         self.ensure_one()
-        members = self.env["commission.member"].sudo().search([
-            ("partner_id", "=", target.agent_id.id),
-            ("member_type", "=", "orientadora"),
-        ])
-        sales = self.env["commission.sale"].sudo().search([
-            ("owner_member_id", "in", members.ids),
-            ("period_code", "=", target.target_date.strftime("%Y-%m")),
-            ("status", "in", ("confirmed", "invoiced")),
-        ])
+        members = (
+            self.env["commission.member"]
+            .sudo()
+            .search(
+                [
+                    ("partner_id", "=", target.agent_id.id),
+                    ("member_type", "=", "orientadora"),
+                ]
+            )
+        )
+        sales = (
+            self.env["commission.sale"]
+            .sudo()
+            .search(
+                [
+                    ("owner_member_id", "in", members.ids),
+                    ("period_code", "=", target.target_date.strftime("%Y-%m")),
+                    ("status", "in", ("confirmed", "invoiced")),
+                ]
+            )
+        )
         total = 0.0
         for sale in sales:
             if sale.is_lens_sale:

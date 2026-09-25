@@ -1,5 +1,6 @@
-1. Orientadoras access Odoo as internal users to manage leads and sales;
-   Doctors use the portal to view their linked opportunities.
+1. Orientadoras and SDRs access Odoo as internal users to manage their own
+   commissions and related records. Doctors use the portal to view their linked
+   opportunities.
 2. Register the monthly target for each Orientadora. The target date is
    normalized to the first day of the month, and duplicate salesperson/month
    targets are rejected.
@@ -27,3 +28,13 @@
    was reached for the coordinator's special prize.
 9. The special prize amount, type, and description are maintained manually
    because the policy defines no fixed prize formula.
+10. **Repasses > Dashboard** is available to Orientadoras and SDRs. It defaults
+    to the current month and accepts an inclusive custom date range. The range is
+    applied in the user's timezone to targets, settlements, opportunities,
+    orders, and quarterly bonuses. Performance settlements remain separate from
+    commission settlements. Confirmed orders are selected by the user's presence
+    as an agent on their
+    commission lines. Each order displays only that agent's commission, even when
+    other agents share the order. *Invoiced* and *Upselling Opportunity* orders
+    are grouped as invoiced; *To Invoice* and *Nothing to Invoice* orders are
+    grouped as not invoiced.

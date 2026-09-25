@@ -7,7 +7,7 @@
         name="Repasses"
         parent="crm.crm_menu_root"
         sequence="50"
-        groups="group_crm_commission_user,sales_team.group_sale_salesman"
+        groups="group_crm_commission_user,group_crm_commission_orientadora,group_crm_commission_sdr,sales_team.group_sale_salesman"
     />
     <record id="action_crm_commission_dashboard" model="ir.actions.act_url">
         <field name="name">Dashboard</field>
@@ -21,12 +21,11 @@
         action="action_crm_commission_dashboard"
         sequence="5"
     />
-    <!-- Keep the Dashboard menu in sync with the root: visible to the same
-         groups (CRM Commission User + Salesman). Command.set() replaces any
-         leftover group assignments that may exist in a database, so this stays
-         consistent across installs/upgrades. -->
+    <!-- Keep the Dashboard menu in sync with the root. Command.set() replaces
+         any leftover group assignments that may exist in a database, so this
+         stays consistent across installs and upgrades. -->
     <record id="menu_crm_commission_dashboard" model="ir.ui.menu">
-        <field name="groups_id" eval="[(6, 0, [ref('group_crm_commission_user'), ref('sales_team.group_sale_salesman')])]"/>
+        <field name="groups_id" eval="[(6, 0, [ref('group_crm_commission_user'), ref('group_crm_commission_orientadora'), ref('group_crm_commission_sdr'), ref('sales_team.group_sale_salesman')])]"/>
     </record>
     <menuitem
         id="menu_crm_commission_targets"

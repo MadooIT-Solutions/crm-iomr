@@ -15,9 +15,9 @@
 
         <!-- Record Rules -->
         <record id="rule_commission_member_orientadora_own" model="ir.rule">
-            <field name="name">Orientadora: see only own member record</field>
+            <field name="name">Orientadora/SDR: see only own member record</field>
             <field name="model_id" ref="model_commission_member"/>
-            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora')), (4, ref('crm_commissions.group_crm_commission_sdr'))]"/>
             <field name="domain_force">[('partner_id.user_ids', 'in', [user.id])]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -26,9 +26,9 @@
         </record>
 
         <record id="rule_commission_target_orientadora_own" model="ir.rule">
-            <field name="name">Orientadora: see only own targets</field>
+            <field name="name">Orientadora/SDR: see only own targets</field>
             <field name="model_id" ref="model_commission_target"/>
-            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora')), (4, ref('crm_commissions.group_crm_commission_sdr'))]"/>
             <field name="domain_force">[('member_id.partner_id.user_ids', 'in', [user.id])]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -37,9 +37,9 @@
         </record>
 
         <record id="rule_commission_sale_orientadora_own" model="ir.rule">
-            <field name="name">Orientadora: see only own sales</field>
+            <field name="name">Orientadora/SDR: see only own sales</field>
             <field name="model_id" ref="model_commission_sale"/>
-            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora')), (4, ref('crm_commissions.group_crm_commission_sdr'))]"/>
             <field name="domain_force">[('owner_member_id.partner_id.user_ids', 'in', [user.id])]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -48,9 +48,9 @@
         </record>
 
         <record id="rule_commission_sale_line_orientadora_own" model="ir.rule">
-            <field name="name">Orientadora: see only own sale detail lines</field>
+            <field name="name">Orientadora/SDR: see only own sale detail lines</field>
             <field name="model_id" ref="model_commission_sale_line"/>
-            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora')), (4, ref('crm_commissions.group_crm_commission_sdr'))]"/>
             <field name="domain_force">[('sale_id.owner_member_id.partner_id.user_ids', 'in', [user.id])]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -59,9 +59,9 @@
         </record>
 
         <record id="rule_commission_result_orientadora_own" model="ir.rule">
-            <field name="name">Orientadora: see only own results</field>
+            <field name="name">Orientadora/SDR: see only own results</field>
             <field name="model_id" ref="model_commission_result"/>
-            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora')), (4, ref('crm_commissions.group_crm_commission_sdr'))]"/>
             <field name="domain_force">[('member_id.partner_id.user_ids', 'in', [user.id])]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -70,9 +70,9 @@
         </record>
 
         <record id="rule_commission_recovery_orientadora_own" model="ir.rule">
-            <field name="name">Orientadora: see only own recovery</field>
+            <field name="name">Orientadora/SDR: see only own recovery</field>
             <field name="model_id" ref="model_commission_recovery"/>
-            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora'))]"/>
+            <field name="groups" eval="[(4, ref('crm_commissions.group_crm_commission_orientadora')), (4, ref('crm_commissions.group_crm_commission_sdr'))]"/>
             <field name="domain_force">[('member_id.partner_id.user_ids', 'in', [user.id])]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>

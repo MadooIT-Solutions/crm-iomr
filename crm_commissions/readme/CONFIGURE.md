@@ -20,3 +20,6 @@
    manual creation is required.
 9. The special prize has no monetary formula in the policy. After eligibility is
    confirmed, manually enter its amount, type, and description.
+10. Assign the *SDR* group from the user form to grant read-only access to
+    *Repasses*. The dashboard, monthly targets, quarterly bonuses, settlements,
+    and commission records remain restricted to the signed-in agent's own data.

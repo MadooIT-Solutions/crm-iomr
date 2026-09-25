@@ -16,6 +16,7 @@
         "portal",
         "account",
         "crm_iomr_auto",
+        "crm_iomr_sale",
         "sale_credit_card_fee",
     ],
     "website": "https://github.com/OCA/commission",

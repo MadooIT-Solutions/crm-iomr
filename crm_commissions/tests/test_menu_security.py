@@ -4,7 +4,7 @@
 from datetime import date
 
 from odoo.exceptions import AccessError
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import HttpCase, TransactionCase
 
 
 class TestRepassesMenuSecurity(TransactionCase):
@@ -15,6 +15,7 @@ class TestRepassesMenuSecurity(TransactionCase):
         cls.group_commission_user = cls.env.ref(
             "crm_commissions.group_crm_commission_user"
         )
+        cls.group_sdr = cls.env.ref("crm_commissions.group_crm_commission_sdr")
 
         cls.agent_own = cls.env["res.partner"].create(
             {
@@ -50,6 +51,24 @@ class TestRepassesMenuSecurity(TransactionCase):
             }
         )
         cls.internal_env = cls.env(user=cls.internal_user.id)
+
+        cls.sdr_partner = cls.env["res.partner"].create(
+            {
+                "name": "SDR Menu Test",
+                "type_partner": "sdr",
+                "agent": True,
+                "agent_type": "sdr",
+            }
+        )
+        cls.sdr_user = cls.env["res.users"].create(
+            {
+                "name": "SDR Menu Test",
+                "login": "sdr_menu_test",
+                "partner_id": cls.sdr_partner.id,
+                "groups_id": [(6, 0, [cls.group_sdr.id])],
+            }
+        )
+        cls.sdr_env = cls.env(user=cls.sdr_user.id)
 
         cls.target_own = cls.env["crm.commission.target"].create(
             {
@@ -93,6 +112,24 @@ class TestRepassesMenuSecurity(TransactionCase):
                 "date_to": date(2026, 1, 31),
             }
         )
+        cls.sdr_target_own = cls.env["crm.commission.target"].create(
+            {
+                "agent_id": cls.sdr_partner.id,
+                "target_date": date(2026, 2, 1),
+                "target_amount": 500.0,
+            }
+        )
+        cls.sdr_bonus_own = cls.env["crm.commission.quarterly.bonus"].search(
+            [("agent_id", "=", cls.sdr_partner.id)],
+            limit=1,
+        )
+        cls.sdr_settlement_own = cls.env["commission.settlement"].create(
+            {
+                "agent_id": cls.sdr_partner.id,
+                "date_from": date(2026, 2, 1),
+                "date_to": date(2026, 2, 28),
+            }
+        )
 
     def _visible_menu_ids(self, env):
         return set(env["ir.ui.menu"].search([]).ids)
@@ -109,25 +146,25 @@ class TestRepassesMenuSecurity(TransactionCase):
         self.assertIn(dashboard.id, visible)
 
     def test_02_internal_user_without_sales_does_not_see_root(self):
-        root = self.env.ref("crm_commissions.menu_crm_commission_root")
-        dashboard = self.env.ref("crm_commissions.menu_crm_commission_dashboard")
+        crm_root = self.env.ref("crm_commissions.menu_crm_commission_root")
+        crm_dashboard = self.env.ref("crm_commissions.menu_crm_commission_dashboard")
+        top_root = self.env.ref("crm_commissions.menu_commission_root")
+        top_dashboard = self.env.ref("crm_commissions.menu_commission_dashboard")
 
         visible = self._visible_menu_ids(self.internal_env)
-        self.assertNotIn(root.id, visible)
-        self.assertNotIn(dashboard.id, visible)
+        self.assertNotIn(crm_root.id, visible)
+        self.assertNotIn(crm_dashboard.id, visible)
+        self.assertNotIn(top_root.id, visible)
+        self.assertNotIn(top_dashboard.id, visible)
 
     def test_03_salesman_does_not_see_targets_menu(self):
         targets = self.env.ref("crm_commissions.menu_crm_commission_targets")
 
-        visible = self.salesman_env["ir.ui.menu"].search(
-            [("id", "=", targets.id)]
-        )
+        visible = self.salesman_env["ir.ui.menu"].search([("id", "=", targets.id)])
         self.assertFalse(visible)
 
     def test_04_salesman_can_read_own_dashboard_records(self):
-        target = self.salesman_env["crm.commission.target"].browse(
-            self.target_own.id
-        )
+        target = self.salesman_env["crm.commission.target"].browse(self.target_own.id)
         bonus = self.salesman_env["crm.commission.quarterly.bonus"].browse(
             self.bonus_own.id
         )
@@ -146,9 +183,7 @@ class TestRepassesMenuSecurity(TransactionCase):
         settlement.check_access("read")
 
     def test_05_salesman_cannot_read_other_agent_dashboard_records(self):
-        target = self.salesman_env["crm.commission.target"].browse(
-            self.target_other.id
-        )
+        target = self.salesman_env["crm.commission.target"].browse(self.target_other.id)
         bonus = self.salesman_env["crm.commission.quarterly.bonus"].browse(
             self.bonus_other.id
         )
@@ -162,3 +197,83 @@ class TestRepassesMenuSecurity(TransactionCase):
             bonus.check_access("read")
         with self.assertRaises(AccessError):
             settlement.check_access("read")
+
+    def test_06_sdr_sees_repasse_and_dashboard_menus(self):
+        crm_root = self.env.ref("crm_commissions.menu_crm_commission_root")
+        crm_dashboard = self.env.ref("crm_commissions.menu_crm_commission_dashboard")
+        top_root = self.env.ref("crm_commissions.menu_commission_root")
+        top_dashboard = self.env.ref("crm_commissions.menu_commission_dashboard")
+
+        self.assertIn(self.group_sdr, crm_root.groups_id)
+        self.assertIn(self.group_sdr, crm_dashboard.groups_id)
+        self.assertIn(self.group_sdr, top_root.groups_id)
+        self.assertIn(self.group_sdr, top_dashboard.groups_id)
+
+        visible = self._visible_menu_ids(self.sdr_env)
+        self.assertIn(crm_root.id, visible)
+        self.assertIn(crm_dashboard.id, visible)
+        self.assertIn(top_root.id, visible)
+        self.assertIn(top_dashboard.id, visible)
+
+    def test_07_sdr_is_authorized_for_dashboard(self):
+        from ..controllers.dashboard import _dashboard_user_allowed
+
+        self.assertTrue(_dashboard_user_allowed(self.sdr_env))
+
+    def test_08_sdr_can_read_own_dashboard_records(self):
+        target = self.sdr_env["crm.commission.target"].browse(self.sdr_target_own.id)
+        bonus = self.sdr_env["crm.commission.quarterly.bonus"].browse(
+            self.sdr_bonus_own.id
+        )
+        settlement = self.sdr_env["commission.settlement"].browse(
+            self.sdr_settlement_own.id
+        )
+
+        target.check_access("read")
+        bonus.check_access("read")
+        settlement.check_access("read")
+
+    def test_09_sdr_cannot_read_other_agent_dashboard_records(self):
+        target = self.sdr_env["crm.commission.target"].browse(self.target_other.id)
+        bonus = self.sdr_env["crm.commission.quarterly.bonus"].browse(
+            self.bonus_other.id
+        )
+        settlement = self.sdr_env["commission.settlement"].browse(
+            self.settlement_other.id
+        )
+
+        with self.assertRaises(AccessError):
+            target.check_access("read")
+        with self.assertRaises(AccessError):
+            bonus.check_access("read")
+        with self.assertRaises(AccessError):
+            settlement.check_access("read")
+
+class TestCommissionDashboardRoute(HttpCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.sdr_user = cls.env["res.users"].create(
+            {
+                "name": "SDR Dashboard Route Test",
+                "login": "sdr_dashboard_route_test",
+                "groups_id": [
+                    (
+                        6,
+                        0,
+                        [cls.env.ref("crm_commissions.group_crm_commission_sdr").id],
+                    )
+                ],
+            }
+        )
+
+    def test_01_sdr_can_open_and_render_dashboard(self):
+        self.authenticate(self.sdr_user.login, "dashboard-route-test")
+
+        response = self.url_open(
+            "/dashboard/commission?date_from=2026-02-01&date_to=2026-02-28"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Dashboard de Repasses", response.text)
+        self.assertIn(self.sdr_user.partner_id.name, response.text)

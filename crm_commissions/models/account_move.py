@@ -18,11 +18,17 @@ class AccountMoveLine(models.Model):
                     sale_agents = record.sale_line_ids[0].agent_ids
                     if sale_agents:
                         record.agent_ids = [
-                            (0, 0, {
-                                "agent_id": x.agent_id.id,
-                                "commission_id": x.commission_id.id,
-                                "commission_split_percent": x.commission_split_percent,
-                            })
+                            (
+                                0,
+                                0,
+                                {
+                                    "agent_id": x.agent_id.id,
+                                    "commission_id": x.commission_id.id,
+                                    "commission_split_percent": (
+                                        x.commission_split_percent
+                                    ),
+                                },
+                            )
                             for x in sale_agents
                         ]
                         continue
@@ -39,10 +45,12 @@ class AccountInvoiceLineAgent(models.Model):
         "object_id.commission_free",
         "object_id.quantity",
         "commission_id",
+        "commission_split_percent",
     )
     def _compute_amount(self):
-        super()._compute_amount()
+        result = super()._compute_amount()
         for line in self:
             line.amount = line.amount or 0.0
             if line.commission_split_percent:
                 line.amount *= line.commission_split_percent / 100.0
+        return result
