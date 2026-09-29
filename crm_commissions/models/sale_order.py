@@ -297,80 +297,90 @@ class SaleOrderLine(models.Model):
         for record in self:
             if record.order_id.partner_id and not record.commission_free:
                 is_excluded_categ = record._product_in_excluded_commission_categ()
+                if is_excluded_categ:
+                    # HONORARIO/PROCEDIMENTO: commission is owed exclusively
+                    # to the order's doctor. Customer agents, the
+                    # salesperson-as-agent and the SDR split are all dropped,
+                    # so this starts from an empty list rather than from the
+                    # customer's agents. The doctor still goes through
+                    # _apply_agent_category_rules so its per-category repasse
+                    # commission is applied.
+                    vals = record._add_medical_agents([])
+                    vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
+                    record.agent_ids = record._apply_agent_category_rules(
+                        vals, record.product_id
+                    )
+                    continue
                 vals = record._prepare_agents_vals_partner(
                     record.order_id.partner_id, settlement_type="sale_invoice"
                 )
-                if is_excluded_categ:
-                    vals = [
-                        v
-                        for v in vals
-                        if len(v) < 3
-                        or self.env["res.partner"]
-                        .browse(v[2].get("agent_id"))
-                        .type_partner
-                        not in ("orientadora", "sdr")
-                    ]
                 salesperson = record.order_id.user_id.partner_id
                 if (
                     salesperson
                     and salesperson.agent
                     and salesperson.salesman_as_agent
-                    and not (
-                        is_excluded_categ
-                        and salesperson.type_partner in ("orientadora", "sdr")
-                    )
                     and not any(
                         len(v) >= 3 and v[2].get("agent_id") == salesperson.id
                         for v in vals
                     )
                 ):
                     vals.append((0, 0, record._prepare_agent_vals(salesperson)))
-                if record.order_id.doctor_id:
-                    doctor = record.order_id.doctor_id
-                    if doctor.agent and doctor.commission_id:
-                        referring_doctors = record.order_id.referred_partner.filtered(
-                            lambda partner, doctor=doctor: (
-                                partner.agent
-                                and partner.commission_id
-                                and partner.id != doctor.id
-                            )
-                        )
-                        if referring_doctors:
-                            doctor_vals = record._prepare_agent_vals(doctor)
-                            doctor_vals["commission_split_percent"] = 50.0
-                            if not any(
-                                v[2].get("agent_id") == doctor.id
-                                for v in vals
-                                if len(v) >= 3
-                            ):
-                                vals.append((0, 0, doctor_vals))
-                            for ref_doc in referring_doctors:
-                                ref_vals = record._prepare_agent_vals(ref_doc)
-                                ref_vals["commission_split_percent"] = 50.0
-                                if not any(
-                                    v[2].get("agent_id") == ref_doc.id
-                                    for v in vals
-                                    if len(v) >= 3
-                                ):
-                                    vals.append((0, 0, ref_vals))
-                        else:
-                            doctor_already = any(
-                                v[2].get("agent_id") == doctor.id
-                                for v in vals
-                                if len(v) >= 3
-                            )
-                            if not doctor_already:
-                                vals.append((0, 0, record._prepare_agent_vals(doctor)))
+                vals = record._add_medical_agents(vals)
                 sdr_partner = (
                     record.order_id.opportunity_id
                     and record.order_id.opportunity_id._get_sdr_partner_from_rotation()
                 )
-                if sdr_partner and not is_excluded_categ:
+                if sdr_partner:
                     vals = record._apply_sdr_commission_split(vals, sdr_partner)
                 vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
                 record.agent_ids = record._add_coordinator_agents(
                     record._apply_agent_category_rules(vals, record.product_id)
                 )
+
+    def _add_medical_agents(self, vals):
+        """Add the order's doctor and its medical referrals to ``vals``.
+
+        This is the only path through which a doctor earns commission: the
+        order's ``doctor_id`` and the doctors referring to it. A doctor that
+        is merely one of the customer's agents never enters through here.
+
+        When the order has medical referrals, the doctor and each referring
+        doctor split the line 50/50; otherwise the doctor takes it all.
+        ``referred_partner`` only excludes convênios, so non-doctors are
+        filtered out by ``is_medical_agent``.
+        """
+        self.ensure_one()
+        doctor = self.order_id.doctor_id
+        if not doctor or not doctor.is_medical_agent():
+            return vals
+        if not (doctor.agent and doctor.commission_id):
+            return vals
+        vals = list(vals)
+        present = {v[2].get("agent_id") for v in vals if len(v) >= 3}
+        referring_doctors = self.order_id.referred_partner.filtered(
+            lambda partner, doctor=doctor: (
+                partner.is_medical_agent()
+                and partner.agent
+                and partner.commission_id
+                and partner.id != doctor.id
+            )
+        )
+        if referring_doctors:
+            if doctor.id not in present:
+                doctor_vals = self._prepare_agent_vals(doctor)
+                doctor_vals["commission_split_percent"] = 50.0
+                vals.append((0, 0, doctor_vals))
+                present.add(doctor.id)
+            for ref_doc in referring_doctors:
+                if ref_doc.id in present:
+                    continue
+                ref_vals = self._prepare_agent_vals(ref_doc)
+                ref_vals["commission_split_percent"] = 50.0
+                vals.append((0, 0, ref_vals))
+                present.add(ref_doc.id)
+        elif doctor.id not in present:
+            vals.append((0, 0, self._prepare_agent_vals(doctor)))
+        return vals
 
     def _get_coordinator_commission(self):
         commission = self.env.ref(
@@ -496,9 +506,9 @@ class SaleOrderLine(models.Model):
                 continue
             agent = self.env["res.partner"].browse(agent_id)
             if (
-                agent.type_partner in ("orientadora", "sdr")
-                and excluded_categ_ids
+                excluded_categ_ids
                 and any(cid in excluded_categ_ids for cid in categ_ids)
+                and not agent.is_medical_agent()
             ):
                 continue
             rule = self.env["commission.agent.rule"].search(

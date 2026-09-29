@@ -7,6 +7,8 @@ from odoo import api, fields, models
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
+    MEDICAL_AGENT_TYPES = ("doctorint", "doctorext")
+
     type_partner = fields.Selection(
         selection_add=[
             ("orientadora", "Orientadora"),
@@ -81,6 +83,15 @@ class ResPartner(models.Model):
         help="Se marcado, o médico pode visualizar todos os valores "
         "(Expectativa, Repasse e Valor) no portal.",
     )
+
+    def is_medical_agent(self):
+        """Whether this partner is a doctor.
+
+        Doctors are the only profile allowed to commission HONORARIO and
+        PROCEDIMENTO categories, and the only one that reaches those lines
+        through the order's ``doctor_id`` / ``referred_partner``.
+        """
+        return self.type_partner in self.MEDICAL_AGENT_TYPES
 
     @api.onchange("type_partner")
     def _onchange_type_partner(self):

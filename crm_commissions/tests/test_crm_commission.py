@@ -655,3 +655,216 @@ class TestCrmCommission(TransactionCase):
         self.assertEqual(agent.commission_id, comm)
         # base = 100 - 100*0.1173 - 100*0.025 = 85.77 ; 85.77 * 50% = 42.885
         self.assertAlmostEqual(agent.amount, 42.885)
+
+    def test_18_honorario_only_commissions_order_doctor(self):
+        """HONORARIO/PROCEDIMENTO lines must only commission the order's doctor.
+
+        Every other agent type used to leak: customer agents of any
+        type_partner, the salesperson-as-agent and non-doctor referrals.
+        """
+        comm = self.Commission.create(
+            {"name": "Fixa 1% Repasse", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        self.doctor.agent = True
+        self.doctor.agent_type = "doctor"
+        self.doctor.commission_id = comm.id
+        # Customer agents covering every non-medical type_partner.
+        others_agent = self.ResPartner.create(
+            {
+                "name": "Agente Outros",
+                "type_partner": "others",
+                "agent": True,
+                "agent_type": "agent",
+                "commission_id": comm.id,
+            }
+        )
+        self.coordenadora.commission_id = comm.id
+        self.sdr.commission_id = comm.id
+        self.orientadora.commission_id = comm.id
+        # A salesperson that is not an orientadora/sdr: used to leak.
+        vendedor = self.ResPartner.create(
+            {
+                "name": "Vendedor",
+                "type_partner": "employee",
+                "agent": True,
+                "agent_type": "agent",
+                "commission_id": comm.id,
+                "salesman_as_agent": True,
+            }
+        )
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "User Vendedor",
+                "login": "vendedor_honorario_test",
+                "partner_id": vendedor.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        # A non-doctor referral: referred_partner only excludes convenio.
+        indicador = self.ResPartner.create(
+            {
+                "name": "Indicador Nao Medico",
+                "type_partner": "employee",
+                "agent": True,
+                "agent_type": "agent",
+                "commission_id": comm.id,
+            }
+        )
+        cat_hon = self.env["product.category"].create({"name": "HONORARIO T18"})
+        prod_hon = self._create_product("Honorario T18", cat_hon)
+        customer = self.ResPartner.create(
+            {
+                "name": "Cliente Honorario T18",
+                "agent_ids": [
+                    (
+                        6,
+                        0,
+                        [
+                            others_agent.id,
+                            self.coordenadora.id,
+                            self.orientadora.id,
+                            self.sdr.id,
+                        ],
+                    )
+                ],
+            }
+        )
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "user_id": sales_user.id,
+                "doctor_id": self.doctor.id,
+                "referred_partner": [(6, 0, [indicador.id])],
+            }
+        )
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": prod_hon.id,
+                "product_uom_qty": 1,
+                "price_unit": 1000.0,
+            }
+        )
+        line._compute_agent_ids()
+
+        agents = line.agent_ids
+        self.assertEqual(
+            agents.mapped("agent_id"), self.doctor, "só o médico do pedido"
+        )
+        self.assertEqual(agents.commission_id, comm)
+        self.assertAlmostEqual(agents.amount, 10.0)
+
+    def test_19_honorario_keeps_medical_referral_split(self):
+        """Two medical parties on the order still split the honorário 50/50."""
+        comm = self.Commission.create(
+            {"name": "Fixa 1% T19", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        self.doctor.agent = True
+        self.doctor.agent_type = "doctor"
+        self.doctor.commission_id = comm.id
+        ref_doctor = self.ResPartner.create(
+            {
+                "name": "Dr Indicador",
+                "type_partner": "doctorext",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        cat_hon = self.env["product.category"].create({"name": "PROCEDIMENTO T19"})
+        prod_hon = self._create_product("Procedimento T19", cat_hon)
+        customer = self.ResPartner.create({"name": "Cliente T19"})
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "doctor_id": self.doctor.id,
+                "referred_partner": [(6, 0, [ref_doctor.id])],
+            }
+        )
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": prod_hon.id,
+                "product_uom_qty": 1,
+                "price_unit": 1000.0,
+            }
+        )
+        line._compute_agent_ids()
+
+        self.assertEqual(
+            line.agent_ids.mapped("agent_id"),
+            self.doctor + ref_doctor,
+        )
+        for agent in line.agent_ids:
+            self.assertEqual(agent.commission_split_percent, 50.0)
+            self.assertAlmostEqual(agent.amount, 5.0)
+
+    def test_20_honorario_applies_doctor_category_rule(self):
+        """The per-category repasse rule must still reach the doctor."""
+        repasse = self.Commission.create(
+            {
+                "name": "Repasse Cirurgia",
+                "commission_type": "fixed",
+                "fix_qty": 100.0,
+                "amount_base_type": "net_amount_deduction",
+                "tax_deduction_pct": 11.73,
+            }
+        )
+        self.doctor.agent = True
+        self.doctor.agent_type = "doctor"
+        self.doctor.commission_id = comm_default = self.Commission.create(
+            {"name": "Padrao T20", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        cat_hon = self.env["product.category"].create({"name": "HONORARIO T20"})
+        prod_hon = self._create_product("Cirurgia T20", cat_hon)
+        self.env["commission.agent.rule"].create(
+            {
+                "agent_id": self.doctor.id,
+                "commission_id": repasse.id,
+                "categ_ids": [(6, 0, [cat_hon.id])],
+                "sequence": 10,
+            }
+        )
+        customer = self.ResPartner.create({"name": "Cliente T20"})
+        line = self._create_doctor_sale_line(customer, prod_hon, self.doctor)
+        line.price_unit = 1000.0
+        line._compute_agent_ids()
+
+        agent = line.agent_ids.filtered(lambda a: a.agent_id == self.doctor)
+        self.assertEqual(len(agent), 1)
+        self.assertEqual(agent.commission_id, repasse)
+        self.assertNotEqual(agent.commission_id, comm_default)
+
+    def test_21_honorario_ignores_doctor_as_customer_agent(self):
+        """A doctor on the customer's agent_ids but not the order's
+        doctor_id must not commission the honorário."""
+        comm = self.Commission.create(
+            {"name": "Fixa 1% T21", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        other_doctor = self.ResPartner.create(
+            {
+                "name": "Dr Nao Indicado",
+                "type_partner": "doctorint",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        self.doctor.agent = True
+        self.doctor.agent_type = "doctor"
+        self.doctor.commission_id = comm.id
+        cat_hon = self.env["product.category"].create({"name": "HONORARIO T21"})
+        prod_hon = self._create_product("Honorario T21", cat_hon)
+        customer = self.ResPartner.create(
+            {
+                "name": "Cliente T21",
+                "agent_ids": [(6, 0, [other_doctor.id])],
+            }
+        )
+        line = self._create_doctor_sale_line(customer, prod_hon, self.doctor)
+        line.price_unit = 1000.0
+        line._compute_agent_ids()
+
+        self.assertEqual(line.agent_ids.mapped("agent_id"), self.doctor)
+        self.assertNotIn(other_doctor, line.agent_ids.mapped("agent_id"))
