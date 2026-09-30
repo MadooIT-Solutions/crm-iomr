@@ -57,17 +57,28 @@ class TestTargetTeam(TransactionCase):
             self.TeamMember.create({"crm_team_id": team.id, "user_id": user.id})
         return team
 
-    def _apply(self, team, target_date, amount):
+    def _apply(self, team, target_date, amount, split=False, mode=None):
+        """Cria a meta de equipe e aplica, confirmando o que houver em conflito.
+
+        Sem ``mode`` a confirmação é respondida com 'manter' para não travar o
+        teste; com 'substituir' ou 'manter' a escolha é exercitada.
+        """
         target = self.Target.create(
             {
                 "target_scope": "team",
                 "team_id": team.id,
                 "target_date": target_date,
                 "target_amount": amount,
+                "split_team_target": split,
             }
         )
-        target.action_apply_team()
-        return target
+        action = target.action_apply_team()
+        if action.get("res_model") == "crm.commission.target.team.apply":
+            wizard = self.env[action["res_model"]].browse(action["res_id"])
+            self.assertTrue(wizard.conflict_ids)
+            wizard.apply_mode = mode or "keep"
+            action = wizard.action_confirm()
+        return target, action
 
     def _targets_of(self, partners, target_date):
         return self.Target.search(
@@ -103,7 +114,41 @@ class TestTargetTeam(TransactionCase):
         # o registro temporário de equipe é removido
         self.assertFalse(self.Target.browse(target.id).exists())
 
-    def test_02_apply_team_skips_existing_and_keeps_them(self):
+    def test_02_apply_team_asks_before_touching_existing_targets(self):
+        """Com meta já existente a confirmação é exigida antes de aplicar."""
+        p1, u1 = self._make_user("Ori A", "ori_a_skip", "orientadora")
+        p2, u2 = self._make_user("Ori B", "ori_b_skip", "orientadora")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2026, 10, 1)
+        p1_target = self.Target.create(
+            {
+                "target_scope": "salesperson",
+                "agent_id": p1.id,
+                "target_date": target_date,
+                "target_amount": 3000.0,
+            }
+        )
+        target = self.Target.create(
+            {
+                "target_scope": "team",
+                "team_id": team.id,
+                "target_date": target_date,
+                "target_amount": 6000.0,
+            }
+        )
+
+        action = target.action_apply_team()
+
+        self.assertEqual(action["res_model"], "crm.commission.target.team.apply")
+        wizard = self.env[action["res_model"]].browse(action["res_id"])
+        self.assertEqual(wizard.conflict_ids, p1)
+        self.assertEqual(wizard.apply_mode, "keep")
+        # nada foi criado enquanto o usuário não decide
+        self.assertFalse(self._targets_of(p2, target_date))
+        self.assertEqual(p1_target.target_amount, 3000.0)
+        self.assertTrue(target.exists())
+
+    def test_02b_apply_team_keeps_existing_when_confirmed_to_keep(self):
         p1, u1 = self._make_user("Ori A", "ori_a_skip", "orientadora")
         p2, u2 = self._make_user("Ori B", "ori_b_skip", "orientadora")
         team = self._make_team([(p1, u1), (p2, u2)])
@@ -117,7 +162,7 @@ class TestTargetTeam(TransactionCase):
             }
         )
 
-        self._apply(team, target_date, 6000.0)
+        self._apply(team, target_date, 6000.0, mode="keep")
 
         created = self._targets_of(p1 + p2, target_date)
         self.assertEqual(len(created), 2)
@@ -126,6 +171,34 @@ class TestTargetTeam(TransactionCase):
         self.assertEqual(p1_target.target_amount, 3000.0)
         p2_target = created.filtered(lambda t: t.agent_id == p2)
         self.assertEqual(p2_target.target_amount, 6000.0)
+
+    def test_02c_apply_team_replaces_existing_when_confirmed_to_replace(self):
+        """Escolhendo 'substituir', a meta existente passa a ser a da equipe."""
+        p1, u1 = self._make_user("Ori A", "ori_a_repl", "orientadora")
+        p2, u2 = self._make_user("Ori B", "ori_b_repl", "orientadora")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2026, 10, 1)
+        old = self.Target.create(
+            {
+                "target_scope": "salesperson",
+                "agent_id": p1.id,
+                "target_date": target_date,
+                "target_amount": 3000.0,
+            }
+        )
+
+        self._apply(team, target_date, 6000.0, mode="replace")
+
+        created = self._targets_of(p1 + p2, target_date)
+        # substituído, não duplicado
+        self.assertEqual(len(created), 2)
+        replaced = created.filtered(lambda t: t.agent_id == p1)
+        self.assertEqual(replaced.id, old.id)
+        self.assertEqual(replaced.target_amount, 6000.0)
+        self.assertEqual(replaced.team_id, team)
+        self.assertEqual(
+            created.filtered(lambda t: t.agent_id == p2).target_amount, 6000.0
+        )
 
     def test_03_team_without_members_raises(self):
         team = self.Team.create({"name": "Equipe Vazia"})
@@ -210,8 +283,8 @@ class TestTargetTeam(TransactionCase):
             }
         )
 
-        # meta de equipe + aplicar
-        team_target = manager_env["crm.commission.target"].create(
+        # meta de equipe + aplicar (p1 já tem meta, então há confirmação)
+        manager_target = manager_env["crm.commission.target"].create(
             {
                 "target_scope": "team",
                 "team_id": team.id,
@@ -219,10 +292,22 @@ class TestTargetTeam(TransactionCase):
                 "target_amount": 5000.0,
             }
         )
-        team_target.action_apply_team()
+        action = manager_target.action_apply_team()
+
+        self.assertEqual(action["res_model"], "crm.commission.target.team.apply")
+        wizard = manager_env[action["res_model"]].browse(action["res_id"])
+        self.assertEqual(wizard.conflict_ids, p1)
+        wizard.action_confirm()
 
         created = self._targets_of(p1 + p2, target_date)
         self.assertEqual(len(created), 2)
+        # a meta individual de 1000 foi preservada e a equipe criou a de p2
+        self.assertEqual(
+            created.filtered(lambda t: t.agent_id == p1).target_amount, 1000.0
+        )
+        self.assertEqual(
+            created.filtered(lambda t: t.agent_id == p2).target_amount, 5000.0
+        )
 
     def test_08_commission_user_salesman_not_manager_still_blocked(self):
         """Usuário de comissão + vendedor (sem ser gestor) continua impedido de
@@ -358,8 +443,8 @@ class TestTargetTeam(TransactionCase):
         self.assertTrue(self._targets_of(active_p, target_date))
         self.assertFalse(self._targets_of(inactive_p, target_date))
 
-    def test_13_skipped_members_are_reported_to_the_user(self):
-        """Quem já tinha meta no mês é avisado, em vez de sumir em silêncio."""
+    def test_13_kept_members_are_reported_to_the_user(self):
+        """Quem teve a meta mantida é avisado, em vez de sumir em silêncio."""
         p1, u1 = self._make_user("Aviso A", "aviso_a", "orientadora")
         p2, u2 = self._make_user("Aviso B", "aviso_b", "orientadora")
         team = self._make_team([(p1, u1), (p2, u2)])
@@ -374,7 +459,7 @@ class TestTargetTeam(TransactionCase):
         )
 
         with patch.object(type(self.env.user), "_bus_send", autospec=True) as bus_send:
-            self._apply(team, target_date, 9000.0)
+            self._apply(team, target_date, 9000.0, mode="keep")
 
         self.assertEqual(bus_send.call_count, 1)
         notification = bus_send.call_args[0][2]
@@ -382,7 +467,7 @@ class TestTargetTeam(TransactionCase):
         self.assertNotIn(p2.name, notification["message"])
         self.assertEqual(notification["type"], "warning")
 
-    def test_14_no_notification_when_nothing_is_skipped(self):
+    def test_14_no_notification_when_nothing_is_kept(self):
         p1, u1 = self._make_user("Sem Aviso", "sem_aviso", "orientadora")
         team = self._make_team([(p1, u1)])
         target_date = date(2026, 12, 1)
@@ -391,3 +476,130 @@ class TestTargetTeam(TransactionCase):
             self._apply(team, target_date, 9000.0)
 
         bus_send.assert_not_called()
+
+    def test_15_split_flag_divides_equally_between_members(self):
+        p1, u1 = self._make_user("Split A", "split_a")
+        p2, u2 = self._make_user("Split B", "split_b")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2027, 1, 1)
+
+        self._apply(team, target_date, 10000.0, split=True)
+
+        created = self._targets_of(p1 + p2, target_date)
+        self.assertEqual(len(created), 2)
+        self.assertEqual(sorted(created.mapped("target_amount")), [5000.0, 5000.0])
+
+    def test_16_split_flag_keeps_whole_amount_when_not_checked(self):
+        p1, u1 = self._make_user("Sem Split A", "sem_split_a")
+        p2, u2 = self._make_user("Sem Split B", "sem_split_b")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2027, 1, 1)
+
+        self._apply(team, target_date, 10000.0, split=False)
+
+        created = self._targets_of(p1 + p2, target_date)
+        self.assertEqual(sorted(created.mapped("target_amount")), [10000.0, 10000.0])
+
+    def test_17_split_distributes_remainder_cents(self):
+        """1000 por 3 não fecha: a sobra vai para as primeiras, sem furar a soma."""
+        members = [
+            self._make_user("Resto A", "resto_a"),
+            self._make_user("Resto B", "resto_b"),
+            self._make_user("Resto C", "resto_c"),
+        ]
+        team = self._make_team(members)
+        target_date = date(2027, 1, 1)
+
+        self._apply(team, target_date, 1000.0, split=True)
+
+        created = self._targets_of(
+            self.Partner.browse([p.id for p, _u in members]), target_date
+        )
+        amounts = sorted(created.mapped("target_amount"))
+        self.assertEqual(amounts, [333.33, 333.33, 333.34])
+        self.assertAlmostEqual(sum(amounts), 1000.0, places=2)
+
+    def test_18_split_remainder_is_at_most_one_cent_each(self):
+        members = [
+            self._make_user(f"Cent {letter}", f"cent_{letter.lower()}")
+            for letter in "ABCDEFG"
+        ]
+        team = self._make_team(members)
+        target_date = date(2027, 1, 1)
+
+        self._apply(team, target_date, 1000000.0, split=True)
+
+        created = self._targets_of(
+            self.Partner.browse([p.id for p, _u in members]), target_date
+        )
+        amounts = created.mapped("target_amount")
+        self.assertEqual(len(amounts), 7)
+        self.assertAlmostEqual(sum(amounts), 1000000.0, places=2)
+        self.assertLessEqual(max(amounts) - min(amounts), 0.01)
+
+    def test_19_split_divides_only_among_who_receives_now(self):
+        """Mantendo a meta existente, o total é dividido entre as demais."""
+        p1, u1 = self._make_user("Div A", "div_a", "orientadora")
+        p2, u2 = self._make_user("Div B", "div_b", "orientadora")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2027, 1, 1)
+        self.Target.create(
+            {
+                "target_scope": "salesperson",
+                "agent_id": p1.id,
+                "target_date": target_date,
+                "target_amount": 1000.0,
+            }
+        )
+
+        self._apply(team, target_date, 9000.0, split=True, mode="keep")
+
+        created = self._targets_of(p1 + p2, target_date)
+        self.assertEqual(len(created), 2)
+        self.assertEqual(
+            created.filtered(lambda t: t.agent_id == p1).target_amount, 1000.0
+        )
+        self.assertEqual(
+            created.filtered(lambda t: t.agent_id == p2).target_amount, 9000.0
+        )
+
+    def test_20_split_replaces_existing_with_the_divided_amount(self):
+        """Substituindo, o total da equipe é dividido por todos os membros."""
+        p1, u1 = self._make_user("Rep A", "rep_a", "orientadora")
+        p2, u2 = self._make_user("Rep B", "rep_b", "orientadora")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2027, 1, 1)
+        self.Target.create(
+            {
+                "target_scope": "salesperson",
+                "agent_id": p1.id,
+                "target_date": target_date,
+                "target_amount": 1000.0,
+            }
+        )
+
+        self._apply(team, target_date, 9000.0, split=True, mode="replace")
+
+        created = self._targets_of(p1 + p2, target_date)
+        self.assertEqual(len(created), 2)
+        self.assertEqual(sorted(created.mapped("target_amount")), [4500.0, 4500.0])
+        self.assertAlmostEqual(sum(created.mapped("target_amount")), 9000.0, places=2)
+
+    def test_21_split_with_zero_amount_does_not_break(self):
+        p1, u1 = self._make_user("Zero A", "zero_a")
+        p2, u2 = self._make_user("Zero B", "zero_b")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2027, 1, 1)
+
+        self._apply(team, target_date, 0.0, split=True)
+
+        created = self._targets_of(p1 + p2, target_date)
+        self.assertEqual(len(created), 2)
+        self.assertEqual(sorted(created.mapped("target_amount")), [0.0, 0.0])
+
+    def test_22_split_flag_visible_only_for_team_scope(self):
+        arch = self.env["crm.commission.target"].get_view(
+            self.env.ref("crm_commissions.crm_commission_target_form").id, "form"
+        )["arch"]
+        self.assertIn('name="split_team_target"', arch)
+        self.assertIn("invisible=\"target_scope != 'team'\"", arch)

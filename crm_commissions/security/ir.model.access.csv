@@ -70,3 +70,6 @@ access_commission_sale_sdr,commission.sale.sdr,model_commission_sale,group_crm_c
 access_commission_sale_line_sdr,commission.sale.line.sdr,model_commission_sale_line,group_crm_commission_sdr,1,0,0,0
 access_commission_result_sdr,commission.result.sdr,model_commission_result,group_crm_commission_sdr,1,0,0,0
 access_commission_recovery_sdr,commission.recovery.sdr,model_commission_recovery,group_crm_commission_sdr,1,0,0,0
+access_crm_commission_target_team_apply_user,crm.commission.target.team.apply.user,model_crm_commission_target_team_apply,commission_oca.group_commission_user,1,1,1,1
+access_crm_commission_target_team_apply_manager,crm.commission.target.team.apply.manager,model_crm_commission_target_team_apply,commission_oca.group_commission_manager,1,1,1,1
+access_crm_commission_target_team_apply_sale_manager,crm.commission.target.team.apply.sale_manager,model_crm_commission_target_team_apply,sales_team.group_sale_manager,1,1,1,1

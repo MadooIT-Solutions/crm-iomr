@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.osv import expression
+from odoo.tools import float_round
 
 
 class Commission(models.Model):
@@ -181,6 +182,16 @@ class CommissionTarget(models.Model):
         string="Monthly target",
         currency_field="currency_id",
         required=True,
+        help="Valor individual da meta. No modo 'Equipe de Vendas' com "
+        "'Dividir meta para equipe' marcado, este valor é o total da equipe "
+        "e é dividido igualmente entre os membros.",
+    )
+    split_team_target = fields.Boolean(
+        string="Dividir meta para equipe",
+        default=False,
+        help="Divide igualmente o valor da meta entre os membros da equipe "
+        "ao clicar em 'Aplicar à Equipe'. Sem esta opção, cada membro recebe "
+        "o valor integral digitado.",
     )
     quarterly_target_amount = fields.Monetary(
         string="Quarterly target",
@@ -642,12 +653,36 @@ class CommissionTarget(models.Model):
             )
         )
 
-    def action_apply_team(self):
-        """Aplica a meta a todos os membros da equipe.
+    def _split_team_target_amount(self, partners):
+        """Reparte igualmente o valor da equipe entre as pessoas informadas.
 
-        Cria um crm.commission.target individual por pessoa da equipe com o
-        mesmo mês/valor/IS-CRM digitados (pulando quem já tem meta no mês) e
-        remove o registro temporário de equipe.
+        Quando o valor não fecha exatamente (1000 por 3, por exemplo), a sobra
+        de centavos é distribuída uma unidade por vez entre as primeiras
+        pessoas, para que a soma das metas individuais seja exatamente igual ao
+        valor digitado -- sem sobra e sem buraco na conciliação do trimestre.
+        """
+        self.ensure_one()
+        if not partners:
+            return {}
+        digits = self.currency_id.decimal_places
+        unit = 10**-digits
+        total = float_round(self.target_amount, precision_digits=digits)
+        share = float_round(total / len(partners), precision_digits=digits)
+        amounts = dict.fromkeys(partners.ids, share)
+        remainder = int(round((total - share * len(partners)) / unit))
+        if remainder:
+            step = unit if remainder > 0 else -unit
+            for partner in partners.sorted("id")[: abs(remainder)]:
+                amounts[partner.id] = float_round(
+                    amounts[partner.id] + step, precision_digits=digits
+                )
+        return amounts
+
+    def action_apply_team(self):
+        """Aplica a meta da equipe a todos os seus membros.
+
+        Quando alguém já possui meta no mês, a confirmação é pedida antes para
+        decidir entre substituir ou manter as metas existentes.
         """
         self.ensure_one()
         if self.target_scope != "team":
@@ -668,31 +703,86 @@ class CommissionTarget(models.Model):
                 ("agent_id", "in", partners.ids),
             ]
         )
-        existing_agent_ids = set(existing.mapped("agent_id.id"))
+        if existing and not self.env.context.get(
+            "crm_commissions_team_apply_confirmed"
+        ):
+            return self._action_confirm_team_apply(existing)
+        return self._apply_team_targets(partners, existing)
+
+    def _action_confirm_team_apply(self, existing):
+        """Abre a confirmação para decidir o que fazer com as metas existentes."""
+        self.ensure_one()
+        wizard = self.env["crm.commission.target.team.apply"].create(
+            {"target_id": self.id}
+        )
+        wizard.conflict_ids = existing.agent_id
+        return wizard.action_open_wizard()
+
+    def _apply_team_targets(self, partners, existing):
+        """Cria (ou sobrescreve) as metas individuais da equipe.
+
+        Com 'Dividir meta para equipe' o valor digitado é o total da equipe e
+        é repartido entre quem recebe a meta agora; sem ele, cada pessoa recebe
+        o valor integral. Quem já tinha meta no mês só é substituído quando o
+        usuário confirmar na tela de confirmação.
+        """
+        self.ensure_one()
+        replace_existing = (
+            self.env.context.get("crm_commissions_team_apply_confirmed") == "replace"
+        )
+        # Quem já tem meta individual no mês é quem o usuário pode querer
+        # manter ou substituir; o registro temporário da equipe não conta.
+        kept = existing.filtered(
+            lambda t: t.target_scope == "salesperson" and not replace_existing
+        )
+        # Quem recebe a meta agora: todos da equipe, menos quem teve a meta
+        # mantida. 'receiving' é quem ainda não tem registro no mês e por isso
+        # precisa de create -- os demais são re gravados, já que a constraint
+        # UNIQUE(agent_id, target_date) proíbe criar um segundo registro.
+        recipients = partners - kept.agent_id
+        receiving = recipients - existing.agent_id
+        overwritten = existing.filtered(lambda t: t.agent_id in recipients)
+
+        amounts = {}
+        if self.split_team_target:
+            amounts = self._split_team_target_amount(recipients)
+
+        overwritten.write(
+            {
+                "target_scope": "salesperson",
+                "team_id": self.team_id.id,
+                "target_date": self.target_date,
+                "is_crm_score": self.is_crm_score,
+                "currency_id": self.currency_id.id,
+            }
+        )
+        # a meta individual difere por pessoa, então vai uma a uma
+        for target in overwritten:
+            target.target_amount = amounts.get(target.agent_id.id, self.target_amount)
 
         created = self.env["crm.commission.target"]
-        for partner in partners:
-            if partner.id in existing_agent_ids:
-                continue
+        for partner in receiving:
             created |= self.env["crm.commission.target"].create(
                 {
                     "target_scope": "salesperson",
                     "agent_id": partner.id,
                     "team_id": self.team_id.id,
                     "target_date": self.target_date,
-                    "target_amount": self.target_amount,
+                    "target_amount": amounts.get(partner.id, self.target_amount),
                     "is_crm_score": self.is_crm_score,
                     "currency_id": self.currency_id.id,
                 }
             )
 
-        skipped = partners.filtered(lambda p: p.id in existing_agent_ids)
+        kept_partners = kept.agent_id
         target_date = self.target_date
         partner_ids = partners.ids
         self.unlink()
 
-        if skipped:
-            self._notify_skipped(skipped, len(created), target_date)
+        if kept_partners:
+            self._notify_kept(
+                kept_partners, len(created) + len(overwritten), target_date
+            )
 
         action = self.env["ir.actions.act_window"]._for_xml_id(
             "crm_commissions.action_crm_commission_target"
@@ -703,15 +793,15 @@ class CommissionTarget(models.Model):
         ]
         return action
 
-    def _notify_skipped(self, skipped, created_count, target_date):
-        """Avisa quem ficou de fora da aplicação da meta e por quê.
+    def _notify_kept(self, kept, created_count, target_date):
+        """Avisa quem ficou com a meta original e por quê.
 
         Sem isso o usuário não tem como perceber que a meta não alcançou todo
         mundo: o registro de equipe é removido e nada mais explica o silêncio.
         """
         self.ensure_one()
         month = fields.Date.to_string(target_date)
-        names = ", ".join(skipped.sorted(lambda p: p.display_name).mapped("name"))
+        names = ", ".join(kept.sorted(lambda p: p.display_name).mapped("name"))
         self.env.user._bus_send(
             "simple_notification",
             {

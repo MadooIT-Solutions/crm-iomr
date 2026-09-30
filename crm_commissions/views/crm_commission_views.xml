@@ -52,6 +52,10 @@
                         </group>
                         <group>
                             <field name="target_amount" widget="monetary" />
+                            <field
+                                name="split_team_target"
+                                invisible="target_scope != 'team'"
+                            />
                             <field name="achieved_amount" widget="monetary" />
                             <field name="quarterly_target_amount" widget="monetary" />
                         </group>
@@ -68,6 +72,42 @@
                         </group>
                     </group>
                 </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="crm_commission_target_team_apply_form" model="ir.ui.view">
+        <field name="name">crm.commission.target.team.apply.form</field>
+        <field name="model">crm.commission.target.team.apply</field>
+        <field name="arch" type="xml">
+            <form string="Aplicar meta à equipe">
+                <field name="conflict_ids" invisible="1" />
+                <field name="currency_id" invisible="1" />
+                <field name="month" invisible="1" />
+                <field name="split_team_target" invisible="1" />
+                <div class="alert alert-warning" role="alert">
+                    <field name="conflict_names" nolabel="1" />
+                </div>
+                <group>
+                    <field name="target_id" invisible="1" />
+                    <field name="team_name" />
+                    <field name="team_amount" />
+                    <field name="apply_mode" widget="radio" />
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        string="Aplicar"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button
+                        name="action_cancel"
+                        string="Cancelar"
+                        type="object"
+                        class="btn-secondary"
+                    />
+                </footer>
             </form>
         </field>
     </record>
