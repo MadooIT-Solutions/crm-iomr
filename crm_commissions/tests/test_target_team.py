@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from datetime import date
+from unittest.mock import patch
 
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests.common import TransactionCase
@@ -9,7 +10,7 @@ from odoo.tests.common import TransactionCase
 
 class TestTargetTeam(TransactionCase):
     """Metas Mensais: modo 'Equipe de Vendas' aplica a mesma meta a todos os
-    vendedores (orientadoras) da equipe selecionada."""
+    membros da equipe selecionada."""
 
     @classmethod
     def setUpClass(cls):
@@ -18,25 +19,32 @@ class TestTargetTeam(TransactionCase):
         cls.Partner = cls.env["res.partner"]
         cls.Team = cls.env["crm.team"]
         cls.TeamMember = cls.env["crm.team.member"]
+        cls.Member = cls.env["commission.member"]
         cls.User = cls.env["res.users"]
 
-    def _make_orientadora(self, name, login):
-        partner = self.Partner.create(
-            {
-                "name": name,
-                "type_partner": "orientadora",
-                "agent": True,
-                "agent_type": "orientadora",
-            }
-        )
+    def _make_user(self, name, login, type_partner=False):
+        """Contato + usuário, como os usuários do CRM são cadastrados de fato.
+
+        ``type_partner`` fica vazio por padrão de propósito: nos dados reais
+        quase nenhum contato tem o perfil 'Orientadora' preenchido, e era
+        exatamente esse o bug da meta de equipe.
+        """
+        values = {"name": name}
+        if type_partner:
+            values.update(
+                {
+                    "type_partner": type_partner,
+                    "agent": True,
+                    "agent_type": type_partner,
+                }
+            )
+        partner = self.Partner.create(values)
         user = self.User.create(
             {
                 "name": name,
                 "login": login,
                 "partner_id": partner.id,
-                "groups_id": [
-                    (6, 0, [self.env.ref("base.group_user").id])
-                ],
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
             }
         )
         return partner, user
@@ -44,33 +52,49 @@ class TestTargetTeam(TransactionCase):
     def _make_team(self, partners_users):
         team = self.Team.create({"name": "Equipe Teste Metas"})
         for _partner, user in partners_users:
-            self.TeamMember.create(
-                {"crm_team_id": team.id, "user_id": user.id}
-            )
+            if not user:
+                continue
+            self.TeamMember.create({"crm_team_id": team.id, "user_id": user.id})
         return team
 
-    def test_01_apply_team_creates_one_target_per_orientadora(self):
-        p1, u1 = self._make_orientadora("Ori A", "ori_a_teste")
-        p2, u2 = self._make_orientadora("Ori B", "ori_b_teste")
+    def _apply(self, team, target_date, amount):
+        target = self.Target.create(
+            {
+                "target_scope": "team",
+                "team_id": team.id,
+                "target_date": target_date,
+                "target_amount": amount,
+            }
+        )
+        target.action_apply_team()
+        return target
+
+    def _targets_of(self, partners, target_date):
+        return self.Target.search(
+            [
+                ("target_scope", "=", "salesperson"),
+                ("target_date", "=", target_date),
+                ("agent_id", "in", partners.ids),
+            ]
+        )
+
+    def test_01_apply_team_creates_one_target_per_member(self):
+        p1, u1 = self._make_user("Ori A", "ori_a_teste", "orientadora")
+        p2, u2 = self._make_user("Ori B", "ori_b_teste", "orientadora")
         team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2026, 9, 1)
 
         target = self.Target.create(
             {
                 "target_scope": "team",
                 "team_id": team.id,
-                "target_date": date(2026, 9, 1),
+                "target_date": target_date,
                 "target_amount": 5000.0,
             }
         )
         target.action_apply_team()
 
-        created = self.Target.search(
-            [
-                ("target_scope", "=", "salesperson"),
-                ("target_date", "=", date(2026, 9, 1)),
-                ("agent_id", "in", (p1 + p2).ids),
-            ]
-        )
+        created = self._targets_of(p1 + p2, target_date)
         self.assertEqual(len(created), 2)
         self.assertEqual(set(created.mapped("agent_id.id")), {p1.id, p2.id})
         for rec in created:
@@ -80,34 +104,22 @@ class TestTargetTeam(TransactionCase):
         self.assertFalse(self.Target.browse(target.id).exists())
 
     def test_02_apply_team_skips_existing_and_keeps_them(self):
-        p1, u1 = self._make_orientadora("Ori A", "ori_a_skip")
-        p2, u2 = self._make_orientadora("Ori B", "ori_b_skip")
+        p1, u1 = self._make_user("Ori A", "ori_a_skip", "orientadora")
+        p2, u2 = self._make_user("Ori B", "ori_b_skip", "orientadora")
         team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2026, 10, 1)
         self.Target.create(
             {
                 "target_scope": "salesperson",
                 "agent_id": p1.id,
-                "target_date": date(2026, 10, 1),
+                "target_date": target_date,
                 "target_amount": 3000.0,
             }
         )
-        target = self.Target.create(
-            {
-                "target_scope": "team",
-                "team_id": team.id,
-                "target_date": date(2026, 10, 1),
-                "target_amount": 6000.0,
-            }
-        )
-        target.action_apply_team()
 
-        created = self.Target.search(
-            [
-                ("target_scope", "=", "salesperson"),
-                ("target_date", "=", date(2026, 10, 1)),
-                ("agent_id", "in", (p1 + p2).ids),
-            ]
-        )
+        self._apply(team, target_date, 6000.0)
+
+        created = self._targets_of(p1 + p2, target_date)
         self.assertEqual(len(created), 2)
         # o alvo já existente do p1 não é sobrescrito/duplicado
         p1_target = created.filtered(lambda t: t.agent_id == p1)
@@ -115,24 +127,14 @@ class TestTargetTeam(TransactionCase):
         p2_target = created.filtered(lambda t: t.agent_id == p2)
         self.assertEqual(p2_target.target_amount, 6000.0)
 
-    def test_03_team_without_orientadoras_raises(self):
-        partner = self.Partner.create({"name": "Colaborador"})
-        user = self.User.create(
-            {
-                "name": "Colaborador",
-                "login": "colab_teste",
-                "partner_id": partner.id,
-                "groups_id": [
-                    (6, 0, [self.env.ref("base.group_user").id])
-                ],
-            }
-        )
-        team = self._make_team([(partner, user)])
+    def test_03_team_without_members_raises(self):
+        team = self.Team.create({"name": "Equipe Vazia"})
+        target_date = date(2026, 11, 1)
         target = self.Target.create(
             {
                 "target_scope": "team",
                 "team_id": team.id,
-                "target_date": date(2026, 11, 1),
+                "target_date": target_date,
                 "target_amount": 2000.0,
             }
         )
@@ -160,7 +162,7 @@ class TestTargetTeam(TransactionCase):
             )
 
     def test_06_individual_scope_still_works(self):
-        partner, _user = self._make_orientadora("Ori Individual", "ori_ind")
+        partner, _user = self._make_user("Ori Individual", "ori_ind")
         target = self.Target.create(
             {
                 "target_scope": "salesperson",
@@ -175,9 +177,10 @@ class TestTargetTeam(TransactionCase):
     def test_07_manager_in_sales_group_can_create_for_others(self):
         """Gestor que também é vendedor (ex.: Rodrigo) pode criar metas para
         outras orientadoras e aplicar metas de equipe (regra manager all)."""
-        p1, u1 = self._make_orientadora("Ori M1", "ori_m1")
-        p2, u2 = self._make_orientadora("Ori M2", "ori_m2")
+        p1, u1 = self._make_user("Ori M1", "ori_m1", "orientadora")
+        p2, u2 = self._make_user("Ori M2", "ori_m2", "orientadora")
         team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2026, 9, 1)
 
         manager = self.User.create(
             {
@@ -188,9 +191,7 @@ class TestTargetTeam(TransactionCase):
                         6,
                         0,
                         [
-                            self.env.ref(
-                                "commission_oca.group_commission_manager"
-                            ).id,
+                            self.env.ref("commission_oca.group_commission_manager").id,
                             self.env.ref("sales_team.group_sale_salesman").id,
                         ],
                     ),
@@ -200,40 +201,33 @@ class TestTargetTeam(TransactionCase):
         manager_env = self.env(user=manager.id)
 
         # meta individual para outra orientadora
-        ind = manager_env["crm.commission.target"].create(
+        manager_env["crm.commission.target"].create(
             {
                 "target_scope": "salesperson",
                 "agent_id": p1.id,
-                "target_date": date(2026, 9, 1),
+                "target_date": target_date,
                 "target_amount": 1000.0,
             }
         )
-        self.assertTrue(ind)
 
         # meta de equipe + aplicar
         team_target = manager_env["crm.commission.target"].create(
             {
                 "target_scope": "team",
                 "team_id": team.id,
-                "target_date": date(2026, 9, 1),
+                "target_date": target_date,
                 "target_amount": 5000.0,
             }
         )
         team_target.action_apply_team()
 
-        created = self.Target.search(
-            [
-                ("target_scope", "=", "salesperson"),
-                ("target_date", "=", date(2026, 9, 1)),
-                ("agent_id", "in", (p1 + p2).ids),
-            ]
-        )
+        created = self._targets_of(p1 + p2, target_date)
         self.assertEqual(len(created), 2)
 
     def test_08_commission_user_salesman_not_manager_still_blocked(self):
         """Usuário de comissão + vendedor (sem ser gestor) continua impedido de
         criar metas para outras orientadoras (regra own only)."""
-        p1, u1 = self._make_orientadora("Ori S1", "ori_s1")
+        p1, _u1 = self._make_user("Ori S1", "ori_s1", "orientadora")
 
         user = self.User.create(
             {
@@ -244,9 +238,7 @@ class TestTargetTeam(TransactionCase):
                         6,
                         0,
                         [
-                            self.env.ref(
-                                "commission_oca.group_commission_user"
-                            ).id,
+                            self.env.ref("commission_oca.group_commission_user").id,
                             self.env.ref("sales_team.group_sale_salesman").id,
                         ],
                     ),
@@ -263,3 +255,139 @@ class TestTargetTeam(TransactionCase):
                     "target_amount": 1000.0,
                 }
             )
+
+    def test_09_members_without_orientadora_profile_are_included(self):
+        """Regressão do bug reportado.
+
+        A equipe tem 4 pessoas e nenhuma tem o perfil 'Orientadora' no
+        contato. Antes, só quem tivesse o perfil exato entrava e a meta saía
+        para 2 pessoas (ou nenhuma); agora entra todo mundo da equipe.
+        """
+        members = [
+            self._make_user("Sem Perfil A", "sem_perfil_a"),
+            self._make_user("Sem Perfil B", "sem_perfil_b"),
+            self._make_user("Sem Perfil C", "sem_perfil_c"),
+            self._make_user("Sem Perfil D", "sem_perfil_d"),
+        ]
+        team = self._make_team(members)
+        target_date = date(2026, 12, 1)
+
+        self._apply(team, target_date, 7000.0)
+
+        created = self._targets_of(
+            self.Partner.browse([p.id for p, _u in members]), target_date
+        )
+        self.assertEqual(len(created), 4)
+        self.assertEqual(
+            set(created.mapped("agent_id.id")), {p.id for p, _u in members}
+        )
+
+    def test_10_sdr_and_coordenadora_are_included(self):
+        """SDR e coordenadora também recebem a meta da equipe."""
+        members = [
+            self._make_user("SDR Teste", "sdr_meta_teste", "sdr"),
+            self._make_user("Coordenadora Teste", "coord_meta_teste", "coordenadora"),
+        ]
+        team = self._make_team(members)
+        target_date = date(2026, 12, 1)
+
+        self._apply(team, target_date, 4000.0)
+
+        created = self._targets_of(
+            self.Partner.browse([p.id for p, _u in members]), target_date
+        )
+        self.assertEqual(len(created), 2)
+
+    def test_11_union_of_the_three_team_sources_without_duplicates(self):
+        """Equipe cadastrada em lugares diferentes deve gerar uma meta só."""
+        crm_p, crm_u = self._make_user("Fonte CRM", "fonte_crm")
+        member_p, _member_u = self._make_user("Fonte Membro", "fonte_membro")
+        partner_p, _partner_u = self._make_user("Fonte Contato", "fonte_contato")
+        other_p, other_u = self._make_user("Outra Equipe", "outra_equipe")
+        team = self.Team.create({"name": "Equipe Multi Fonte"})
+        self.TeamMember.create({"crm_team_id": team.id, "user_id": crm_u.id})
+        # o mesmo contato também aparece no Membro de Comissão
+        self.Member.create(
+            {
+                "name": "Fonte CRM",
+                "member_type": "orientadora",
+                "partner_id": crm_p.id,
+                "team_id": team.id,
+            }
+        )
+        self.Member.create(
+            {
+                "name": "Fonte Membro",
+                "member_type": "orientadora",
+                "partner_id": member_p.id,
+                "team_id": team.id,
+            }
+        )
+        partner_p.crm_team_id = team
+        other_team = self.Team.create({"name": "Outra Equipe"})
+        self.TeamMember.create({"crm_team_id": other_team.id, "user_id": other_u.id})
+        target_date = date(2026, 12, 1)
+
+        self._apply(team, target_date, 2500.0)
+
+        created = self._targets_of(crm_p + member_p + partner_p, target_date)
+        self.assertEqual(len(created), 3)
+        # ninguém de outra equipe entrou
+        self.assertFalse(self._targets_of(other_p, target_date))
+        # a meta preserva a equipe em todos os registros
+        self.assertEqual(set(created.mapped("team_id.id")), {team.id})
+
+    def test_12_inactive_member_is_not_included(self):
+        active_p, active_u = self._make_user("Membro Ativo", "membro_ativo")
+        inactive_p, _inactive_u = self._make_user("Membro Inativo", "inativo_x")
+        team = self._make_team([(active_p, active_u)])
+        # só aparece na equipe via um Membro de Comissão arquivado
+        self.Member.create(
+            {
+                "name": "Membro Arquivado",
+                "member_type": "orientadora",
+                "partner_id": inactive_p.id,
+                "team_id": team.id,
+                "active": False,
+            }
+        )
+        target_date = date(2026, 12, 1)
+
+        self._apply(team, target_date, 1500.0)
+
+        self.assertTrue(self._targets_of(active_p, target_date))
+        self.assertFalse(self._targets_of(inactive_p, target_date))
+
+    def test_13_skipped_members_are_reported_to_the_user(self):
+        """Quem já tinha meta no mês é avisado, em vez de sumir em silêncio."""
+        p1, u1 = self._make_user("Aviso A", "aviso_a", "orientadora")
+        p2, u2 = self._make_user("Aviso B", "aviso_b", "orientadora")
+        team = self._make_team([(p1, u1), (p2, u2)])
+        target_date = date(2026, 12, 1)
+        self.Target.create(
+            {
+                "target_scope": "salesperson",
+                "agent_id": p1.id,
+                "target_date": target_date,
+                "target_amount": 1000.0,
+            }
+        )
+
+        with patch.object(type(self.env.user), "_bus_send", autospec=True) as bus_send:
+            self._apply(team, target_date, 9000.0)
+
+        self.assertEqual(bus_send.call_count, 1)
+        notification = bus_send.call_args[0][2]
+        self.assertIn(p1.name, notification["message"])
+        self.assertNotIn(p2.name, notification["message"])
+        self.assertEqual(notification["type"], "warning")
+
+    def test_14_no_notification_when_nothing_is_skipped(self):
+        p1, u1 = self._make_user("Sem Aviso", "sem_aviso", "orientadora")
+        team = self._make_team([(p1, u1)])
+        target_date = date(2026, 12, 1)
+
+        with patch.object(type(self.env.user), "_bus_send", autospec=True) as bus_send:
+            self._apply(team, target_date, 9000.0)
+
+        bus_send.assert_not_called()

@@ -31,7 +31,7 @@
                         string="Aplicar à Equipe"
                         type="object"
                         class="btn-primary"
-                        confirm="Criar a meta mensal para todos os vendedores (orientadoras) da equipe selecionada?"
+                        confirm="Criar a meta mensal para todos os membros da equipe selecionada?"
                         invisible="target_scope != 'team'"
                     />
                 </header>

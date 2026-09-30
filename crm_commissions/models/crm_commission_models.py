@@ -161,13 +161,15 @@ class CommissionTarget(models.Model):
         default="salesperson",
         required=True,
         help="Individual: meta para um/a vendedor(a) específico/a. "
-        "Equipe de Vendas: a meta é aplicada a todos os vendedores "
-        "(orientadoras) da equipe selecionada ao clicar em 'Aplicar à Equipe'.",
+        "Equipe de Vendas: a meta é aplicada a todos os membros da equipe "
+        "selecionada ao clicar em 'Aplicar à Equipe'.",
     )
     team_id = fields.Many2one(
         "crm.team",
         string="Equipe de Vendas",
-        help="Equipe cujos vendedores (orientadoras) receberão esta meta.",
+        help="Equipe cujos membros receberão esta meta. São considerados os "
+        "membros da equipe no CRM, os Membros de Comissão com esta equipe e "
+        "os contatos com 'Equipe de Vendas' preenchida.",
     )
     agent_id = fields.Many2one(
         "res.partner",
@@ -581,30 +583,83 @@ class CommissionTarget(models.Model):
                     _("Selecione a equipe de vendas para aplicar a meta coletiva.")
                 )
 
-    def _get_team_orientadora_partners(self):
-        """Vendedores(as) (orientadoras) que são membros da equipe."""
-        self.ensure_one()
-        users = self.team_id.crm_team_member_ids.user_id
-        return users.partner_id.filtered(lambda p: p.type_partner == "orientadora")
+    @api.model
+    def _get_team_member_partners(self, team):
+        """Contatos que pertencem à equipe de vendas informada.
+
+        A equipe pode estar cadastrada em três lugares e todos são usados no
+        dia a dia:
+
+        * ``crm.team.member`` -- membros da equipe nativa do CRM;
+        * ``commission.member.team_id`` -- membros do módulo de comissões;
+        * ``res.partner.crm_team_id`` -- equipe mantida no próprio contato.
+
+        Nenhuma das fontes é confiável sozinha: quem cadastrou a equipe em um
+        lugar não aparece nos outros. Por isso as três são unidas, sem filtro
+        de perfil, e o contato repetido é contado uma única vez.
+        """
+        if not team:
+            return self.env["res.partner"]
+        partners = team.crm_team_member_ids.user_id.partner_id
+        partners |= (
+            self.env["commission.member"]
+            .sudo()
+            .search([("team_id", "=", team.id), ("active", "=", True)])
+            .mapped("partner_id")
+        )
+        partners |= (
+            self.env["res.partner"]
+            .sudo()
+            .search([("crm_team_id", "=", team.id), ("active", "=", True)])
+        )
+        return partners
+
+    @api.model
+    def _get_team_of_partner(self, partner):
+        """Equipe de vendas do contato, procurando nas três fontes de cadastro.
+
+        Mesma ordem de precedência de ``_get_team_member_partners``: o contato,
+        o membro de comissão e por fim a equipe nativa do CRM.
+        """
+        if not partner:
+            return self.env["crm.team"]
+        if partner.crm_team_id:
+            return partner.crm_team_id
+        team = (
+            self.env["commission.member"]
+            .sudo()
+            .search([("partner_id", "=", partner.id)], limit=1)
+            .team_id
+        )
+        if team:
+            return team
+        return (
+            self.env["crm.team"]
+            .sudo()
+            .search(
+                [("crm_team_member_ids.user_id.partner_id", "=", partner.id)],
+                limit=1,
+            )
+        )
 
     def action_apply_team(self):
-        """Aplica a meta a todos os vendedores (orientadoras) da equipe.
+        """Aplica a meta a todos os membros da equipe.
 
-        Cria um crm.commission.target individual por orientadora da equipe com
-        os mesmos mês/valor/IS-CRM digitados (pulando quem já tem meta no mês)
-        e remove o registro temporário de equipe.
+        Cria um crm.commission.target individual por pessoa da equipe com o
+        mesmo mês/valor/IS-CRM digitados (pulando quem já tem meta no mês) e
+        remove o registro temporário de equipe.
         """
         self.ensure_one()
         if self.target_scope != "team":
             raise UserError(
                 _("Esta ação só se aplica a metas no modo 'Equipe de Vendas'.")
             )
-        partners = self._get_team_orientadora_partners()
+        partners = self._get_team_member_partners(self.team_id)
         if not partners:
             raise UserError(
                 _(
-                    "Nenhum/a vendedor(a) (orientadora) encontrado/a na equipe "
-                    "selecionada."
+                    "Nenhum membro encontrado na equipe selecionada. Verifique "
+                    "os membros em Vendas › Equipes e em Comissões › Membros."
                 )
             )
         existing = self.env["crm.commission.target"].search(
@@ -631,9 +686,13 @@ class CommissionTarget(models.Model):
                 }
             )
 
+        skipped = partners.filtered(lambda p: p.id in existing_agent_ids)
         target_date = self.target_date
         partner_ids = partners.ids
         self.unlink()
+
+        if skipped:
+            self._notify_skipped(skipped, len(created), target_date)
 
         action = self.env["ir.actions.act_window"]._for_xml_id(
             "crm_commissions.action_crm_commission_target"
@@ -643,6 +702,32 @@ class CommissionTarget(models.Model):
             ("target_date", "=", target_date),
         ]
         return action
+
+    def _notify_skipped(self, skipped, created_count, target_date):
+        """Avisa quem ficou de fora da aplicação da meta e por quê.
+
+        Sem isso o usuário não tem como perceber que a meta não alcançou todo
+        mundo: o registro de equipe é removido e nada mais explica o silêncio.
+        """
+        self.ensure_one()
+        month = fields.Date.to_string(target_date)
+        names = ", ".join(skipped.sorted(lambda p: p.display_name).mapped("name"))
+        self.env.user._bus_send(
+            "simple_notification",
+            {
+                "title": _("Meta aplicada à equipe"),
+                "message": _(
+                    "Meta de %(month)s criada para %(created)d pessoa(s) da "
+                    "equipe. Estas já possuiam meta em %(month)s e foram "
+                    "mantidas: %(names)s.",
+                    month=month,
+                    created=created_count,
+                    names=names,
+                ),
+                "type": "warning",
+                "sticky": True,
+            },
+        )
 
 
 class CommissionQuarterlyBonus(models.Model):
@@ -875,15 +960,8 @@ class CommissionQuarterlyBonus(models.Model):
         for rec in self:
             team = rec.team_id or rec.agent_id.crm_team_id
             if not team and rec.agent_id:
-                team = self.env["crm.team"].search(
-                    [
-                        (
-                            "crm_team_member_ids.user_id.partner_id",
-                            "=",
-                            rec.agent_id.id,
-                        ),
-                    ],
-                    limit=1,
+                team = self.env["crm.commission.target"]._get_team_of_partner(
+                    rec.agent_id
                 )
             if not team or not rec.date_from or not rec.date_to:
                 rec.team_total_target = 0.0
@@ -891,9 +969,9 @@ class CommissionQuarterlyBonus(models.Model):
                 rec.team_quarterly_pct = 0.0
                 rec.is_team_eligible = False
                 continue
-            agent_ids = team.crm_team_member_ids.user_id.partner_id.filtered(
-                lambda partner: partner.type_partner == "orientadora"
-            ).ids
+            agent_ids = (
+                self.env["crm.commission.target"]._get_team_member_partners(team).ids
+            )
             if rec.agent_id.id not in agent_ids:
                 agent_ids.append(rec.agent_id.id)
             targets = (
