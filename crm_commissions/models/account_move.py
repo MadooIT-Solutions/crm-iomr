@@ -46,6 +46,26 @@ class AccountMoveLine(models.Model):
 class AccountInvoiceLineAgent(models.Model):
     _inherit = "account.invoice.line.agent"
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        agents = super().create(vals_list)
+        agents._apply_medical_split_rule()
+        return agents
+
+    def write(self, vals):
+        result = super().write(vals)
+        if {"agent_id", "commission_split_percent"} & set(vals):
+            self._apply_medical_split_rule()
+        return result
+
+    def _can_change_split(self):
+        """A settled line is a closed accounting fact, it is never rewritten.
+
+        OCA raises "You can't modify a settled line" on it, so the medical
+        split rule leaves those alone and they are reported by the migration.
+        """
+        return not any(self.mapped("settled"))
+
     @api.depends(
         "object_id.price_subtotal",
         "object_id.commission_free",

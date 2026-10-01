@@ -93,6 +93,9 @@ class SaleOrder(models.Model):
             else self.env["res.partner"]
         )
         result = super().write(vals)
+        # Rules first: whatever the client sent along, the values of the agent
+        # lines are normalised before anything reads them.
+        self._apply_commission_agent_rules()
         if tracked_fields.intersection(vals):
             affected_agents = old_agents | self._get_crm_commission_agents()
             if affected_agents:
@@ -108,6 +111,41 @@ class SaleOrder(models.Model):
                 )
                 targets._refresh_from_sale_changes()
         return result
+
+    def _apply_commission_agent_rules(self):
+        """Re-apply the module rules to the agent lines of this order.
+
+        The agents themselves are left alone -- they are picked by the rules
+        of ``SaleOrderLine._compute_agent_ids`` or by hand on the form -- but
+        their split is not free: it comes from the order, so it is refreshed
+        on every save.
+        """
+        lines = self.order_line.filtered(lambda line: not line.display_type)
+        if lines:
+            lines.agent_ids._apply_medical_split_rule()
+
+    def _get_medical_commission_parties(self):
+        """Doctors sharing this order's commission: the doctor and the ones
+        that indicated the patient to them.
+
+        Empty when the order has no doctor able to commission, so callers can
+        treat a falsy result as "the medical rules do not apply here".
+        """
+        self.ensure_one()
+        doctor = self.doctor_id
+        if not doctor or not doctor.is_medical_agent():
+            return self.env["res.partner"]
+        if not (doctor.agent and doctor.commission_id):
+            return self.env["res.partner"]
+        referring_doctors = self.referred_partner.filtered(
+            lambda partner: (
+                partner.is_medical_agent()
+                and partner.agent
+                and partner.commission_id
+                and partner.id != doctor.id
+            )
+        )
+        return doctor | referring_doctors
 
     def unlink(self):
         old_agents = self._get_crm_commission_agents()
@@ -291,7 +329,17 @@ class SaleOrder(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    @api.depends("order_id.partner_id", "order_id.doctor_id", "order_id.user_id")
+    # ``referred_partner`` is the doctor that indicated the patient, the very
+    # field the 50/50 split is built on, and it was missing from this list:
+    # the web client only recomputes a stored computed field when one of its
+    # dependencies changes, so picking the indication on the order left the
+    # agents of the lines exactly as they were.
+    @api.depends(
+        "order_id.partner_id",
+        "order_id.user_id",
+        "order_id.doctor_id",
+        "order_id.referred_partner",
+    )
     def _compute_agent_ids(self):
         self.agent_ids = False
         for record in self:
@@ -342,6 +390,18 @@ class SaleOrderLine(models.Model):
                     record._apply_agent_category_rules(vals, record.product_id)
                 )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines.agent_ids._apply_medical_split_rule()
+        return lines
+
+    def write(self, vals):
+        result = super().write(vals)
+        if {"product_id", "commission_free", "order_id", "agent_ids"} & set(vals):
+            self.agent_ids._apply_medical_split_rule()
+        return result
+
     def _add_medical_agents(self, vals):
         """Add the order's doctor and its medical referrals to ``vals``.
 
@@ -349,42 +409,35 @@ class SaleOrderLine(models.Model):
         order's ``doctor_id`` and the doctors referring to it. A doctor that
         is merely one of the customer's agents never enters through here.
 
-        When the order has medical referrals, the doctor and each referring
-        doctor split the line 50/50; otherwise the doctor takes it all.
-        ``referred_partner`` only excludes convênios, so non-doctors are
-        filtered out by ``is_medical_agent``.
+        The medical parties of the line -- the order's doctor plus every
+        doctor that referred to it -- split it evenly, so the usual case of
+        a single indication is the 50/50 rule. The split is enforced on the
+        parties that are *already* on ``vals`` as well: a doctor that is also
+        one of the customer's agents arrives with the default 100%, and
+        skipping it used to pay both doctors the whole amount (or 150% when
+        only the order's doctor was already there).
         """
         self.ensure_one()
-        doctor = self.order_id.doctor_id
-        if not doctor or not doctor.is_medical_agent():
-            return vals
-        if not (doctor.agent and doctor.commission_id):
+        medical_parties = self.order_id._get_medical_commission_parties()
+        if not medical_parties:
             return vals
         vals = list(vals)
-        present = {v[2].get("agent_id") for v in vals if len(v) >= 3}
-        referring_doctors = self.order_id.referred_partner.filtered(
-            lambda partner, doctor=doctor: (
-                partner.is_medical_agent()
-                and partner.agent
-                and partner.commission_id
-                and partner.id != doctor.id
+        split_percent = 100.0 / len(medical_parties)
+        for party in medical_parties:
+            party_val = next(
+                (
+                    val
+                    for val in vals
+                    if len(val) >= 3 and val[2].get("agent_id") == party.id
+                ),
+                None,
             )
-        )
-        if referring_doctors:
-            if doctor.id not in present:
-                doctor_vals = self._prepare_agent_vals(doctor)
-                doctor_vals["commission_split_percent"] = 50.0
-                vals.append((0, 0, doctor_vals))
-                present.add(doctor.id)
-            for ref_doc in referring_doctors:
-                if ref_doc.id in present:
-                    continue
-                ref_vals = self._prepare_agent_vals(ref_doc)
-                ref_vals["commission_split_percent"] = 50.0
-                vals.append((0, 0, ref_vals))
-                present.add(ref_doc.id)
-        elif doctor.id not in present:
-            vals.append((0, 0, self._prepare_agent_vals(doctor)))
+            if party_val is not None:
+                party_val[2]["commission_split_percent"] = split_percent
+                continue
+            party_vals = self._prepare_agent_vals(party)
+            party_vals["commission_split_percent"] = split_percent
+            vals.append((0, 0, party_vals))
         return vals
 
     def _get_coordinator_commission(self):
@@ -580,6 +633,18 @@ class SaleOrderLine(models.Model):
 
 class SaleOrderLineAgent(models.Model):
     _inherit = "sale.order.line.agent"
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        agents = super().create(vals_list)
+        agents._apply_medical_split_rule()
+        return agents
+
+    def write(self, vals):
+        result = super().write(vals)
+        if {"agent_id", "commission_split_percent"} & set(vals):
+            self._apply_medical_split_rule()
+        return result
 
     @api.depends(
         "commission_id",

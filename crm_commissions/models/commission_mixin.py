@@ -50,6 +50,68 @@ class CommissionLineMixin(models.AbstractModel):
         default=100.0,
     )
 
+    def _get_source_sale_order(self):
+        """The sale order behind this commission line, when there is one.
+
+        A sale line carries it directly; an invoice line reaches it through
+        the sale lines the invoice was generated from.
+        """
+        self.ensure_one()
+        source_line = self.object_id
+        order = getattr(source_line, "order_id", False)
+        if order:
+            return order
+        sale_lines = getattr(source_line, "sale_line_ids", False)
+        return sale_lines[:1].order_id if sale_lines else False
+
+    def _can_change_split(self):
+        """Whether the split of this row may be rewritten.
+
+        An invoice line held by a settlement is a closed accounting fact --
+        OCA raises "You can't modify a settled line" on it -- so it is left
+        alone and reported instead of being silently changed.
+        """
+        return True
+
+    def _apply_medical_split_rule(self):
+        """Force the split between the order's doctor and the one that
+        indicated the patient.
+
+        ``commission_split_percent`` is a rule output and not a free value:
+        the order's doctor (``doctor_id``) and the doctors that referred to
+        them (``referred_partner``) share the line evenly, so the usual case
+        of a single indication is the 50/50 rule.
+
+        A row reaches its line from three directions -- rebuilt by
+        ``_compute_agent_ids``, copied from the customer's agents, or typed in
+        by hand on the form -- and each of them used to be able to leave the
+        two doctors on the 100% default, paying the whole amount twice. It
+        runs when the row is created, when it is written and when the order
+        is saved, and it is a no-op once the split already matches.
+        """
+        splits = {}
+        for agent_line in self:
+            order = agent_line._get_source_sale_order()
+            if not order:
+                continue
+            medical_parties = order._get_medical_commission_parties()
+            if len(medical_parties) < 2:
+                continue
+            splits[agent_line.object_id] = (
+                medical_parties,
+                100.0 / len(medical_parties),
+            )
+        for line, (medical_parties, split_percent) in splits.items():
+            to_fix = line.agent_ids.filtered(
+                lambda agent_line, parties=medical_parties, percent=split_percent: (
+                    agent_line.agent_id in parties
+                    and agent_line.commission_split_percent != percent
+                )
+            )
+            to_fix = to_fix.filtered(lambda agent_line: agent_line._can_change_split())
+            if to_fix:
+                to_fix.write({"commission_split_percent": split_percent})
+
     def _get_product_category_ids(self, product):
         categ_ids = set()
         categ = product.categ_id

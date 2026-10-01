@@ -29,6 +29,7 @@ class TestCrmCommission(TransactionCase):
         # Migration functions, exercised directly: the wrong state they fix
         # is built by hand, since the computes no longer produce it.
         cls.post_migration = _load_migration("18.0.2.0.0", "post-migrate.py")
+        cls.split_migration = _load_migration("18.0.2.1.0", "post-migrate.py")
 
         cls.orientadora = cls.ResPartner.create(
             {
@@ -1364,3 +1365,454 @@ class TestCrmCommission(TransactionCase):
         self.assertEqual(
             self.post_migration.clear_fee_product_flag(self.env, [fee_product.id]), 0
         )
+
+    # ------------------------------------------------------------------
+    # The split between the order's doctor and the doctor that indicated
+    # ------------------------------------------------------------------
+
+    def _medical_split_setup(self, suffix, in_customer_agents=False):
+        """A 1% commission, a doctor, the doctor that indicated and a product.
+
+        Returns ``(commission, doctor, referring_doctor, product)``. With
+        ``in_customer_agents`` the two doctors are also listed as agents of
+        the customer, which is how they reach the line *before* the medical
+        rules run.
+        """
+        comm = self.Commission.create(
+            {
+                "name": f"Fixa 1% {suffix}",
+                "commission_type": "fixed",
+                "fix_qty": 1.0,
+            }
+        )
+        doctor = self.ResPartner.create(
+            {
+                "name": f"Dr {suffix}",
+                "type_partner": "doctorint",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        referring_doctor = self.ResPartner.create(
+            {
+                "name": f"Dr Indicador {suffix}",
+                "type_partner": "doctorext",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        category = self.env["product.category"].create(
+            {"name": f"PROCEDIMENTO {suffix}"}
+        )
+        product = self._create_product(f"Procedimento {suffix}", category)
+        customer_vals = {"name": f"Cliente {suffix}"}
+        if in_customer_agents:
+            customer_vals["agent_ids"] = [
+                (6, 0, [doctor.id, referring_doctor.id]),
+            ]
+        customer = self.ResPartner.create(customer_vals)
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "doctor_id": doctor.id,
+                "referred_partner": [(6, 0, [referring_doctor.id])],
+            }
+        )
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product.id,
+                "product_uom_qty": 1,
+                "price_unit": 1000.0,
+            }
+        )
+        line._compute_agent_ids()
+        return comm, doctor, referring_doctor, product, order, line
+
+    def test_32_split_applies_when_the_doctors_are_customer_agents(self):
+        """Both doctors at 100% instead of the 50/50 rule.
+
+        The two doctors reach the line through the customer's agents, so
+        ``_add_medical_agents`` used to find them already there and skipped
+        them: each kept the default 100% and the whole amount was paid
+        twice.
+        """
+        comm, doctor, referring_doctor, _, _, line = self._medical_split_setup(
+            "T32", in_customer_agents=True
+        )
+        agents = line.agent_ids
+
+        self.assertEqual(agents.mapped("agent_id"), doctor + referring_doctor)
+        for agent in agents:
+            self.assertEqual(agent.commission_split_percent, 50.0)
+            self.assertAlmostEqual(agent.amount, 5.0)
+        # The whole amount is paid once, not twice.
+        self.assertAlmostEqual(sum(agents.mapped("amount")), 10.0)
+        self.assertEqual(agents.commission_id, comm)
+
+    def test_33_split_applies_to_the_order_doctor_already_present(self):
+        """Only the order's doctor arrives as a customer agent.
+
+        The used-to-be case paid 100% to the doctor and 50% to the
+        indicating one, 150% of the amount in total.
+        """
+        comm = self.Commission.create(
+            {"name": "Fixa 1% T33", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        doctor = self.ResPartner.create(
+            {
+                "name": "Dr T33",
+                "type_partner": "doctorint",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        referring_doctor = self.ResPartner.create(
+            {
+                "name": "Dr Indicador T33",
+                "type_partner": "doctorext",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        category = self.env["product.category"].create({"name": "PROCEDIMENTO T33"})
+        product = self._create_product("Procedimento T33", category)
+        customer = self.ResPartner.create(
+            {"name": "Cliente T33", "agent_ids": [(6, 0, [doctor.id])]}
+        )
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "doctor_id": doctor.id,
+                "referred_partner": [(6, 0, [referring_doctor.id])],
+            }
+        )
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product.id,
+                "product_uom_qty": 1,
+                "price_unit": 1000.0,
+            }
+        )
+        line._compute_agent_ids()
+
+        self.assertEqual(line.agent_ids.mapped("agent_id"), doctor + referring_doctor)
+        self.assertEqual(set(line.agent_ids.mapped("commission_split_percent")), {50.0})
+        self.assertAlmostEqual(sum(line.agent_ids.mapped("amount")), 10.0)
+
+    def test_34_referring_partner_recomputes_the_agents(self):
+        """Picking the indicating doctor on the order refreshes the line.
+
+        ``referred_partner`` was missing from ``_compute_agent_ids``'s
+        ``@api.depends``, so the web client never recomputed the agents when
+        it was picked: the doctor kept the whole amount and the indicating
+        one was never paid.
+        """
+        self.assertIn(
+            "order_id.referred_partner",
+            self.env["sale.order.line"]._compute_agent_ids._depends,
+            "o campo que monta o split precisa ser dependência do compute",
+        )
+
+        comm = self.Commission.create(
+            {"name": "Fixa 1% T34", "commission_type": "fixed", "fix_qty": 1.0}
+        )
+        doctor = self.ResPartner.create(
+            {
+                "name": "Dr T34",
+                "type_partner": "doctorint",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        referring_doctor = self.ResPartner.create(
+            {
+                "name": "Dr Indicador T34",
+                "type_partner": "doctorext",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        category = self.env["product.category"].create({"name": "PROCEDIMENTO T34"})
+        product = self._create_product("Procedimento T34", category)
+        order = self.env["sale.order"].create(
+            {"partner_id": self._customer("T34").id, "doctor_id": doctor.id}
+        )
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product.id,
+                "product_uom_qty": 1,
+                "price_unit": 1000.0,
+            }
+        )
+        self.assertEqual(line.agent_ids.mapped("commission_split_percent"), [100.0])
+
+        # The indication is picked on an order that already had its lines.
+        order.referred_partner = [(4, referring_doctor.id)]
+        self.env.flush_all()
+
+        self.assertEqual(line.agent_ids.mapped("agent_id"), doctor + referring_doctor)
+        self.assertEqual(set(line.agent_ids.mapped("commission_split_percent")), {50.0})
+
+    def _customer(self, suffix, **extra):
+        return self.ResPartner.create({"name": f"Cliente {suffix}", **extra})
+
+    def test_35_hand_added_agent_lines_get_the_split(self):
+        """Agent rows typed in by hand are normalised to the rule.
+
+        ``commission_split_percent`` is a rule output, not a free value, so
+        adding the two doctors on the line -- with the 100% default -- has to
+        end up on the 50/50 of the order's doctor and its indication.
+        """
+        comm, doctor, referring_doctor, _, order, line = self._medical_split_setup(
+            "T35"
+        )
+        # The agents built by the rules come out; the ones typed in by hand
+        # take their place, and the rule has to hold just the same.
+        line.agent_ids.unlink()
+        self.env["sale.order.line.agent"].create(
+            [
+                {"object_id": line.id, "agent_id": doctor.id, "commission_id": comm.id},
+                {
+                    "object_id": line.id,
+                    "agent_id": referring_doctor.id,
+                    "commission_id": comm.id,
+                },
+            ]
+        )
+        self.env.flush_all()
+
+        self.assertEqual(line.agent_ids.mapped("agent_id"), doctor + referring_doctor)
+        self.assertEqual(set(line.agent_ids.mapped("commission_split_percent")), {50.0})
+        self.assertAlmostEqual(sum(line.agent_ids.mapped("amount")), 10.0)
+
+        # ... and it is not a value that can be edited away either.
+        line.agent_ids.write({"commission_split_percent": 100.0})
+        self.env.flush_all()
+        self.assertEqual(set(line.agent_ids.mapped("commission_split_percent")), {50.0})
+
+        # A doctor that took no part in the order is left alone.
+        outsider = self.ResPartner.create(
+            {
+                "name": "Dr Sem Relacao T35",
+                "type_partner": "doctorext",
+                "agent": True,
+                "agent_type": "doctor",
+                "commission_id": comm.id,
+            }
+        )
+        env_agent = self.env["sale.order.line.agent"].create(
+            {"object_id": line.id, "agent_id": outsider.id, "commission_id": comm.id}
+        )
+        self.env.flush_all()
+        self.assertEqual(env_agent.commission_split_percent, 100.0)
+
+    def test_36_saving_the_order_normalises_the_split(self):
+        """Saving the order re-applies the rules to the stored agent lines.
+
+        A split left at 100% by an older version of the module, or by an
+        edit made before the indication was picked, is corrected on the next
+        save of the order.
+        """
+        comm, doctor, referring_doctor, _, order, line = self._medical_split_setup(
+            "T36"
+        )
+        # Straight through SQL: the point of the test is a split left at
+        # 100% by an older version of the module, which no write() call can
+        # reproduce because the rule already corrects it on the way in.
+        self.env.cr.execute(
+            "UPDATE sale_order_line_agent SET commission_split_percent = 100.0 "
+            "WHERE object_id = %s",
+            (line.id,),
+        )
+        line.invalidate_recordset(["agent_ids"])
+
+        order.write({"note": "salvo pelo usuário"})
+
+        self.assertEqual(set(line.agent_ids.mapped("commission_split_percent")), {50.0})
+        self.assertEqual(line.agent_ids.mapped("agent_id"), doctor + referring_doctor)
+
+    def test_37_invoice_agents_follow_the_medical_split(self):
+        """A fatura, onde o repasse é apurado, também fica 50/50.
+
+        A linha da fatura copia o split da linha de venda, e a linha escrita
+        à mão -- o caminho que o ``button_edit_agents`` do OCA abre -- é
+        normalizada pela mesma regra, com a ressalva de uma linha já
+        liquidada, que é fato contábil fechado.
+        """
+        comm, doctor, referring_doctor, _, order, line = self._medical_split_setup(
+            "T37"
+        )
+        invoice = self._create_invoice_with_line(
+            line.order_id.partner_id, line.product_id, 1000.0
+        )
+        invoice_line = invoice.invoice_line_ids.filtered(
+            lambda iline, product=line.product_id: iline.product_id == product
+        )
+        # É por ``sale_line_ids`` que a linha da fatura encontra o pedido e,
+        # com ele, a regra do split.
+        invoice_line.sale_line_ids = [(4, line.id)]
+        self.env.flush_all()
+        # A linha da fatura nasce das agentes da venda: já 50/50.
+        self.assertEqual(
+            set(invoice_line.agent_ids.mapped("commission_split_percent")), {50.0}
+        )
+
+        # Recomeça sem as agentes herdadas e monta-as à mão, com o 100% padrão.
+        invoice_line.agent_ids.unlink()
+        self.env["account.invoice.line.agent"].create(
+            [
+                {
+                    "object_id": invoice_line.id,
+                    "agent_id": doctor.id,
+                    "commission_id": comm.id,
+                },
+                {
+                    "object_id": invoice_line.id,
+                    "agent_id": referring_doctor.id,
+                    "commission_id": comm.id,
+                },
+            ]
+        )
+        self.env.flush_all()
+        agents = invoice_line.agent_ids
+        self.assertEqual(agents.mapped("agent_id"), doctor + referring_doctor)
+        self.assertEqual(set(agents.mapped("commission_split_percent")), {50.0})
+        # 1% de 1.000,00 = 10,00 para cada, e o total pago uma vez só.
+        self.assertAlmostEqual(sum(agents.mapped("amount")), 10.0)
+
+    def test_38_settled_invoice_line_is_left_alone(self):
+        """Uma linha já liquidada não é reescrita pela regra.
+
+        O OCA recusa a alteração ("You can't modify a settled line"), então
+        a regra precisa pular essas linhas em vez de estourar o salvamento.
+        """
+        comm, doctor, referring_doctor, _, order, line = self._medical_split_setup(
+            "T38"
+        )
+        invoice = self._create_invoice_with_line(
+            line.order_id.partner_id, line.product_id, 1000.0
+        )
+        invoice_line = invoice.invoice_line_ids.filtered(
+            lambda iline, product=line.product_id: iline.product_id == product
+        )
+        invoice_line.sale_line_ids = [(4, line.id)]
+        self.env.flush_all()
+        agent = invoice_line.agent_ids.filtered(lambda a: a.agent_id == doctor)
+        settlement = self.env["commission.settlement"].create(
+            {
+                "name": "Repasse T38",
+                "agent_id": doctor.id,
+                "date_from": "2026-01-01",
+                "date_to": "2026-12-31",
+                "state": "settled",
+                "settlement_type": "manual",
+            }
+        )
+        self.env["commission.settlement.line"].create(
+            {
+                "settlement_id": settlement.id,
+                "invoice_agent_line_id": agent.id,
+                "commission_id": agent.commission_id.id,
+                "date": "2026-06-01",
+            }
+        )
+        self.env.flush_all()
+        self.assertTrue(agent.settled, "premissa do teste")
+        self.assertFalse(agent._can_change_split())
+
+        # Nada estoura e a linha mantém o que tinha.
+        invoice.write({"invoice_date": invoice.invoice_date})
+        self.assertTrue(agent.exists())
+
+    def test_39_migration_repairs_the_stored_split(self):
+        """A migração corrige o que a versão anterior gravou.
+
+        As linhas de agente são armazenadas, então o split errado e o valor
+        derivado dele sobrevivem à atualização do módulo. O estado é montado
+        por SQL, pelo mesmo motivo de ``_insert_legacy_fee_agent``: nenhuma
+        escrita pelo ORM reproduz o que só o código antigo produzia.
+        """
+        comm, doctor, referring_doctor, _, order, line = self._medical_split_setup(
+            "T39"
+        )
+        # O flush vem antes do SQL: sem ele o cache ORM ainda tem o split
+        # certo pendente e o gravaria por cima do estado errado.
+        self.env.flush_all()
+        self.env.cr.execute(
+            """
+            UPDATE sale_order_line_agent
+               SET commission_split_percent = 100.0, amount = 10.0
+             WHERE object_id = %s
+            """,
+            (line.id,),
+        )
+        # O cache inteiro é limpo: um ``invalidate_recordset`` num recordset
+        # vazio não invalida nada e a leitura viria ainda com o split certo.
+        self.env.invalidate_all()
+
+        fixed, blocked = self.split_migration.repair_medical_split(
+            self.env, self.env["sale.order.line.agent"], line.ids
+        )
+        self.env.flush_all()
+
+        self.assertEqual(fixed, 2)
+        self.assertEqual(blocked, 0)
+        self.assertEqual(set(line.agent_ids.mapped("commission_split_percent")), {50.0})
+        # O valor derivado do split é corrigido junto com ele.
+        self.assertAlmostEqual(sum(line.agent_ids.mapped("amount")), 10.0)
+
+    def test_40_migration_skips_settled_invoice_lines(self):
+        """A migração conta e deixa de lado as linhas já liquidadas.
+
+        Reescrever uma linha liquidada estoura ("You can't modify a settled
+        line"), então a migração as conta para revisão manual em vez de
+        falhar no meio do upgrade.
+        """
+        comm, doctor, referring_doctor, _, order, line = self._medical_split_setup(
+            "T40"
+        )
+        invoice = self._create_invoice_with_line(
+            line.order_id.partner_id, line.product_id, 1000.0
+        )
+        invoice_line = invoice.invoice_line_ids.filtered(
+            lambda iline, product=line.product_id: iline.product_id == product
+        )
+        invoice_line.sale_line_ids = [(4, line.id)]
+        self.env.flush_all()
+        agent = invoice_line.agent_ids.filtered(lambda a: a.agent_id == doctor)
+        settlement = self.env["commission.settlement"].create(
+            {
+                "name": "Repasse T40",
+                "agent_id": doctor.id,
+                "date_from": "2026-01-01",
+                "date_to": "2026-12-31",
+                "state": "settled",
+                "settlement_type": "manual",
+            }
+        )
+        self.env["commission.settlement.line"].create(
+            {
+                "settlement_id": settlement.id,
+                "invoice_agent_line_id": agent.id,
+                "commission_id": agent.commission_id.id,
+                "date": "2026-06-01",
+            }
+        )
+        self.env.flush_all()
+
+        fixed, blocked = self.split_migration.repair_medical_split(
+            self.env, self.env["account.invoice.line.agent"], invoice_line.ids
+        )
+
+        self.assertEqual(fixed, 0)
+        self.assertEqual(blocked, 1)
+        self.assertTrue(agent.exists())
