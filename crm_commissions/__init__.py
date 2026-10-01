@@ -5,9 +5,21 @@ from . import wizard
 
 
 def _ensure_commission_manager_implication(env):
-    """Keep CRM managers aligned with the legacy commission manager group."""
-    crm_manager = env.ref("crm_commissions.group_crm_commission_manager")
-    commission_manager = env.ref("crm_commissions.group_commission_manager")
+    """Keep CRM managers aligned with the legacy commission manager group.
+
+    The CRM manager group no longer exists (it was dropped together with the
+    pre-OCA roles) and this hook runs on every install, so both refs must
+    tolerate its absence the same way ``res.users`` does. Resolving them
+    strictly made a fresh install of this module crash in post_init_hook.
+    """
+    crm_manager = env.ref(
+        "crm_commissions.group_crm_commission_manager", raise_if_not_found=False
+    )
+    commission_manager = env.ref(
+        "crm_commissions.group_commission_manager", raise_if_not_found=False
+    )
+    if not crm_manager or not commission_manager:
+        return
     if commission_manager not in crm_manager.implied_ids:
         crm_manager.write({"implied_ids": [(4, commission_manager.id)]})
 

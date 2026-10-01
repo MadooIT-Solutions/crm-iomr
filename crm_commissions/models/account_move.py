@@ -13,6 +13,12 @@ class AccountMoveLine(models.Model):
                 and record.move_id.move_type[:3] == "out"
                 and not record.commission_free
                 and record.product_id
+                # The card fee line is a cost, not a sale: it carries no
+                # sale_line_ids, so without this check it would fall
+                # through to the customer agents and pay the orientadora
+                # and the coordenadora on the fee that was discounted
+                # from their base.
+                and not record._is_card_fee_line()
             ):
                 if record.sale_line_ids:
                     sale_agents = record.sale_line_ids[0].agent_ids

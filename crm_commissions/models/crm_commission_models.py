@@ -32,7 +32,19 @@ class Commission(models.Model):
         help=(
             "Fixed percentage of taxes to deduct from the commission base "
             "before applying the commission rate (used with "
-            "'Net (Gross - Taxes - Card Fee)' base type)."
+            "'Net (Gross - Taxes - Card Fee)' base type). Only used when "
+            "'Deduct Line Taxes' is off, for products that carry no taxes."
+        ),
+    )
+    deduct_taxes = fields.Boolean(
+        string="Deduct Line Taxes",
+        default=False,
+        help=(
+            "Deduct from the commission base the taxes actually charged on "
+            "the line (price_total - price_subtotal), taken from the "
+            "product's own tax configuration. This follows the repasse rule "
+            "'[preço - impostos - taxa cartão]' and replaces the fixed "
+            "'Tax Deduction (%)'."
         ),
     )
     deduct_card_fee = fields.Boolean(

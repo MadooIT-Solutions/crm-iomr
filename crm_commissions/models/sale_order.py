@@ -296,6 +296,11 @@ class SaleOrderLine(models.Model):
         self.agent_ids = False
         for record in self:
             if record.order_id.partner_id and not record.commission_free:
+                # The card fee reaches the invoice, not the order line, so
+                # this is a safety net: if the fee ever shows up on a sale
+                # line it must not commission anyone either.
+                if record._is_card_fee_line():
+                    continue
                 is_excluded_categ = record._product_in_excluded_commission_categ()
                 if is_excluded_categ:
                     # HONORARIO/PROCEDIMENTO: commission is owed exclusively
