@@ -1,6 +1,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
@@ -34,7 +35,8 @@ class SaleOrder(models.Model):
         domain=[("type_partner", "!=", "convenio")],
     )
     nota_fiscal = fields.Char(
-        string="Nota fiscal", )
+        string="Nota fiscal",
+    )
 
     @api.onchange("opportunity_id")
     def _onchange_opportunity_id(self):
@@ -60,5 +62,12 @@ class SaleOrder(models.Model):
             if not rec.convenio:
                 raise UserError(
                     _("O campo Convênio é obrigatório para confirmar o pedido.")
+                )
+            if not rec.payment_method_ids:
+                raise UserError(
+                    _(
+                        "O campo Forma de Pagamento é obrigatório "
+                        "para confirmar o pedido."
+                    )
                 )
         return super().action_confirm()
