@@ -28,7 +28,7 @@ class CRMLead(models.Model):
         "res.partner",
         string="Convênio",
         domain=[("type_partner", "=", "convenio")],
-        tracking=True,
+        tracking=True, required=True
     )
     doctor = fields.Many2one(
         "res.partner",
@@ -38,7 +38,7 @@ class CRMLead(models.Model):
             ("type_partner", "=", "doctorext"),
             ("type_partner", "=", "doctorint"),
         ],
-        tracking=True,
+        tracking=True, required=True
     )
     procedure = fields.Char(string="Procedure", tracking=True)
     id_orc = fields.Integer(string="ID do Orçamento", tracking=True)
