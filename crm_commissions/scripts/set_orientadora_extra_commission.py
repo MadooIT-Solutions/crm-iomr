@@ -3,7 +3,7 @@
 
 """Aplica as regras de comissão das orientadoras por categoria:
 
-- Taxa de Sala, MAT/MED e COLA ORGANICA -> comissão fixa de 1%.
+- Taxa de Sala, MAT/MED, COLA ORGANICA e TAXA DE EQUIPAMENTO -> comissão fixa de 1%.
 - Comissão Progressiva LIOs -> somente para a categoria LIO (e subcategorias).
 
 Uso (odoo shell):
@@ -13,10 +13,17 @@ Uso (odoo shell):
 
 from odoo import SUPERUSER_ID, api
 
-FIXED_COMMISSION_NAME = "Comissão Fixa 1% (Taxa Sala / Mat-Med / Cola)"
+FIXED_COMMISSION_NAME = (
+    "Comissão Fixa 1% (Taxa Sala / Mat-Med / Cola / Taxa Equipamento)"
+)
 FIXED_COMMISSION_XMLID = "crm_commissions.commission_fixed_1pct_extras"
 PROGRESSIVE_XMLID = "crm_commissions.commission_progressive_lios"
-EXTRA_CATEGORIES = ["TAXA DE SALA", "MAT/MED", "COLA ORGANICA"]
+EXTRA_CATEGORIES = [
+    "TAXA DE SALA",
+    "MAT/MED",
+    "COLA ORGANICA",
+    "TAXA DE EQUIPAMENTO",
+]
 LIO_CATEGORY_NAME = "LIO"
 
 
@@ -27,8 +34,10 @@ def _get_category(env, name):
 def get_or_create_fixed_commission(env):
     fixed = env.ref(FIXED_COMMISSION_XMLID, raise_if_not_found=False)
     if not fixed:
+        # "Comissão Fixa 1% ..." cobre o nome atual e o antigo (noupdate=1
+        # preserva o nome original do registro já instalado).
         fixed = env["commission"].search(
-            [("name", "=", FIXED_COMMISSION_NAME)], limit=1
+            [("name", "ilike", "Comissão Fixa 1%")], limit=1
         )
     if not fixed:
         fixed = env["commission"].create(
@@ -55,9 +64,7 @@ def restrict_progressive_to_lio(env):
     """A progressão LIOs só vale para a categoria LIO e subcategorias."""
     prog = env.ref(PROGRESSIVE_XMLID, raise_if_not_found=False)
     if not prog:
-        prog = env["commission"].search(
-            [("name", "ilike", "Progressiva LIO")], limit=1
-        )
+        prog = env["commission"].search([("name", "ilike", "Progressiva LIO")], limit=1)
     lio = _get_category(env, LIO_CATEGORY_NAME)
     if not prog or not lio:
         return [prog, lio]
@@ -73,17 +80,13 @@ def apply_rules_for_orientadoras(env, fixed, extra_cats):
     extra_ids = set(extra_cats.ids)
     for partner in partners:
         rules = env["commission.agent.rule"].search([("agent_id", "=", partner.id)])
-        matching = rules.filtered(
-            lambda r: set(r.categ_ids.ids) & extra_ids
-        )
+        matching = rules.filtered(lambda r: set(r.categ_ids.ids) & extra_ids)
         if matching:
             rule = matching[0]
             rule.commission_id = fixed.id
             missing = extra_ids - set(rule.categ_ids.ids)
             if missing:
-                rule.categ_ids = [
-                    (6, 0, list(set(rule.categ_ids.ids) | extra_ids))
-                ]
+                rule.categ_ids = [(6, 0, list(set(rule.categ_ids.ids) | extra_ids))]
             updated += 1
         else:
             env["commission.agent.rule"].create(
@@ -112,9 +115,10 @@ def run(cr):
     env = api.Environment(cr, SUPERUSER_ID, {})
     fixed = get_or_create_fixed_commission(env)
     prog, lio_cats = restrict_progressive_to_lio(env)
-    extra_cats = env["product.category"].search(
-        [("name", "in", EXTRA_CATEGORIES)]
-    )
+    extra_cats = env["product.category"].search([("name", "in", EXTRA_CATEGORIES)])
+    missing = set(EXTRA_CATEGORIES) - set(extra_cats.mapped("name"))
+    if missing:
+        print(f"ATENÇÃO: categorias não encontradas: {sorted(missing)}")
     created, updated = apply_rules_for_orientadoras(env, fixed, extra_cats)
     recomputed = recompute_extra_category_lines(env, extra_cats)
     print(f"Comissão fixa: {fixed.id} - {fixed.name}")
