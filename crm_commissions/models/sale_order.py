@@ -1,7 +1,8 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 _SDR_COMMISSION_PCT = 25.0
 
@@ -79,6 +80,13 @@ class SaleOrder(models.Model):
         )
         targets._refresh_from_sale_changes()
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        orders = super().create(vals_list)
+        orders._apply_commission_agent_rules()
+        orders._check_commission_agents()
+        return orders
+
     def write(self, vals):
         tracked_fields = {
             "partner_id",
@@ -96,6 +104,7 @@ class SaleOrder(models.Model):
         # Rules first: whatever the client sent along, the values of the agent
         # lines are normalised before anything reads them.
         self._apply_commission_agent_rules()
+        self._check_commission_agents()
         if tracked_fields.intersection(vals):
             affected_agents = old_agents | self._get_crm_commission_agents()
             if affected_agents:
@@ -123,6 +132,67 @@ class SaleOrder(models.Model):
         lines = self.order_line.filtered(lambda line: not line.display_type)
         if lines:
             lines.agent_ids._apply_medical_split_rule()
+
+    def _get_commissionable_lines(self):
+        """Order lines the commission rules can build agents for.
+
+        Display lines (sections, notes) never carry a commission, so they are
+        left out of the completeness check.
+        """
+        return self.order_line.filtered(lambda line: not line.display_type)
+
+    def _check_commission_agents(self):
+        """Ensure every commission the rules owe is present on the order.
+
+        The agents are normally built by ``SaleOrderLine._compute_agent_ids``,
+        but ``agent_ids`` is an editable field: an import, an RPC call or a
+        hand edit can leave a line without the agents its rules dictate. Saving
+        is the last moment to catch that, before the missing commission
+        silently becomes an unpaid repasse.
+
+        A type only counts as owed when the line's product really has a rule
+        for it -- that is, when the very same rule engine that fills the field
+        would have paid it (see ``_get_rule_based_agent_vals``). Orders whose
+        rules produce no agent for a product are therefore never blocked.
+        """
+        for order in self:
+            if order.state == "cancel":
+                continue
+            missing = []
+            for line in order._get_commissionable_lines():
+                expected = line._get_expected_agent_partners()
+                present = line.agent_ids.agent_id
+                missing.extend((line, partner) for partner in expected - present)
+            if missing:
+                raise ValidationError(
+                    order._build_commission_validation_message(missing)
+                )
+
+    def _build_commission_validation_message(self, missing):
+        self.ensure_one()
+        details = []
+        for line, partner in missing:
+            product = line.product_id.display_name or _("Linha sem produto")
+            role = self._get_commission_role_label(partner)
+            details.append(f"- {product}: {partner.display_name} ({role})")
+        return _(
+            "Comissões incompletas no pedido {order}.\n"
+            "Corrija as comissões e salve novamente:\n{details}"
+        ).format(
+            order=self.display_name or self.name,
+            details="\n".join(details),
+        )
+
+    @api.model
+    def _get_commission_role_label(self, partner):
+        """Human label of a commission agent, for the validation message."""
+        if partner.type_partner in ("doctorint", "doctorext"):
+            return _("Médico(a)")
+        return {
+            "orientadora": _("Orientadora"),
+            "sdr": _("SDR"),
+            "coordenadora": _("Coordenadora"),
+        }.get(partner.type_partner, _("Agente"))
 
     def _get_medical_commission_parties(self):
         """Doctors sharing this order's commission: the doctor and the ones
@@ -341,54 +411,79 @@ class SaleOrderLine(models.Model):
         "order_id.referred_partner",
     )
     def _compute_agent_ids(self):
-        self.agent_ids = False
         for record in self:
-            if record.order_id.partner_id and not record.commission_free:
-                # The card fee reaches the invoice, not the order line, so
-                # this is a safety net: if the fee ever shows up on a sale
-                # line it must not commission anyone either.
-                if record._is_card_fee_line():
-                    continue
-                is_excluded_categ = record._product_in_excluded_commission_categ()
-                if is_excluded_categ:
-                    # HONORARIO/PROCEDIMENTO: commission is owed exclusively
-                    # to the order's doctor. Customer agents, the
-                    # salesperson-as-agent and the SDR split are all dropped,
-                    # so this starts from an empty list rather than from the
-                    # customer's agents. The doctor still goes through
-                    # _apply_agent_category_rules so its per-category repasse
-                    # commission is applied.
-                    vals = record._add_medical_agents([])
-                    vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
-                    record.agent_ids = record._apply_agent_category_rules(
-                        vals, record.product_id
-                    )
-                    continue
-                vals = record._prepare_agents_vals_partner(
-                    record.order_id.partner_id, settlement_type="sale_invoice"
-                )
-                salesperson = record.order_id.user_id.partner_id
-                if (
-                    salesperson
-                    and salesperson.agent
-                    and salesperson.salesman_as_agent
-                    and not any(
-                        len(v) >= 3 and v[2].get("agent_id") == salesperson.id
-                        for v in vals
-                    )
-                ):
-                    vals.append((0, 0, record._prepare_agent_vals(salesperson)))
-                vals = record._add_medical_agents(vals)
-                sdr_partner = (
-                    record.order_id.opportunity_id
-                    and record.order_id.opportunity_id._get_sdr_partner_from_rotation()
-                )
-                if sdr_partner:
-                    vals = record._apply_sdr_commission_split(vals, sdr_partner)
-                vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
-                record.agent_ids = record._add_coordinator_agents(
-                    record._apply_agent_category_rules(vals, record.product_id)
-                )
+            # Clear first: assigning ``(0, 0, ...)`` commands to a one2many
+            # *adds* to the current set, so without this the rules would keep
+            # stacking agents on every recompute (and hit the ``unique_agent``
+            # constraint).
+            record.agent_ids = False
+            record.agent_ids = record._get_rule_based_agent_vals()
+
+    def _get_rule_based_agent_vals(self):
+        """Agent values the commission rules assign to this line.
+
+        This is the single source of truth for both ``_compute_agent_ids`` and
+        the save-time completeness check (``SaleOrder._check_commission_agents``),
+        so the field and the validation can never disagree on which agents the
+        order owes.
+        """
+        self.ensure_one()
+        if not self.order_id.partner_id or self.commission_free:
+            return []
+        # The card fee reaches the invoice, not the order line, so this is a
+        # safety net: if the fee ever shows up on a sale line it must not
+        # commission anyone either.
+        if self._is_card_fee_line():
+            return []
+        if self._product_in_excluded_commission_categ():
+            # HONORARIO/PROCEDIMENTO: commission is owed exclusively to the
+            # order's doctor. Customer agents, the salesperson-as-agent and the
+            # SDR split are all dropped, so this starts from an empty list
+            # rather than from the customer's agents. The doctor still goes
+            # through _apply_agent_category_rules so its per-category repasse
+            # commission is applied.
+            vals = self._add_medical_agents([])
+            vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
+            return self._apply_agent_category_rules(vals, self.product_id)
+        vals = self._prepare_agents_vals_partner(
+            self.order_id.partner_id, settlement_type="sale_invoice"
+        )
+        salesperson = self.order_id.user_id.partner_id
+        if (
+            salesperson
+            and salesperson.agent
+            and salesperson.salesman_as_agent
+            and not any(
+                len(v) >= 3 and v[2].get("agent_id") == salesperson.id for v in vals
+            )
+        ):
+            vals.append((0, 0, self._prepare_agent_vals(salesperson)))
+        vals = self._add_medical_agents(vals)
+        sdr_partner = (
+            self.order_id.opportunity_id
+            and self.order_id.opportunity_id._get_sdr_partner()
+        )
+        if sdr_partner:
+            vals = self._apply_sdr_commission_split(vals, sdr_partner)
+        vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
+        return self._add_coordinator_agents(
+            self._apply_agent_category_rules(vals, self.product_id)
+        )
+
+    def _get_expected_agent_partners(self):
+        """Partners the commission rules assign to this line.
+
+        Used by the save-time completeness check to know which commissions
+        must be present on the stored ``agent_ids``.
+        """
+        self.ensure_one()
+        return self.env["res.partner"].browse(
+            [
+                val[2]["agent_id"]
+                for val in self._get_rule_based_agent_vals()
+                if len(val) >= 3 and val[2].get("agent_id")
+            ]
+        )
 
     @api.model_create_multi
     def create(self, vals_list):

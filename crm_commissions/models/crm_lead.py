@@ -12,7 +12,9 @@ class CrmLead(models.Model):
         if self.doctor:
             ctx["default_doctor_id"] = self.doctor.id
         if self.referred_partner:
-            ctx["default_referred_partner"] = [(4, pid) for pid in self.referred_partner.ids]
+            ctx["default_referred_partner"] = [
+                (4, pid) for pid in self.referred_partner.ids
+            ]
         return ctx
 
     is_crm_score = fields.Float(
@@ -64,14 +66,30 @@ class CrmLead(models.Model):
         either as the previous or the current seller of the opportunity.
         """
         self.ensure_one()
-        rotations = self.env["crm.lead.rotation"].sudo().search(
-            [("lead_id", "=", self.id)]
+        rotations = (
+            self.env["crm.lead.rotation"].sudo().search([("lead_id", "=", self.id)])
         )
         for rotation in rotations:
             for user in (rotation.user_to_id, rotation.user_from_id):
                 if user and user.partner_id.type_partner == "sdr":
                     return user.partner_id
         return False
+
+    def _get_sdr_partner(self):
+        """Return the SDR partner tied to this opportunity, if any.
+
+        The SDR is the one the opportunity went through in the rotation, or --
+        when the opportunity was created directly by an SDR (no rotation) --
+        its own owner, so that seller is not left out of the commission.
+        """
+        self.ensure_one()
+        sdr = self._get_sdr_partner_from_rotation()
+        if sdr:
+            return sdr
+        owner = self.user_id.partner_id
+        if owner and owner.type_partner == "sdr":
+            return owner
+        return self.env["res.partner"]
 
     def action_validate_discount(self):
         self.ensure_one()

@@ -40,3 +40,9 @@
     other agents share the order. *Invoiced* and *Upselling Opportunity* orders
     are grouped as invoiced; *To Invoice* and *Nothing to Invoice* orders are
     grouped as not invoiced.
+11. Saving an order validates every commission its rules owe. For each line
+    whose product has a linked rule, the commission agents of that type must be
+    present, and a missing one is reported with *ValidationError*. The check
+    covers the doctor(s), the Orientadora, the SDR (when the opportunity went
+    through a rotation or was created directly by an SDR) and the Coordenadora,
+    and it never blocks a line whose product pays no commission of that type.
