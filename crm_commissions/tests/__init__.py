@@ -10,3 +10,4 @@ from . import test_member_team
 from . import test_legacy_target_fields
 from . import test_commission_migration
 from . import test_commission_validation
+from . import test_commission_mass_settle

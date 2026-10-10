@@ -4,6 +4,7 @@
 from datetime import timedelta
 
 from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class CommissionMassSettle(models.TransientModel):
@@ -71,11 +72,26 @@ class CommissionMassSettle(models.TransientModel):
     def action_settle(self):
         """Executa o fechamento em lote de comissões."""
         self.ensure_one()
+        # O assistente é um registro transiente e pode ter sido removido
+        # (expiração/limpeza automática) entre a abertura e o clique. Nesse
+        # caso avisamos de forma amigável em vez de deixar o ORM levantar
+        # ``MissingError`` ao ler um campo.
+        if not self.exists():
+            raise UserError(
+                _(
+                    "O assistente não está mais disponível (pode ter "
+                    "expirado). Abra novamente 'Fechamento em Lote' e tente "
+                    "outra vez."
+                )
+            )
+        # Guardamos os valores em variáveis locais: o laço abaixo pode demorar
+        # e o registro transiente pode ser removido durante a execução; reler
+        # ``self.<campo>`` depois disso causaria ``MissingError``.
+        date_from = self.date_from
+        date_to = self.date_to
         agents = self._get_agents()
         if not agents:
-            raise models.UserError(
-                _("Nenhum agente encontrado com os filtros selecionados.")
-            )
+            raise UserError(_("Nenhum agente encontrado com os filtros selecionados."))
 
         settlement_types = self._get_settlement_types()
         make_settle = self.env["commission.make.settle"]
@@ -92,8 +108,8 @@ class CommissionMassSettle(models.TransientModel):
             for stype in settlement_types:
                 wizard = make_settle.with_context(commission_mass_settle=True).create(
                     {
-                        "date_from": self.date_from,
-                        "date_to": self.date_to,
+                        "date_from": date_from,
+                        "date_to": date_to,
                         "agent_ids": [(6, 0, [agent.id])],
                         "settlement_type": stype,
                     }
@@ -117,15 +133,8 @@ class CommissionMassSettle(models.TransientModel):
             else:
                 summary["agents_skipped"] += 1
 
-        # Armazena resultado no contexto para exibição
-        self.env.context = {
-            **self.env.context,
-            "mass_settle_result": {
-                "settlement_ids": all_settlements.ids,
-                "summary": summary,
-            },
-        }
-
+        # Não mutamos ``self.env.context`` (o ambiente é compartilhado); o
+        # resumo vai no contexto da ação retornada.
         if all_settlements:
             return {
                 "name": _("Mass Settlement Result"),
@@ -133,8 +142,15 @@ class CommissionMassSettle(models.TransientModel):
                 "res_model": "commission.settlement",
                 "view_mode": "list,form",
                 "domain": [("id", "in", all_settlements.ids)],
+                # O cliente injeta o ``active_id``/``active_model`` do
+                # assistente no contexto da ação retornada; sobrescrevemos com
+                # os settlements para não carregar uma referência (que pode já
+                # ter sido limpa) ao registro transiente.
                 "context": {
                     "mass_settle_summary": summary,
+                    "active_model": "commission.settlement",
+                    "active_ids": all_settlements.ids,
+                    "active_id": all_settlements[:1].id or False,
                 },
             }
         return {
@@ -147,8 +163,8 @@ class CommissionMassSettle(models.TransientModel):
                     "%(date_from)s a %(date_to)s. Verifique se há comissões "
                     "pendentes (faturas postadas e/ou metas alcançadas) para "
                     "os %(agent_count)s agente(s) selecionado(s).",
-                    date_from=self.date_from or "-",
-                    date_to=self.date_to or "-",
+                    date_from=date_from or "-",
+                    date_to=date_to or "-",
                     agent_count=len(agents),
                 ),
                 "type": "warning",
