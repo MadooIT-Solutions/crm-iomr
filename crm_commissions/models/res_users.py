@@ -9,6 +9,25 @@ class ResUsers(models.Model):
     show_repasse_table = fields.Boolean(related='partner_id.show_repasse_table', readonly=False)
     show_all_values = fields.Boolean(related='partner_id.show_all_values', readonly=False)
 
+    # Tipos de contato que identificam um(a) médico(a). Servem de referência
+    # para não rebaixar um contato médico para um tipo não-médico ao sincronizar
+    # a Função CRM com o ``type_partner`` do parceiro.
+    MEDICAL_PARTNER_TYPES = ("doctorint", "doctorext")
+
+    # Mapa ``crm_role`` -> ``res.partner.type_partner``. As Funções que têm um
+    # tipo de contato claro; ``doctor`` é tratado à parte (pode ser interno ou
+    # externo) e as Funções sem equivalente próprio caem em ``employee``.
+    ROLE_TO_PARTNER_TYPE = {
+        "sdr": "sdr",
+        "orientadora": "orientadora",
+        "coordenadora": "coordenadora",
+        "salesman": "employee",
+        "sale_manager": "employee",
+        "commission_user": "employee",
+        "manager": "employee",
+        "readonly": "employee",
+    }
+
     crm_role = fields.Selection(
         selection=[
             ("sdr", "SDR"),
@@ -48,6 +67,24 @@ class ResUsers(models.Model):
             else:
                 user.crm_role = False
 
+    def _partner_type_for_crm_role(self, role):
+        """Retorna o ``type_partner`` alvo para a Função CRM informada.
+
+        Recebe o papel capturado antes das escritas de grupo: como ``crm_role``
+        é compute de ``groups_id``, o inverse o recalcula e o valor digitado se
+        perderia se lido depois. ``doctor`` preserva ``doctorint``/``doctorext``
+        se o contato já for médico; caso contrário assume ``doctorext``.
+        """
+        self.ensure_one()
+        if not role:
+            return False
+        if role == "doctor":
+            current = self.partner_id.type_partner
+            if current in self.MEDICAL_PARTNER_TYPES:
+                return current
+            return "doctorext"
+        return self.ROLE_TO_PARTNER_TYPE.get(role, False)
+
     def _inverse_crm_role(self):
         crm_groups_xml_ids = {
             "commission_oca.group_commission_user",
@@ -79,9 +116,10 @@ class ResUsers(models.Model):
             "sale_manager": {"sales_team.group_sale_manager"},
         }
         for user in self:
-            if not user.crm_role:
+            role = user.crm_role
+            if not role:
                 continue
-            target_xml_ids = role_group_map.get(user.crm_role, set())
+            target_xml_ids = role_group_map.get(role, set())
             current_group_ids = set(user.groups_id.ids)
             groups_to_remove = []
             groups_to_add = []
@@ -99,6 +137,20 @@ class ResUsers(models.Model):
                 user.write({"groups_id": [(3, gid) for gid in groups_to_remove]})
             if groups_to_add:
                 user.write({"groups_id": [(4, gid) for gid in groups_to_add]})
+
+            # Sincroniza o tipo do contato com a Função CRM selecionada.
+            # Usa o papel capturado no topo do loop: ``crm_role`` é compute de
+            # ``groups_id`` e seria recalculado após as escritas acima.
+            # Não rebaixa um contato médico (doctorint/doctorext) para um tipo
+            # não-médico: só o médico é quem decide interno/externo.
+            target_type = user._partner_type_for_crm_role(role)
+            current_type = user.partner_id.type_partner
+            is_downgrade_medical = (
+                current_type in self.MEDICAL_PARTNER_TYPES
+                and target_type not in self.MEDICAL_PARTNER_TYPES
+            )
+            if target_type and target_type != current_type and not is_downgrade_medical:
+                user.partner_id.type_partner = target_type
 
     def write(self, vals):
         if "groups_id" in vals and isinstance(vals["groups_id"], list):
