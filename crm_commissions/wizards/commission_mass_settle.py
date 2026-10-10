@@ -35,8 +35,16 @@ class CommissionMassSettle(models.TransientModel):
     )
 
     def _get_agents(self):
-        """Retorna agentes filtrados por equipe e/ou seleção manual."""
-        domain = [("agent", "=", True)]
+        """Retorna agentes filtrados por equipe e/ou seleção manual.
+
+        Inclui tanto parceiros com ``agent=True`` quanto médicos/que têm
+        metas CRM (``crm.commission.target``), mesmo sem o campo agent.
+        """
+        domain = [
+            "|",
+            ("agent", "=", True),
+            ("target_ids", "!=", False),
+        ]
         if self.team_ids:
             domain.append(("crm_team_id", "in", self.team_ids.ids))
         if self.agent_ids:
