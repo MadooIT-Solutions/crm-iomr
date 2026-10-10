@@ -7,7 +7,7 @@ class CrmProductivitySla(models.Model):
     _rec_name = "user_id"
     _order = "create_date desc"
 
-    user_id = fields.Many2one("res.users", string="Vendedor/SDR")
+    user_id = fields.Many2one("res.users", string="Vendedor(a)/SDR")
     period = fields.Char(string="Período")
     avg_response_time = fields.Float(string="Tempo Médio Resposta (h)")
     conversion_rate = fields.Float(string="Taxa Conversão MQL->SQL (%)")

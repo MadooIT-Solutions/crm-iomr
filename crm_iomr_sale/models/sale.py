@@ -21,7 +21,7 @@ class SaleOrder(models.Model):
 
     doctor_id = fields.Many2one(
         "res.partner",
-        string="Doctor/Médico",
+        string="Doctor/Médico(a)",
         domain=[("type_partner", "in", ("doctorint", "doctorext"))],
     )
 
@@ -53,7 +53,7 @@ class SaleOrder(models.Model):
         for rec in self:
             if not rec.doctor_id:
                 raise UserError(
-                    _("O campo Médico é obrigatório para confirmar o pedido.")
+                    _("O campo Médico(a) é obrigatório para confirmar o pedido.")
                 )
             if not rec.opportunity_id:
                 raise UserError(

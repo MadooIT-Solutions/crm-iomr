@@ -39,7 +39,7 @@ def add_doctors_as_agents(cr):
         added += 1
 
     print(f"Linhas processadas: {len(lines)}")
-    print(f"Médicos adicionados como agentes: {added}")
+    print(f"Médico(a)s adicionados como agentes: {added}")
     print(f"Pulados (já existente ou sem comissão): {skipped}")
     return added
 

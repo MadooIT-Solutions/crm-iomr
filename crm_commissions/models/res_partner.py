@@ -11,9 +11,9 @@ class ResPartner(models.Model):
 
     type_partner = fields.Selection(
         selection_add=[
-            ("orientadora", "Orientadora"),
-            ("sdr", "SDR (Pré-orientadora)"),
-            ("coordenadora", "Coordenadora"),
+            ("orientadora", "Orientador(a)"),
+            ("sdr", "SDR (Pré-orientador(a))"),
+            ("coordenadora", "Coordenador(a)"),
         ],
         ondelete={
             "orientadora": "set default",
@@ -23,9 +23,9 @@ class ResPartner(models.Model):
     )
     agent_type = fields.Selection(
         selection_add=[
-            ("orientadora", "Orientadora"),
+            ("orientadora", "Orientador(a)"),
             ("sdr", "SDR"),
-            ("coordenadora", "Coordenadora"),
+            ("coordenadora", "Coordenador(a)"),
             ("doctor", "Médico(a)"),
         ],
         ondelete={
@@ -59,8 +59,15 @@ class ResPartner(models.Model):
     )
     coordenadora_id = fields.Many2one(
         "res.partner",
-        string="Coordenadora",
-        domain=[("type_partner", "=", "coordenadora")],
+        string="Coordenador(a)",
+        compute="_compute_coordenadora_id",
+        store=True,
+        readonly=False,
+        precompute=True,
+        help="Líder da equipe de vendas da orientador(a). Vem automaticamente "
+        "do crm_team.user_id (Team Leader) da equipe do contato "
+        "(crm_team_id). Pode ser ajustado à mão quando a orientador(a) não "
+        "segue a equipe padrão.",
     )
     is_crm_target = fields.Float(
         string="IS-CRM target (%)",
@@ -92,6 +99,27 @@ class ResPartner(models.Model):
         through the order's ``doctor_id`` / ``referred_partner``.
         """
         return self.type_partner in self.MEDICAL_AGENT_TYPES
+
+    @api.depends("crm_team_id", "crm_team_id.user_id", "type_partner")
+    def _compute_coordenadora_id(self):
+        """A coordenadora é a líder da equipe de vendas da orientadora.
+
+        Regra padrão da clínica: cada orientadora pertence a uma equipe
+        (``crm_team_id``) e quem lidera essa equipe (``crm_team.user_id``)
+        coordena sua equipe, recebendo o repasse de coordenador. Assim o
+        vínculo se mantém sozinho quando a equipe muda de líder.
+
+        Só orientador(a)s entram aqui. Nos demais tipos o campo é apenas
+        preservado, para não apagar um valor preenchido à mão por engano.
+        """
+        for partner in self:
+            if partner.type_partner != "orientadora":
+                # Preserva o valor já gravado (inclusive um ajuste manual) nos
+                # demais tipos: sem atribuição, o ORM gravaria False por cima.
+                partner.coordenadora_id = partner.coordenadora_id
+                continue
+            leader = partner.crm_team_id.user_id.partner_id if partner.crm_team_id else False
+            partner.coordenadora_id = leader
 
     @api.onchange("type_partner")
     def _onchange_type_partner(self):

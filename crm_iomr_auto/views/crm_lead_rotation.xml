@@ -49,9 +49,9 @@
         <field name="type">search</field>
         <field name="arch" type="xml">
             <search>
-                <filter name="group_by_user_from_id" string="Vendedor Origem"
+                <filter name="group_by_user_from_id" string="Vendedor(a) Origem"
                         domain="[]" context="{'group_by': 'user_from_id'}"/>
-                <filter name="group_by_user_to_id" string="Vendedor Destino"
+                <filter name="group_by_user_to_id" string="Vendedor(a) Destino"
                         domain="[]" context="{'group_by': 'user_to_id'}"/>
                 <filter name="group_by_rotation_type" string="Tipo de Rotação"
                         domain="[]" context="{'group_by': 'rotation_type'}"/>
@@ -59,9 +59,9 @@
                 <filter name="my_rotations" string="Minhas Rotações"
                         domain="[('user_from_id', '=', uid)]"/>
                 <group expand="0" string="Agrupar por">
-                    <filter name="group_by_user_from" string="Vendedor Origem"
+                    <filter name="group_by_user_from" string="Vendedor(a) Origem"
                             context="{'group_by': 'user_from_id'}"/>
-                    <filter name="group_by_user_to" string="Vendedor Destino"
+                    <filter name="group_by_user_to" string="Vendedor(a) Destino"
                             context="{'group_by': 'user_to_id'}"/>
                     <filter name="group_by_type" string="Tipo"
                             context="{'group_by': 'rotation_type'}"/>

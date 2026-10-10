@@ -9,8 +9,8 @@ class CrmLeadRotation(models.Model):
     lead_id = fields.Many2one(
         "crm.lead", string="Oportunidade", required=True, ondelete="cascade"
     )
-    user_from_id = fields.Many2one("res.users", string="Vendedor Anterior")
-    user_to_id = fields.Many2one("res.users", string="Vendedor Atual")
+    user_from_id = fields.Many2one("res.users", string="Vendedor(a) Anterior")
+    user_to_id = fields.Many2one("res.users", string="Vendedor(a) Atual")
     rotation_sequence = fields.Integer(string="Sequência")
     rotation_type = fields.Selection(
         [
@@ -21,7 +21,7 @@ class CrmLeadRotation(models.Model):
         string="Tipo de Rotação",
         default="manual",
     )
-    days_with_seller = fields.Integer(string="Dias com Vendedor")
+    days_with_seller = fields.Integer(string="Dias com Vendedor(a)")
     date_rotation = fields.Datetime(
         string="Data da Rotação", default=fields.Datetime.now
     )
@@ -74,7 +74,7 @@ class CrmLeadRotation(models.Model):
     @api.model
     def validate_next_activity_requirement(self):
         """
-        Valida se vendedores têm próxima atividade agendada
+        Valida se vendedor(a)s têm próxima atividade agendada
         """
         config = self.env["ir.config_parameter"].sudo()
         require_activity = config.get_param("crm.require_next_activity", False)
@@ -103,7 +103,7 @@ class CrmLeadRotation(models.Model):
                         "name": "CRM Rotation",
                         "type": "server",
                         "level": "WARNING",
-                        "message": f"Vendedor {user.name} não possui próxima atividade agendada",
+                        "message": f"Vendedor(a) {user.name} não possui próxima atividade agendada",
                         "path": "crm.lead.rotation",
                         "func_name": "validate_next_activity_requirement",
                     }

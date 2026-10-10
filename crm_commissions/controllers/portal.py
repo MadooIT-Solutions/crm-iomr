@@ -477,14 +477,14 @@ class CustomerPortal(http.Controller):
         xlsx_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "..",
-            "Regras de Repasse dos Médicos Sócios.xlsx",
+            "Regras de Repasse dos Médico(a)s Sócios.xlsx",
         )
         if os.path.isfile(xlsx_path):
             with open(xlsx_path, "rb") as f:
                 content = f.read()
             headers = [
                 ("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-                ("Content-Disposition", "attachment; filename=Regras de Repasse dos Médicos Sócios.xlsx"),
+                ("Content-Disposition", "attachment; filename=Regras de Repasse dos Médico(a)s Sócios.xlsx"),
                 ("Content-Length", str(len(content))),
             ]
             return request.make_response(content, headers=headers)

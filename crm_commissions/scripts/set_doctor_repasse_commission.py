@@ -1,13 +1,13 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-"""Aplica as regras de repasse dos médicos por categoria de produto:
+"""Aplica as regras de repasse dos médico(a)s por categoria de produto:
 
-- Categorias de CONSULTA -> Repasse Médico - Consulta (60% sobre receita
+- Categorias de CONSULTA -> Repasse Médico(a) - Consulta (60% sobre receita
   líquida: subtotal - impostos 16,33% - taxa de cartão).
-- Categorias de EXAME -> Repasse Médico - Exame (50% sobre receita
+- Categorias de EXAME -> Repasse Médico(a) - Exame (50% sobre receita
   líquida: subtotal - impostos 11,73% - taxa de cartão).
-- Categorias de CIRURGIA -> Repasse Médico - Cirurgia (Honorário)
+- Categorias de CIRURGIA -> Repasse Médico(a) - Cirurgia (Honorário)
   (100% sobre receita líquida: subtotal - impostos 11,73% - taxa de cartão).
 - As demais categorias (LIO, Cola Orgânica etc.) mantêm a comissão atual
   do médico e não sofrem dedução.
@@ -30,9 +30,9 @@ EXAME_CATEGORY_TERMS = ["EXAME"]
 CIRURGIA_CATEGORY_TERMS = ["CIRURGICA", "CIRURGIA", "PROCEDIMENTO CIRURGICO"]
 
 COMMISSION_SPECS = [
-    (CONSULTA_XMLID, "Repasse Médico - Consulta", 60.0, 16.33),
-    (EXAME_XMLID, "Repasse Médico - Exame", 50.0, 11.73),
-    (CIRURGIA_XMLID, "Repasse Médico - Cirurgia (Honorário)", 100.0, 11.73),
+    (CONSULTA_XMLID, "Repasse Médico(a) - Consulta", 60.0, 16.33),
+    (EXAME_XMLID, "Repasse Médico(a) - Exame", 50.0, 11.73),
+    (CIRURGIA_XMLID, "Repasse Médico(a) - Cirurgia (Honorário)", 100.0, 11.73),
 ]
 
 
@@ -141,7 +141,7 @@ def run(cr):
     print(f"Categorias de consulta: {sorted(consulta_cats.mapped('complete_name'))}")
     print(f"Categorias de exame: {sorted(exame_cats.mapped('complete_name'))}")
     print(f"Categorias de cirurgia: {sorted(cirurgia_cats.mapped('complete_name'))}")
-    print(f"Médicos com regras criadas: {created} | regras atualizadas: {updated}")
+    print(f"Médico(a)s com regras criadas: {created} | regras atualizadas: {updated}")
     print(f"Linhas de venda recalculadas: {recomputed}")
     cr.commit()
     return {

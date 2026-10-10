@@ -43,7 +43,7 @@
                             <field name="avg_conversion_rate"/>
                         </group>
                     </group>
-                    <group string="Transferências (Orientadora B)">
+                    <group string="Transferências (Orientador(a) B)">
                         <group>
                             <field name="transferred_leads_count"/>
                             <field name="transferred_closure_rate"/>

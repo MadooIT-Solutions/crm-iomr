@@ -1,7 +1,7 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-"""Aplica as regras de comissão das orientadoras por categoria:
+"""Aplica as regras de comissão das orientador(a)s por categoria:
 
 - Taxa de Sala, MAT/MED, COLA ORGANICA e TAXA DE EQUIPAMENTO -> comissão fixa de 1%.
 - Comissão Progressiva LIOs -> somente para a categoria LIO (e subcategorias).

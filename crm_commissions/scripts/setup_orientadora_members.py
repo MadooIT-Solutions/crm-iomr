@@ -4,9 +4,9 @@
 """Cadastra a Equipe de Repasses (commission.member) e tipa os partners dos
 usuários conforme o grupo de função do usuário:
 
-- Usuários no grupo Orientadora  -> type_partner/agent_type = 'orientadora' e member orientadora
+- Usuários no grupo Orientador(a)  -> type_partner/agent_type = 'orientadora' e member orientadora
 - Usuários no grupo SDR          -> type_partner/agent_type = 'sdr'          e member sdr
-- Usuários no grupo Coordenadora -> type_partner/agent_type = 'coordenadora' e member coordenadora
+- Usuários no grupo Coordenador(a) -> type_partner/agent_type = 'coordenadora' e member coordenadora
 
 Sem esses registros o menu Equipe fica vazio e as record rules de orientadora
 (que filtram por member_id.partner_id.user_ids) nunca devolvem nada, deixando

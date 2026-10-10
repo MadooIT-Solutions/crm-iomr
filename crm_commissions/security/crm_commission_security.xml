@@ -5,7 +5,7 @@
     <!-- The base User/Manager roles come from commission_oca. The groups below
          are CRM-specific roles that do not exist in that module. -->
     <record id="group_crm_commission_orientadora" model="res.groups">
-        <field name="name">Orientadora</field>
+        <field name="name">Orientador(a)</field>
         <field name="category_id" ref="base.module_category_sales_sales" />
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
     </record>

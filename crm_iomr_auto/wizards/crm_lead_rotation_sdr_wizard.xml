@@ -5,7 +5,7 @@
         <field name="model">crm.lead.rotation.sdr.wizard</field>
         <field name="arch" type="xml">
             <form>
-                <p class="mt4 mb4">Não há mais vendedores disponíveis na equipe. Deseja encaminhar a oportunidade para o SDR?</p>
+                <p class="mt4 mb4">Não há mais vendedor(a)s disponíveis na equipe. Deseja encaminhar a oportunidade para o SDR?</p>
                 <field name="lead_id" invisible="1"/>
                 <field name="sdr_user_id" invisible="1"/>
                 <footer>

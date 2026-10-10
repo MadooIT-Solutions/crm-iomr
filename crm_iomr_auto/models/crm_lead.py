@@ -55,9 +55,9 @@ class CRMLead(models.Model):
     )
 
     date_assigned_to_seller = fields.Datetime(
-        string="Data Atribuída ao Vendedor",
+        string="Data Atribuída ao Vendedor(a)",
         tracking=True,
-        help="Data em que a oportunidade foi atribuída ao vendedor atual",
+        help="Data em que a oportunidade foi atribuída ao vendedor(a) atual",
     )
 
     rotation_history_ids = fields.One2many(
@@ -69,14 +69,14 @@ class CRMLead(models.Model):
     )
 
     days_with_current_seller = fields.Integer(
-        string="Dias com Vendedor Atual", compute="_compute_days_with_seller"
+        string="Dias com Vendedor(a) Atual", compute="_compute_days_with_seller"
     )
 
     all_sellers_exhausted = fields.Boolean(
-        string="Todos Vendedores Esgotados",
+        string="Todos Vendedor(a)s Esgotados",
         default=False,
         tracking=True,
-        help="Indica se a oportunidade já passou por todos os vendedores da equipe",
+        help="Indica se a oportunidade já passou por todos os vendedor(a)s da equipe",
     )
 
     can_rotate = fields.Boolean(
@@ -148,7 +148,7 @@ class CRMLead(models.Model):
 
     def rotate_seller_automatic(self):
         """
-        Rotaciona vendedor automaticamente baseado nas regras
+        Rotaciona vendedor(a) automaticamente baseado nas regras
         """
         config = self.env["ir.config_parameter"].sudo()
 
@@ -192,7 +192,7 @@ class CRMLead(models.Model):
 
     def _get_next_seller(self):
         """
-        Obtém o próximo vendedor da equipe que ainda não foi atribuído à oportunidade
+        Obtém o próximo vendedor(a) da equipe que ainda não foi atribuído à oportunidade
         """
         self.ensure_one()
 
@@ -246,10 +246,10 @@ class CRMLead(models.Model):
 
     def action_rotate_seller(self):
         """
-        Ação manual para rotacionar vendedor
+        Ação manual para rotacionar vendedor(a)
         """
         if not self.user_id:
-            raise UserError("Oportunidade não tem vendedor atribuído")
+            raise UserError("Oportunidade não tem vendedor(a) atribuído")
 
         next_seller = self._get_next_seller()
 
@@ -258,7 +258,7 @@ class CRMLead(models.Model):
             sdr_user_id = int(config.get_param("crm.sdr_user_id", 0))
             if not sdr_user_id:
                 raise UserError(
-                    "Não há vendedores disponíveis e nenhum SDR configurado."
+                    "Não há vendedor(a)s disponíveis e nenhum SDR configurado."
                 )
             return {
                 "type": "ir.actions.act_window",

@@ -126,7 +126,7 @@
                 />
                 <separator />
                 <group expand="1" string="Group By">
-                    <filter name="group_agent" string="Vendedor" context="{'group_by': 'agent_id'}" />
+                    <filter name="group_agent" string="Vendedor(a)" context="{'group_by': 'agent_id'}" />
                     <filter name="group_quarter" string="Trimestre" context="{'group_by': 'quarter'}" />
                 </group>
             </search>
@@ -218,7 +218,7 @@
                             <field name="prize_description" />
                         </group>
                     </group>
-                    <group string="Elegibilidade coletiva / coordenadora">
+                    <group string="Elegibilidade coletiva / coordenador(a)">
                         <group>
                             <field name="team_total_target" widget="monetary" />
                             <field name="team_total_achieved" widget="monetary" />

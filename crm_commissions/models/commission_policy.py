@@ -37,7 +37,7 @@ class CommissionPolicy(models.Model):
     coordinator_rate = fields.Float(
         string="Coordinator Rate (%)",
         default=0.5,
-        help="Fixed commission rate for coordinators on total Orientadora sales",
+        help="Fixed commission rate for coordinators on total Orientador(a) sales",
     )
     line_ids = fields.One2many(
         "commission.policy.line",

@@ -59,7 +59,7 @@ class SaleOrder(models.Model):
         return res
 
     def _get_crm_commission_agents(self):
-        """Orientadoras that identify this order as their achievement."""
+        """Orientador(a)s that identify this order as their achievement."""
         return self.mapped("partner_id.agent_ids") | self.mapped(
             "order_line.agent_ids.agent_id"
         )
@@ -189,9 +189,9 @@ class SaleOrder(models.Model):
         if partner.type_partner in ("doctorint", "doctorext"):
             return _("Médico(a)")
         return {
-            "orientadora": _("Orientadora"),
+            "orientadora": _("Orientador(a)"),
             "sdr": _("SDR"),
-            "coordenadora": _("Coordenadora"),
+            "coordenadora": _("Coordenador(a)"),
         }.get(partner.type_partner, _("Agente"))
 
     def _get_medical_commission_parties(self):
@@ -235,11 +235,11 @@ class SaleOrder(models.Model):
         return result
 
     def _get_commission_orientadora_members(self):
-        """Orientadora members whose partner appears as an agent on the order.
+        """Orientador(a) members whose partner appears as an agent on the order.
 
         Runs in superuser context: this is internal bookkeeping and must never
         break order confirmation for users without commission ACLs (plain
-        salespeople, orientadoras read-only on commission.*, etc.).
+        salespeople, orientador(a)s read-only on commission.*, etc.).
         """
         order = self.sudo()
         partner_ids = set()

@@ -12,13 +12,13 @@ class ResUsers(models.Model):
     crm_role = fields.Selection(
         selection=[
             ("sdr", "SDR"),
-            ("orientadora", "Orientadora"),
-            ("coordenadora", "Coordenadora"),
+            ("orientadora", "Orientador(a)"),
+            ("coordenadora", "Coordenador(a)"),
             ("commission_user", "Commission User"),
             ("manager", "Commission Manager"),
             ("doctor", "Doctor (Portal)"),
             ("readonly", "Visualização Total (CRM/Vendas)"),
-            ("salesman", "Vendedor"),
+            ("salesman", "Vendedor(a)"),
             ("sale_manager", "Gerente de Vendas"),
         ],
         string="Função CRM",

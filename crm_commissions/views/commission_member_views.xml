@@ -46,7 +46,7 @@
                     <group string="SDR Configuration" invisible="member_type != 'orientadora'">
                         <field name="sdr_ids" widget="many2many_tags"/>
                     </group>
-                    <group string="Orientadora" invisible="member_type != 'sdr'">
+                    <group string="Orientador(a)" invisible="member_type != 'sdr'">
                         <field name="orientadora_id"/>
                     </group>
                     <notebook>
@@ -85,11 +85,11 @@
                 <field name="name"/>
                 <field name="member_type"/>
                 <field name="team_id"/>
-                <filter name="orientadora" string="Orientadoras"
+                <filter name="orientadora" string="Orientador(a)s"
                         domain="[('member_type','=','orientadora')]"/>
                 <filter name="sdr" string="SDRs"
                         domain="[('member_type','=','sdr')]"/>
-                <filter name="coordenadora" string="Coordenadoras"
+                <filter name="coordenadora" string="Coordenador(a)s"
                         domain="[('member_type','=','coordenadora')]"/>
                 <group expand="0" string="Group By">
                     <filter name="group_by_type" string="Type"

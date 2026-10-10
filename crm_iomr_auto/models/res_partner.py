@@ -7,8 +7,8 @@ class ResPartner(models.Model):
     type_partner = fields.Selection(
         [
             ("patient", "Paciente"),
-            ("doctorint", "Médico Interno"),
-            ("doctorext", "Médico Externo"),
+            ("doctorint", "Médico(a) Interno"),
+            ("doctorext", "Médico(a) Externo"),
             ("employee", "Funcionário"),
             ("supplier", "Fornecedor"),
             ("convenio", "Convênio"),

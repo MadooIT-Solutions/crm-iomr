@@ -10,7 +10,7 @@
           <group>
             <field name="referred_partner" widget="many2many_tags" options="{'no_create':true}"/>
             <field name="convenio" options="{'no_create':true}"/>
-            <field name="doctor" string="Médico" options="{'no_create':true}"/>
+            <field name="doctor" string="Médico(a)" options="{'no_create':true}"/>
           </group>
           <group>
             <field name="expected_revenue" string="Orçamento"/>
@@ -38,7 +38,7 @@
 
       <xpath expr="//button[@name='action_set_won_rainbowman']" position="before">
         <button name="action_rotate_seller"
-                string="Rotacionar Vendedor"
+                string="Rotacionar Vendedor(a)"
                 type="object"
                 class="oe_highlight"
                 invisible="not can_rotate or all_sellers_exhausted"/>
@@ -74,7 +74,7 @@
       <xpath expr="//list" position="inside">
         <field name="referred_partner"/>
         <field name="convenio" />
-        <field name="doctor" string="Médico"/>
+        <field name="doctor" string="Médico(a)"/>
       </xpath>
 
     </field>

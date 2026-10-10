@@ -86,7 +86,7 @@ class CommissionResult(models.Model):
         store=True,
     )
     orientadora_count = fields.Integer(
-        string="Orientadoras",
+        string="Orientador(a)s",
         compute="_compute_orientadora_count",
     )
 
@@ -261,7 +261,7 @@ class CommissionResult(models.Model):
         self.commission_base_amount = total_commissionable
 
         self.base_rate = policy.coordinator_rate
-        self.range_label = "Coordenadora"
+        self.range_label = "Coordenador(a)"
         self.crm_bonus_rate = 0.0
         self.is_crm_score = 100.0
 

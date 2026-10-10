@@ -9,9 +9,9 @@ class CommissionMember(models.Model):
     name = fields.Char(required=True)
     member_type = fields.Selection(
         [
-            ("orientadora", "Orientadora"),
+            ("orientadora", "Orientador(a)"),
             ("sdr", "SDR"),
-            ("coordenadora", "Coordenadora"),
+            ("coordenadora", "Coordenador(a)"),
         ],
         required=True,
     )
@@ -41,7 +41,7 @@ class CommissionMember(models.Model):
     )
     orientadora_id = fields.Many2one(
         "commission.member",
-        string="Orientadora",
+        string="Orientador(a)",
         domain=[("member_type", "=", "orientadora")],
     )
     target_ids = fields.One2many(

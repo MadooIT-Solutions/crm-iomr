@@ -1,9 +1,9 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-"""Vincula as orientadoras à sua coordenadora e espelha a comissão:
+"""Vincula as orientador(a)s à sua coordenadora e espelha a comissão:
 
-- Todas as orientadoras passam a ter coordenadora_id = Wanessa Santos.
+- Todas as orientador(a)s passam a ter coordenadora_id = Wanessa Santos.
 - Garante a comissão "Coordenadora (via política)" (commission_type coordinator).
 - Recalcula as linhas de venda para aplicar o espelhamento 0,5%.
 
@@ -16,7 +16,7 @@ from odoo import SUPERUSER_ID, api
 
 COORDINATOR_NAME = "Wanessa Santos"
 COORDINATOR_TYPE = "coordenadora"
-COMMISSION_NAME = "Comissão Coordenadora (via política)"
+COMMISSION_NAME = "Comissão Coordenador(a) (via política)"
 COMMISSION_XMLID = "crm_commissions.commission_coordinator_policy"
 
 
@@ -92,14 +92,14 @@ def run(cr):
     policy = ensure_policy_rate(env)
     linked = link_orientadoras_to_coordinator(env, coach)
     recomputed = recompute_all_sale_lines(env)
-    print(f"Coordenadora: {coach.id} - {coach.name}" if coach else "Coordenadora: NENHUMA")
+    print(f"Coordenador(a): {coach.id} - {coach.name}" if coach else "Coordenador(a): NENHUMA")
     print(f"Comissão coordenadora: {commission.id} - {commission.name}")
     print(
         f"Política ativa: {policy.id} - coordinator_rate={policy.coordinator_rate}"
         if policy
         else "Política ativa: NENHUMA"
     )
-    print(f"Orientadoras vinculadas: {linked}")
+    print(f"Orientador(a)s vinculadas: {linked}")
     print(f"Linhas de venda recalculadas: {recomputed}")
     cr.commit()
     return {
