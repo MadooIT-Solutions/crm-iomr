@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <record id="commission_mass_settle_form" model="ir.ui.view">
+        <field name="name">commission.mass.settle.form</field>
+        <field name="model">commission.mass.settle</field>
+        <field name="arch" type="xml">
+            <form string="Fechamento em Lote de Comissões">
+                <group>
+                    <group string="Período">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group string="Filtros">
+                        <field name="team_ids" widget="many2many_tags"/>
+                        <field name="agent_ids" widget="many2many_tags"/>
+                        <field name="settlement_type"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_settle"
+                            string="Fechar Comissões"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_commission_mass_settle" model="ir.actions.act_window">
+        <field name="name">Fechamento em Lote</field>
+        <field name="res_model">commission.mass.settle</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
