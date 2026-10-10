@@ -25,6 +25,7 @@
     <field name="prontuario" />
     <field name="doctor_id"/>
     <field name="convenio"/>
+    <field name="payment_method_ids" widget="many2many_tags"/>
   </field>
 </field>
 </record>
