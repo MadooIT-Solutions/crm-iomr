@@ -747,6 +747,15 @@ class SaleOrderLineAgent(models.Model):
         "object_id.product_id",
         "object_id.product_uom_qty",
         "commission_split_percent",
+        # The repasse policies deduct the card administrator fee from their
+        # base (``deduct_card_fee``), and the fee is read from the order
+        # (``_get_card_fee_amount``). Without it here the amount was frozen
+        # at whatever the fee was when something else recomputed it: editing
+        # the fee on the order changed nothing (S00219 kept R$ 8.561,35
+        # instead of R$ 8.318,77). ``credit_card_fee_amount`` is stored and
+        # already recomputes from the fee lines, so this one name covers
+        # every fee edit.
+        "object_id.order_id.credit_card_fee_amount",
     )
     def _compute_amount(self):
         result = super()._compute_amount()

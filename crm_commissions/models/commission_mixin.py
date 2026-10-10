@@ -120,30 +120,41 @@ class CommissionLineMixin(models.AbstractModel):
             categ = categ.parent_id
         return list(categ_ids)
 
-    def _get_card_fee_percent(self):
-        """Get the credit card fee percentage from the related sale order.
+    def _get_card_fee_amount(self):
+        """Return this line's share of the order's card administrator fee.
 
-        The fee lives on ``sale.order.credit_card_fee_percent`` (provided by
-        ``sale_credit_card_fee``), so the source commission line is
-        traced back to its order, either directly (sale.order.line) or through
-        the originating sale lines (account.move.line).
+        The deduction follows the fee **actually charged**, not its rate:
+        ``credit_card_fee_amount`` is the sum of the order's
+        ``sale.order.credit.card.fee.line`` amounts, which is what the
+        acquirer really billed. That matters because the fee lines are
+        editable -- a user may set a fee amount by hand and the module
+        rebalances only the remaining lines, so ``fee_percent x base`` no
+        longer reconstructs the fee that was collected.
+
+        The fee is an order-level cost, so it is spread over the lines by
+        price weight rather than charged to each of them in full. Weighting by
+        ``price_total`` is the same base ``sale_credit_card_fee`` charges the
+        fee on, so the shares add up to exactly the fee collected.
+
+        Earlier this was read as ``credit_card_fee_percent``, a ``fields.Char``
+        holding a formatted, comma-joined string (e.g. ``'2.99'``) for display.
+        Multiplying that by a float raised
+        ``TypeError: can't multiply sequence by non-int of type 'float'``,
+        breaking the commission computation -- and with it the write that
+        triggered it -- on every order carrying a card fee.
         """
         self.ensure_one()
-        line = self.object_id
-        if not line:
+        order = self._get_source_sale_order()
+        if not order:
             return 0.0
-        sale_lines = getattr(line, "sale_line_ids", False)
-        if sale_lines:
-            for sale_line in sale_lines:
-                order = sale_line.order_id
-                if order and order.credit_card_fee_percent:
-                    return order.credit_card_fee_percent
+        total_fee = order.credit_card_fee_amount
+        if not total_fee:
             return 0.0
-        if getattr(line, "order_id", False):
-            order = line.order_id
-            if order and order.credit_card_fee_percent:
-                return order.credit_card_fee_percent
-        return 0.0
+        order_gross = sum(order.order_line.mapped("price_total"))
+        if not order_gross:
+            return 0.0
+        line_gross = getattr(self.object_id, "price_total", 0.0) or 0.0
+        return total_fee * line_gross / order_gross
 
     def _get_line_gross_amount(self, subtotal):
         """Return what the patient is actually charged for this line.
@@ -161,15 +172,65 @@ class CommissionLineMixin(models.AbstractModel):
     def _get_line_tax_amount(self):
         """Return the taxes really charged on this line.
 
-        ``price_total - price_subtotal`` is what Odoo computed from the
-        line's own ``tax_ids``, so the deduction follows the product's
-        real fiscal mix instead of a hard-coded percentage.
+        Two ways a price can carry its taxes, and the deduction has to follow
+        whichever one the clinic actually uses:
+
+        * Taxes **added on top** -- ``price_total - price_subtotal`` is what
+          Odoo computed from the line's own ``tax_ids``, so the deduction
+          follows the product's real fiscal mix instead of a hard-coded
+          percentage.
+        * Taxes **already inside the price** -- the clinic's price list is
+          tax-inclusive, and the Brazilian fiscal framework then maps ISSQN,
+          PIS, COFINS, IRPJ and CSLL as ``tax_include`` taxes
+          (``l10n_br_fiscal.tax_group.tax_include``), booking them in
+          ``amount_tax_included`` with ``amount_tax_not_included`` left at
+          zero. ``price_total`` is then equal to ``price_subtotal`` and the
+          subtraction above is always ``0.00``: the taxes are in the price but
+          invisible to it, and the repasse would be gross when it has to be
+          net. ``amount_tax_included`` is the value that actually answers
+          "how much tax is inside this price", so it is used for that case.
+
+        An invoice line is the third case. ``amount_tax_included`` is a
+        *related* field there, pointing at its move, so an invoice issued
+        before the clinic had a fiscal operation carries no tax of its own
+        and reads ``0.00`` -- while the sale lines it came from do carry it.
+        The invoice is what the repasse is actually paid on, so without a
+        fallback the same sale would be net on the order and gross on the
+        invoice. The originating sale lines answer it instead, scaled by the
+        share of them this line bills, so a partially invoiced line does not
+        claim the whole tax.
         """
         self.ensure_one()
         line = self.object_id
         gross = getattr(line, "price_total", 0.0) or 0.0
         net = getattr(line, "price_subtotal", 0.0) or 0.0
-        return max(0.0, gross - net)
+        tax_on_top = max(0.0, gross - net)
+        if tax_on_top:
+            return tax_on_top
+        included = max(0.0, getattr(line, "amount_tax_included", 0.0) or 0.0)
+        if included:
+            return included
+        return self._get_source_line_tax_amount()
+
+    def _get_source_line_tax_amount(self):
+        """Return the embedded tax of the sale lines this line was billed from.
+
+        Only an invoice line reaches this. The share is proportional to the
+        price, and capped at the tax those sale lines really carry, so a line
+        invoiced in part never deducts more tax than exists.
+        """
+        self.ensure_one()
+        sale_lines = getattr(self.object_id, "sale_line_ids", None)
+        if not sale_lines:
+            return 0.0
+        sale_net = sum(sale_lines.mapped("price_subtotal"))
+        if not sale_net:
+            return 0.0
+        sale_tax = sum(sale_lines.mapped("amount_tax_included"))
+        if not sale_tax:
+            return 0.0
+        line_net = getattr(self.object_id, "price_subtotal", 0.0) or 0.0
+        return min(sale_tax, sale_tax * line_net / sale_net)
 
     def _get_deducted_base_amount(self, commission, subtotal):
         """Deduct the line's taxes and/or the card fee from the commission base.
@@ -177,16 +238,22 @@ class CommissionLineMixin(models.AbstractModel):
         Follows the repasse rule ``[preço - impostos - taxa cartão]``, where
         ``preço`` is the amount charged to the patient, so the base becomes::
 
-            base = price_total
-                 - (price_total - price_subtotal)   # impostos reais da linha
-                 - price_total * card_fee_percent   # taxa de cartão
-               = price_subtotal - price_total * card_fee_percent
+            base = gross                          # price_total
+                 - impostos da linha               # _get_line_tax_amount()
+                 - parte da taxa de cartão         # _get_card_fee_amount()
+               = max(0, base)
 
-        The card fee is always taken over ``price_total`` so the deduction
-        matches the amount the acquirer really charges. The taxes come from
-        the line's own ``tax_ids`` when ``deduct_taxes`` is set; otherwise
-        the legacy fixed ``tax_deduction_pct`` is applied over the untaxed
-        subtotal, which stays available for products without taxes.
+        ``impostos da linha`` is ``_get_line_tax_amount()``: the tax added on
+        top of the price when the price is tax-exclusive, the tax embedded in
+        the price (``amount_tax_included``) when it is tax-inclusive, which is
+        the clinic's case. ``taxa de cartão`` is this line's share of the
+        order's ``credit_card_fee_amount`` -- the fee actually charged,
+        spread over the lines by price weight.
+
+        The taxes come from the line itself when ``deduct_taxes`` is set;
+        otherwise the legacy fixed ``tax_deduction_pct`` is applied over the
+        untaxed subtotal, which stays available for lines the fiscal framework
+        cannot price.
         """
         self.ensure_one()
         gross = self._get_line_gross_amount(subtotal)
@@ -196,8 +263,37 @@ class CommissionLineMixin(models.AbstractModel):
         elif commission.tax_deduction_pct:
             base -= (subtotal or 0.0) * commission.tax_deduction_pct / 100.0
         if commission.deduct_card_fee:
-            base -= gross * self._get_card_fee_percent() / 100.0
+            base -= self._get_card_fee_amount()
         return max(0.0, base)
+
+    def _get_single_commission_amount(self, commission, subtotal, product, quantity):
+        """Apply the net base to the 'Product criteria' policies as well.
+
+        A ``commission_type == 'product'`` policy is rated straight from its
+        ``commission.item`` rows by
+        ``sale_commission_oca_product_criteria._get_single_commission_amount``,
+        which is reached without ever going through
+        ``_get_commission_amount``. So the ``net_amount_deduction`` base --
+        the taxes and the card fee -- was never applied to it, no matter what
+        ``deduct_taxes``/``deduct_card_fee`` said: those flags are read by
+        ``_get_deducted_base_amount``, which that path skips. It is the
+        largest policy in the clinic, so the rule has to be applied here too
+        or the repasse would stay gross exactly where it matters most.
+
+        Only the percentage items read the base; a fixed item is a flat amount
+        that does not, and keeps its value.
+
+        Its cost deduction is intentionally gone: that branch tests
+        ``amount_base_type == 'net_amount'``, and moving the policy to
+        ``net_amount_deduction`` is what the clinic asked for. ``quantity`` is
+        passed on untouched so the items keep reading the real quantity.
+        """
+        self.ensure_one()
+        if commission and commission.amount_base_type == "net_amount_deduction":
+            subtotal = self._get_deducted_base_amount(commission, subtotal)
+        return super()._get_single_commission_amount(
+            commission, subtotal, product, quantity
+        )
 
     def _get_commission_amount(self, commission, subtotal, product, quantity):
         self.ensure_one()
