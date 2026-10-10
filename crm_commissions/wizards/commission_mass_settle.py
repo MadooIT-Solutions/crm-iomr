@@ -10,8 +10,15 @@ class CommissionMassSettle(models.TransientModel):
     _name = "commission.mass.settle"
     _description = "Mass Commission Settlement"
 
-    date_from = fields.Date(string="Data Início", required=True)
-    date_to = fields.Date(string="Data Fim", required=True)
+    date_from = fields.Date(
+        string="Data Início",
+        default=lambda self: fields.Date.context_today(self).replace(day=1),
+    )
+    date_to = fields.Date(
+        string="Data Fim",
+        required=True,
+        default=fields.Date.today,
+    )
     team_ids = fields.Many2many(
         comodel_name="crm.team",
         string="Equipes",
@@ -20,7 +27,8 @@ class CommissionMassSettle(models.TransientModel):
     agent_ids = fields.Many2many(
         comodel_name="res.partner",
         string="Agentes",
-        domain="[('agent', '=', True)]",
+        domain="['|', '|', ('agent', '=', True), ('target_ids', '!=', False), "
+        "('type_partner', 'in', ['doctorint', 'doctorext'])]",
         help="Deixe vazio para processar todos os agentes.",
     )
     settlement_type = fields.Selection(
@@ -37,13 +45,16 @@ class CommissionMassSettle(models.TransientModel):
     def _get_agents(self):
         """Retorna agentes filtrados por equipe e/ou seleção manual.
 
-        Inclui tanto parceiros com ``agent=True`` quanto médicos/que têm
-        metas CRM (``crm.commission.target``), mesmo sem o campo agent.
+        Inclui quem tem ``agent=True``, quem possui metas CRM
+        (``crm.commission.target``) e os médicos (``doctorint``/``doctorext``),
+        cujo repasse corre por fatura e pode não ter a marca de agente.
         """
         domain = [
             "|",
+            "|",
             ("agent", "=", True),
             ("target_ids", "!=", False),
+            ("type_partner", "in", ("doctorint", "doctorext")),
         ]
         if self.team_ids:
             domain.append(("crm_team_id", "in", self.team_ids.ids))
@@ -79,8 +90,9 @@ class CommissionMassSettle(models.TransientModel):
         for agent in agents:
             agent_settlements = self.env["commission.settlement"]
             for stype in settlement_types:
-                wizard = make_settle.create(
+                wizard = make_settle.with_context(commission_mass_settle=True).create(
                     {
+                        "date_from": self.date_from,
                         "date_to": self.date_to,
                         "agent_ids": [(6, 0, [agent.id])],
                         "settlement_type": stype,
@@ -131,8 +143,13 @@ class CommissionMassSettle(models.TransientModel):
             "params": {
                 "title": _("Mass Settlement"),
                 "message": _(
-                    "Nenhum settlement foi criado. Verifique se há "
-                    "comissões pendentes para o período selecionado."
+                    "Nenhum settlement foi criado para o período de "
+                    "%(date_from)s a %(date_to)s. Verifique se há comissões "
+                    "pendentes (faturas postadas e/ou metas alcançadas) para "
+                    "os %(agent_count)s agente(s) selecionado(s).",
+                    date_from=self.date_from or "-",
+                    date_to=self.date_to or "-",
+                    agent_count=len(agents),
                 ),
                 "type": "warning",
                 "sticky": False,
