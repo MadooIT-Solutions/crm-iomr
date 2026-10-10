@@ -67,4 +67,18 @@
               action="commission_oca.action_commission"
               sequence="80"
               groups="commission_oca.group_commission_manager"/>
+
+    <menuitem id="menu_commission_mass_settle"
+              name="Fechamento em Lote"
+              parent="menu_commission_root"
+              action="action_commission_mass_settle"
+              sequence="85"
+              groups="commission_oca.group_commission_manager"/>
+
+    <menuitem id="menu_commission_mass_invoice"
+              name="Faturas de Pagamento"
+              parent="menu_commission_root"
+              action="action_commission_mass_invoice"
+              sequence="90"
+              groups="commission_oca.group_commission_manager"/>
 </odoo>

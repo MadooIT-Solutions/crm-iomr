@@ -1816,3 +1816,63 @@ class TestCrmCommission(TransactionCase):
         self.assertEqual(fixed, 0)
         self.assertEqual(blocked, 1)
         self.assertTrue(agent.exists())
+
+    # ------------------------------------------------------------------
+    # The card fee of the order drives the stored commission amount
+    # ------------------------------------------------------------------
+
+    def test_41_card_fee_change_recomputes_the_commission(self):
+        """Alterar a taxa de cartão do pedido recalcula o repasse gravado.
+
+        A comissão do repasse médico deduz a taxa de cartão do pedido, mas
+        ``sale.order.line.agent.amount`` é calculado e **armazenado**: sem a
+        taxa em ``@api.depends`` o valor ficava congelado no cálculo anterior
+        e editar a taxa no pedido não movia a comissão (o pedido cobrava um
+        valor e pagava outro). O ``credit_card_fee_amount`` do pedido já
+        recalcula a partir das linhas de taxa, então basta que o ``amount``
+        dependa dele para a edição da taxa chegar sozinha à comissão.
+        """
+        comm = self.Commission.create(
+            {
+                "name": "Repasse Recalcula Taxa",
+                "commission_type": "fixed",
+                "fix_qty": 100.0,
+                "amount_base_type": "net_amount_deduction",
+                "deduct_taxes": True,
+                "deduct_card_fee": True,
+            }
+        )
+        self.doctor.agent = True
+        self.doctor.agent_type = "doctor"
+        self.doctor.commission_id = comm.id
+        cat = self.env["product.category"].create({"name": "RECALC TAXA"})
+        prod = self._create_product("Recalc", cat)
+        customer = self.ResPartner.create({"name": "Cliente Recalc"})
+        order = self._create_card_fee_order(customer, self.doctor, 2.5)
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": prod.id,
+                "product_uom_qty": 1,
+                "price_unit": 1000.0,
+            }
+        )
+        line._compute_agent_ids()
+        agent = line.agent_ids.filtered(lambda a: a.agent_id == self.doctor)
+        self.assertTrue(agent, "o médico precisa ir para a linha do pedido")
+        self.env.flush_all()
+
+        # 1.000,00 - 1.000,00 x 2,5% = 975,00 ; comissão de 100%.
+        self.assertAlmostEqual(order.credit_card_fee_amount, 25.0)
+        self.assertAlmostEqual(agent.amount, 975.0)
+
+        # A taxa do pedido muda (2,5% -> 10%): o valor gravado tem de reagir
+        # sozinho, sem recompute manual nem novo save.
+        fee_range = order.credit_card_fee_line_ids.payment_method_id.fee_line_ids
+        self.assertTrue(fee_range, "a faixa de taxa do cartão precisa existir")
+        fee_range.fee_percent = 10.0
+        self.env.flush_all()
+
+        self.assertAlmostEqual(order.credit_card_fee_amount, 100.0)
+        self.assertAlmostEqual(agent.amount, 900.0)
+        self.assertAlmostEqual(order.commission_total, 900.0)
