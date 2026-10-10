@@ -70,9 +70,9 @@
 
     <menuitem id="menu_commission_mass_settle"
               name="Fechamento em Lote"
-              parent="menu_commission_root"
+              parent="account_commission_oca.menu_invoicing_commission"
               action="action_commission_mass_settle"
-              sequence="85"
+              sequence="1"
               groups="commission_oca.group_commission_manager"/>
 
     <menuitem id="menu_commission_mass_invoice"
