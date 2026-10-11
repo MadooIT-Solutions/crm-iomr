@@ -47,7 +47,7 @@
                         <field name="sdr_ids" widget="many2many_tags"/>
                     </group>
                     <group string="Orientador(a)" invisible="member_type != 'sdr'">
-                        <field name="orientador_id"/>
+                        <field name="orientadora_id"/>
                     </group>
                     <notebook>
                         <page name="targets" string="Targets">
