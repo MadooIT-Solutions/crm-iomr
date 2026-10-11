@@ -32,7 +32,7 @@ class CrmIomrSnapshot(models.Model):
     # Pareto de Perdas
     loss_reason_pareto = fields.Text(string="Pareto de Motivos de Perda")
 
-    # Efetividade Orientadora B
+    # Efetividade Orientador(a) B
     transferred_leads_count = fields.Integer(string="Leads Transferidos")
     transferred_closure_rate = fields.Float(
         string="Taxa de Fechamento pós-Transferência (%)"
@@ -132,7 +132,7 @@ class CrmIomrSnapshot(models.Model):
             "\n".join(pareto_lines) if pareto_lines else "Nenhum motivo registrado"
         )
 
-        # Transferências (Orientadora B)
+        # Transferências (Orientador(a) B)
         transferred = self.env["crm.lead"].search(
             [("transferred_from_id", "!=", False)]
         )

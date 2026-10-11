@@ -13,7 +13,7 @@ from odoo.tools import format_date
 _DASHBOARD_GROUPS = (
     "commission_oca.group_commission_user",
     "commission_oca.group_commission_manager",
-    "crm_commissions.group_crm_commission_orientadora",
+    "crm_commissions.group_crm_commission_orientador",
     "crm_commissions.group_crm_commission_sdr",
     "sales_team.group_sale_salesman",
     "sales_team.group_sale_manager",
@@ -208,7 +208,7 @@ def get_dashboard_values(env, date_from, date_to):
     lead_owner_ids = [partner.id]
     is_sdr = env.user.has_group("crm_commissions.group_crm_commission_sdr")
     is_orientadora = env.user.has_group(
-        "crm_commissions.group_crm_commission_orientadora"
+        "crm_commissions.group_crm_commission_orientador"
     ) or (partner.type_partner == "orientadora" and not is_sdr)
     if is_orientadora:
         lead_owner_ids.extend(partner.sudo().sdr_agent_ids.ids)

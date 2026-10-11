@@ -28,7 +28,7 @@ from odoo import SUPERUSER_ID, api
 
 # (grupo, member_type) — a ordem importa; em caso de conflito vence a última.
 ROLE_MAP = [
-    ("crm_commissions.group_crm_commission_orientadora", "orientadora"),
+    ("crm_commissions.group_crm_commission_orientador", "orientadora"),
     ("crm_commissions.group_crm_commission_sdr", "sdr"),
     ("crm_commissions.group_commission_coordinator", "coordenadora"),
 ]

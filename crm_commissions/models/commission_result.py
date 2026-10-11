@@ -85,7 +85,7 @@ class CommissionResult(models.Model):
         compute="_compute_coordinator_rate",
         store=True,
     )
-    orientadora_count = fields.Integer(
+    orientador_count = fields.Integer(
         string="Orientador(a)s",
         compute="_compute_orientadora_count",
     )
@@ -140,11 +140,11 @@ class CommissionResult(models.Model):
     def _compute_orientadora_count(self):
         for rec in self:
             if rec.member_id.member_type == "coordenadora":
-                rec.orientadora_count = self.env["commission.member"].search_count([
+                rec.orientador_count = self.env["commission.member"].search_count([
                     ("member_type", "=", "orientadora"),
                 ])
             else:
-                rec.orientadora_count = 0
+                rec.orientador_count = 0
 
     def _get_active_policy(self):
         return self.env["commission.policy"].search(

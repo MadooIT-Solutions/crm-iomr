@@ -7,7 +7,7 @@
         name="Repasses"
         parent="crm.crm_menu_root"
         sequence="50"
-        groups="commission_oca.group_commission_user,crm_commissions.group_crm_commission_orientadora,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman"
+        groups="commission_oca.group_commission_user,crm_commissions.group_crm_commission_orientador,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman"
     />
     <record id="action_crm_commission_dashboard" model="ir.actions.act_url">
         <field name="name">Dashboard</field>
@@ -25,7 +25,7 @@
          any leftover group assignments that may exist in a database, so this
          stays consistent across installs and upgrades. -->
     <record id="menu_crm_commission_dashboard" model="ir.ui.menu">
-        <field name="groups_id" eval="[(6, 0, [ref('commission_oca.group_commission_user'), ref('crm_commissions.group_crm_commission_orientadora'), ref('crm_commissions.group_crm_commission_sdr'), ref('sales_team.group_sale_salesman')])]"/>
+        <field name="groups_id" eval="[(6, 0, [ref('commission_oca.group_commission_user'), ref('crm_commissions.group_crm_commission_orientador'), ref('crm_commissions.group_crm_commission_sdr'), ref('sales_team.group_sale_salesman')])]"/>
     </record>
     <menuitem
         id="menu_crm_commission_targets"

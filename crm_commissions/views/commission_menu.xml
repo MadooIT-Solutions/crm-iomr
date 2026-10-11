@@ -12,7 +12,7 @@
               name="Repasses"
               sequence="90"
               web_icon="crm_commissions,static/src/img/icon.png"
-              groups="commission_oca.group_commission_user,commission_oca.group_commission_manager,crm_commissions.group_commission_coordinator,crm_commissions.group_crm_commission_orientadora,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
+              groups="commission_oca.group_commission_user,commission_oca.group_commission_manager,crm_commissions.group_commission_coordinator,crm_commissions.group_crm_commission_orientador,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
 
     <!-- The dashboard is exposed from CRM > Repasses. Keep this legacy
          duplicate hidden so the old Repasses menu keeps its original options. -->
@@ -22,7 +22,7 @@
               action="action_crm_commission_dashboard"
               sequence="10"
               active="False"
-              groups="commission_oca.group_commission_user,commission_oca.group_commission_manager,crm_commissions.group_commission_coordinator,crm_commissions.group_crm_commission_orientadora,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
+              groups="commission_oca.group_commission_user,commission_oca.group_commission_manager,crm_commissions.group_commission_coordinator,crm_commissions.group_crm_commission_orientador,crm_commissions.group_crm_commission_sdr,sales_team.group_sale_salesman,sales_team.group_sale_manager"/>
 
     <menuitem id="menu_commission_sales"
               name="Vendas"

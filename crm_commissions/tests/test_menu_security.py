@@ -355,7 +355,7 @@ class TestCommissionDashboardRoute(HttpCase):
                         0,
                         [
                             cls.env.ref(
-                                "crm_commissions.group_crm_commission_orientadora"
+                                "crm_commissions.group_crm_commission_orientador"
                             ).id
                         ],
                     )

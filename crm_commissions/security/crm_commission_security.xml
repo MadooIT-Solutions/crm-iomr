@@ -4,7 +4,7 @@
 <odoo>
     <!-- The base User/Manager roles come from commission_oca. The groups below
          are CRM-specific roles that do not exist in that module. -->
-    <record id="group_crm_commission_orientadora" model="res.groups">
+    <record id="group_crm_commission_orientador" model="res.groups">
         <field name="name">Orientador(a)</field>
         <field name="category_id" ref="base.module_category_sales_sales" />
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
@@ -28,10 +28,10 @@
 
     <!-- Record rules -->
     <record id="rule_crm_target_own_only" model="ir.rule">
-        <field name="name">CRM Target: own only (orientadora)</field>
+        <field name="name">CRM Target: own only (orientador)</field>
         <field name="model_id" ref="model_crm_commission_target" />
         <field name="domain_force">[('agent_id.user_ids', 'in', [user.id])]</field>
-        <field name="groups" eval="[(4, ref('group_crm_commission_orientadora'))]" />
+        <field name="groups" eval="[(4, ref('group_crm_commission_orientador'))]" />
     </record>
 
     <!-- Sales users: read-only access to Dashboard data, restricted to own records -->

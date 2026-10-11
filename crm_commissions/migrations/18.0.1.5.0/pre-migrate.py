@@ -10,7 +10,7 @@ _LEGACY_MANAGER_GROUPS = (
 )
 _LEGACY_USER_GROUPS = ("crm_commissions.group_crm_commission_user",)
 _RESTRICTED_ROLE_GROUPS = (
-    "crm_commissions.group_crm_commission_orientadora",
+    "crm_commissions.group_crm_commission_orientador",
     "crm_commissions.group_crm_commission_sdr",
     "crm_commissions.group_crm_commission_doctor",
     "crm_commissions.group_commission_coordinator",

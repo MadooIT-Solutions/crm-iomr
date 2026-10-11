@@ -371,7 +371,7 @@ class TestCommissionDashboard(TransactionCase):
         )
 
         orientadora_group = self.env.ref(
-            "crm_commissions.group_crm_commission_orientadora"
+            "crm_commissions.group_crm_commission_orientador"
         )
         self.own_user.write({"groups_id": [(4, orientadora_group.id)]})
         self.env.flush_all()

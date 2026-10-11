@@ -1684,7 +1684,7 @@ msgstr "Oportunidades Perdidas"
 #: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__agent_type__orientadora
 #: model:ir.model.fields.selection,name:crm_commissions.selection__res_partner__type_partner__orientadora
 #: model:ir.model.fields.selection,name:crm_commissions.selection__res_users__crm_role__orientadora
-#: model:res.groups,name:crm_commissions.group_crm_commission_orientadora
+#: model:res.groups,name:crm_commissions.group_crm_commission_orientador
 #: model_terms:ir.ui.view,arch_db:crm_commissions.commission_member_form
 msgid "Orientadora"
 msgstr "Orientadora"

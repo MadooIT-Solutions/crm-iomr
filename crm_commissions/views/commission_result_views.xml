@@ -14,7 +14,7 @@
                 <field name="base_rate"/>
                 <field name="coordinator_rate"
                        invisible="member_id.member_type != 'coordenadora'"/>
-                <field name="orientadora_count"
+                <field name="orientador_count"
                        invisible="member_id.member_type != 'coordenadora'"/>
                 <field name="final_rate"/>
                 <field name="commission_amount"/>
@@ -65,7 +65,7 @@
                             <field name="final_rate"/>
                             <field name="coordinator_rate"
                                    invisible="member_id.member_type != 'coordenadora'"/>
-                            <field name="orientadora_count"
+                            <field name="orientador_count"
                                    invisible="member_id.member_type != 'coordenadora'"/>
                         </group>
                     </group>

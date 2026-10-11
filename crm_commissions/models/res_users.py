@@ -20,7 +20,7 @@ class ResUsers(models.Model):
     ROLE_TO_PARTNER_TYPE = {
         "sdr": "sdr",
         "orientadora": "orientadora",
-        "coordenadora": "coordenadora",
+        "coordenador": "coordenador(a)",
         "salesman": "employee",
         "sale_manager": "employee",
         "commission_user": "employee",
@@ -50,7 +50,7 @@ class ResUsers(models.Model):
         for user in self:
             if user.has_group("commission_oca.group_commission_manager"):
                 user.crm_role = "manager"
-            elif user.has_group("crm_commissions.group_crm_commission_orientadora"):
+            elif user.has_group("crm_commissions.group_crm_commission_orientador"):
                 user.crm_role = "orientadora"
             elif user.has_group("crm_commissions.group_crm_commission_sdr"):
                 user.crm_role = "sdr"
@@ -89,7 +89,7 @@ class ResUsers(models.Model):
         crm_groups_xml_ids = {
             "commission_oca.group_commission_user",
             "commission_oca.group_commission_manager",
-            "crm_commissions.group_crm_commission_orientadora",
+            "crm_commissions.group_crm_commission_orientador",
             "crm_commissions.group_crm_commission_sdr",
             "crm_commissions.group_crm_commission_doctor",
             "crm_commissions.group_crm_readonly",
@@ -105,7 +105,7 @@ class ResUsers(models.Model):
         role_group_map = {
             "sdr": {"crm_commissions.group_crm_commission_sdr"},
             "orientadora": {
-                "crm_commissions.group_crm_commission_orientadora",
+                "crm_commissions.group_crm_commission_orientador",
             },
             "coordenadora": {"crm_commissions.group_commission_coordinator"},
             "commission_user": {"commission_oca.group_commission_user"},
@@ -214,7 +214,7 @@ class ResGroups(models.Model):
         # commission groups stay visible in the standard access-rights view so
         # they can be assigned directly as well.
         managed_xml_ids = {
-            "crm_commissions.group_crm_commission_orientadora",
+            "crm_commissions.group_crm_commission_orientador",
             "crm_commissions.group_crm_commission_sdr",
             "crm_commissions.group_crm_commission_doctor",
             "crm_commissions.group_crm_readonly",
