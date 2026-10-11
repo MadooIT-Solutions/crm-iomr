@@ -75,6 +75,15 @@
               sequence="1"
               groups="commission_oca.group_commission_manager"/>
 
+    <!-- Resulting settlements list: same folder as the mass settle wizard so
+         the generated records can be reviewed, edited or reprocessed. -->
+    <menuitem id="menu_commission_settlements"
+              name="Comissões Fechadas"
+              parent="account_commission_oca.menu_invoicing_commission"
+              action="commission_oca.action_commission_settlement"
+              sequence="2"
+              groups="commission_oca.group_commission_manager"/>
+
     <menuitem id="menu_commission_mass_invoice"
               name="Faturas de Pagamento"
               parent="menu_commission_root"
