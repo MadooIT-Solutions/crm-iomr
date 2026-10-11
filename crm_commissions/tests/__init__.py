@@ -11,3 +11,4 @@ from . import test_legacy_target_fields
 from . import test_commission_migration
 from . import test_commission_validation
 from . import test_commission_mass_settle
+from . import test_commission_mass_invoice

@@ -4,6 +4,7 @@
 from datetime import timedelta
 
 from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class CommissionMassInvoice(models.TransientModel):
@@ -87,33 +88,37 @@ class CommissionMassInvoice(models.TransientModel):
         """Cria faturas de pagamento para os settlements selecionados."""
         self.ensure_one()
         if not self.settlement_ids:
-            raise models.UserError(_("Nenhum settlement selecionado para faturamento."))
+            raise UserError(_("Nenhum settlement selecionado para faturamento."))
 
         settlements = self.settlement_ids.filtered(lambda s: s.state == "settled")
         if not settlements:
-            raise models.UserError(_("Nenhum settlement válido para faturamento."))
+            raise UserError(_("Nenhum settlement válido para faturamento."))
 
-        # Agrupa settlements conforme configuração
-        if self.group_by == "agent":
-            grouped = settlements.groupby(lambda s: s.agent_id)
-        elif self.group_by == "period":
-            grouped = settlements.groupby(
-                lambda s: (s.agent_id, s.date_from, s.date_to)
-            )
+        # O método ``groupby`` de recordset foi removido no Odoo 18. O
+        # ``make_invoices`` do account_commission_oca já agrupa por agente
+        # (company/currency), troca faturas negativas para refund e marca os
+        # settlements como faturados. Para "Agente + Período" pré-agrupamos em
+        # buckets, pois o OCA não considera o período nas chaves de agrupamento.
+        settlement_obj = self.env["commission.settlement"]
+        if self.group_by == "period":
+            buckets = {}
+            for settlement in settlements:
+                key = (settlement.agent_id, settlement.date_from, settlement.date_to)
+                buckets.setdefault(key, settlement_obj)
+                buckets[key] |= settlement
+            groups = list(buckets.values())
         else:
-            grouped = settlements.groupby(lambda s: s)
+            groups = [settlements]
 
+        grouped_invoice = self.group_by != "individual"
         invoices = self.env["account.move"]
-        for _key, group in grouped:
-            group_settlements = settlements & group
-            invoice_vals = group_settlements._prepare_invoice(
-                self.journal_id, self.product_id, self.date
+        for group in groups:
+            invoices |= group.make_invoices(
+                self.journal_id,
+                self.product_id,
+                self.date,
+                grouped=grouped_invoice,
             )
-            invoice = self.env["account.move"].create(invoice_vals)
-            invoices |= invoice
-
-        # Marca settlements como faturados
-        settlements.write({"state": "invoiced"})
 
         return {
             "name": _("Faturas Criadas"),
