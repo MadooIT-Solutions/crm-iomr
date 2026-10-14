@@ -56,10 +56,27 @@
         <field name="settlement_type">sale_invoice</field>
     </record>
 
+    <!-- Coordenador(a): 0,5% sobre a base líquida (impostos da linha + taxa
+         de cartão), a mesma regra do repasse. Nas categorias extras a comissão
+         é a fixa de 0,25% (ver ``commission_coordinator_extras_025``). -->
     <record id="commission_coordinator_policy" model="commission">
         <field name="name">Comissão Coordenador(a) (via política)</field>
         <field name="commission_type">coordinator</field>
-        <field name="amount_base_type">gross_amount</field>
+        <field name="amount_base_type">net_amount_deduction</field>
+        <field name="deduct_taxes" eval="True"/>
+        <field name="deduct_card_fee" eval="True"/>
+        <field name="settlement_type">sale_invoice</field>
+    </record>
+
+    <!-- Coordenador(a): 0,25% líquido sobre as mesmas categorias extras da
+         orientadora (Taxa de Sala, Mat-Med, Cola, Taxa de Equipamento). -->
+    <record id="commission_coordinator_extras_025" model="commission">
+        <field name="name">Comissão Coordenador(a) 0,25% (Taxa Sala / Mat-Med / Cola / Taxa Equipamento)</field>
+        <field name="commission_type">fixed</field>
+        <field name="fix_qty">0.25</field>
+        <field name="amount_base_type">net_amount_deduction</field>
+        <field name="deduct_taxes" eval="True"/>
+        <field name="deduct_card_fee" eval="True"/>
         <field name="settlement_type">sale_invoice</field>
     </record>
 

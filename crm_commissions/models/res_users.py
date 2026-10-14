@@ -6,8 +6,12 @@ from odoo import api, fields, models
 class ResUsers(models.Model):
     _inherit = "res.users"
 
-    show_repasse_table = fields.Boolean(related='partner_id.show_repasse_table', readonly=False)
-    show_all_values = fields.Boolean(related='partner_id.show_all_values', readonly=False)
+    show_repasse_table = fields.Boolean(
+        related="partner_id.show_repasse_table", readonly=False
+    )
+    show_all_values = fields.Boolean(
+        related="partner_id.show_all_values", readonly=False
+    )
 
     # Tipos de contato que identificam um(a) médico(a). Servem de referência
     # para não rebaixar um contato médico para um tipo não-médico ao sincronizar
@@ -20,7 +24,7 @@ class ResUsers(models.Model):
     ROLE_TO_PARTNER_TYPE = {
         "sdr": "sdr",
         "orientadora": "orientadora",
-        "coordenador": "coordenador(a)",
+        "coordenadora": "coordenadora",
         "salesman": "employee",
         "sale_manager": "employee",
         "commission_user": "employee",
@@ -50,6 +54,11 @@ class ResUsers(models.Model):
         for user in self:
             if user.has_group("commission_oca.group_commission_manager"):
                 user.crm_role = "manager"
+            elif user.has_group("crm_commissions.group_commission_coordinator"):
+                # A coordenadora herda o grupo de orientadora (ver
+                # ``security/commission_security.xml``), então precisa ser
+                # checada antes para não cair em "orientadora".
+                user.crm_role = "coordenadora"
             elif user.has_group("crm_commissions.group_crm_commission_orientador"):
                 user.crm_role = "orientadora"
             elif user.has_group("crm_commissions.group_crm_commission_sdr"):
@@ -203,11 +212,11 @@ class ResGroups(models.Model):
     def _update_user_groups_view(self):
         super()._update_user_groups_view()
 
-        if self._context.get('install_filename') or self._context.get('_force_unlink'):
+        if self._context.get("install_filename") or self._context.get("_force_unlink"):
             return
 
-        view = self.env.ref('base.user_groups_view', raise_if_not_found=False)
-        if not (view and view._name == 'ir.ui.view'):
+        view = self.env.ref("base.user_groups_view", raise_if_not_found=False)
+        if not (view and view._name == "ir.ui.view"):
             return
 
         # Keep the CRM-specific roles controlled by ``crm_role``. The OCA
@@ -237,9 +246,9 @@ class ResGroups(models.Model):
         tree = etree.fromstring(view.arch)
 
         modified = False
-        for field_elem in list(tree.iter('field')):
-            name = field_elem.get('name', '')
-            if name.startswith('in_group_'):
+        for field_elem in list(tree.iter("field")):
+            name = field_elem.get("name", "")
+            if name.startswith("in_group_"):
                 try:
                     gid = int(name[9:])
                     if gid in managed_group_ids:
@@ -247,9 +256,9 @@ class ResGroups(models.Model):
                         modified = True
                 except ValueError:
                     pass
-            elif name.startswith('sel_groups_'):
+            elif name.startswith("sel_groups_"):
                 try:
-                    ids = [int(v) for v in name[11:].split('_')]
+                    ids = [int(v) for v in name[11:].split("_")]
                     if any(gid in managed_group_ids for gid in ids):
                         field_elem.getparent().remove(field_elem)
                         modified = True
@@ -259,4 +268,4 @@ class ResGroups(models.Model):
         if modified:
             xml_content = etree.tostring(tree, pretty_print=True, encoding="unicode")
             if xml_content != view.arch:
-                view.with_context(lang=None).write({'arch': xml_content})
+                view.with_context(lang=None).write({"arch": xml_content})

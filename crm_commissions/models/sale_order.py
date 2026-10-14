@@ -6,6 +6,15 @@ from odoo.exceptions import ValidationError
 
 _SDR_COMMISSION_PCT = 25.0
 
+# Categorias que pagam a coordenadora a comissão fixa de 0,25% (líquido).
+# As mesmas categorias extras da orientadora, conforme a regra da clínica.
+COORDINATOR_EXTRA_CATEGORY_NAMES = (
+    "TAXA DE SALA",
+    "MAT/MED",
+    "COLA ORGANICA",
+    "TAXA DE EQUIPAMENTO",
+)
+
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
@@ -546,15 +555,65 @@ class SaleOrderLine(models.Model):
             )
         return commission
 
+    def _get_coordinator_commission_for_product(self, partner, product):
+        """Comissão da coordenadora para o produto vendido.
+
+        Segue o mesmo modelo da orientadora: a regra de categoria dela (quando
+        existe) decide; nas categorias extras a comissão é a fixa de 0,25%; nas
+        demais, a política de coordenador. Garante que a coordenadora nunca recaia
+        na comissão do cliente (o bug de espelhamento) nem receba o mesmo
+        percentual da orientadora.
+        """
+        if not partner:
+            return self._get_coordinator_commission()
+        if product and product.categ_id:
+            categ_ids = self._get_product_category_ids(product)
+            rule = self.env["commission.agent.rule"].search(
+                [
+                    ("agent_id", "=", partner.id),
+                    ("categ_ids", "in", categ_ids),
+                ],
+                order="sequence",
+                limit=1,
+            )
+            if rule:
+                return rule.commission_id
+        if self._product_in_coordinator_extras_categ(product):
+            extras = self.env.ref(
+                "crm_commissions.commission_coordinator_extras_025",
+                raise_if_not_found=False,
+            )
+            if extras:
+                return extras
+        return self._get_coordinator_commission()
+
+    def _product_in_coordinator_extras_categ(self, product):
+        """Se o produto pertence a uma categoria extra da coordenadora."""
+        if not product or not product.categ_id:
+            return False
+        cats = self.env["product.category"].search(
+            [("name", "in", COORDINATOR_EXTRA_CATEGORY_NAMES)]
+        )
+        if not cats:
+            return False
+        extra_ids = set(cats.ids)
+        for cat in cats:
+            extra_ids.update(
+                self.env["product.category"].search([("id", "child_of", cat.id)]).ids
+            )
+        return any(cid in extra_ids for cid in self._get_product_category_ids(product))
+
     def _add_coordinator_agents(self, agent_vals):
         """Mirror the orientadora's commission lines to her coordinator.
 
-        The coordinator receives commission (via the active policy rate) on
-        the same items where the orientadora receives commission.
+        The coordinator receives commission on the same items where the
+        orientadora receives commission, at her own rate: the per-category
+        commission (0,25% on the extras, the coordinator policy elsewhere),
+        never the orientadora's.
         """
         result = list(agent_vals)
-        coordinator_comm = self._get_coordinator_commission()
-        if not coordinator_comm:
+        default_comm = self._get_coordinator_commission()
+        if not default_comm:
             return result
         present_agents = {v[2].get("agent_id") for v in result if len(v) >= 3}
         for val in result:
@@ -567,13 +626,19 @@ class SaleOrderLine(models.Model):
                 and coordinator
                 and coordinator.id not in present_agents
             ):
+                comm = (
+                    self._get_coordinator_commission_for_product(
+                        coordinator, self.product_id
+                    )
+                    or default_comm
+                )
                 result.append(
                     (
                         0,
                         0,
                         {
                             "agent_id": coordinator.id,
-                            "commission_id": coordinator_comm.id,
+                            "commission_id": comm.id,
                             "commission_split_percent": 100.0,
                         },
                     )
@@ -633,7 +698,13 @@ class SaleOrderLine(models.Model):
     @api.model
     def _get_excluded_orientadora_categ_ids(self):
         cats = self.env["product.category"].search(
-            ["|", ("name", "ilike", "HONORARIO"), ("name", "ilike", "PROCEDIMENTO")]
+            [
+                "|",
+                ("name", "ilike", "HONORARIO"),
+                "|",
+                ("name", "ilike", "PROCEDIMENTO"),
+                ("name", "ilike", "ANESTES"),
+            ]
         )
         all_ids = set()
         for cat in cats:
@@ -674,6 +745,16 @@ class SaleOrderLine(models.Model):
             )
             if rule:
                 val[2]["commission_id"] = rule.commission_id.id
+            if agent.type_partner == "coordenadora":
+                # Bug de espelhamento: quando a coordenadora já está na lista de
+                # agentes do cliente (ou é o vendedor), ela ficava com a
+                # comissão do cliente e não com a dela. Força a política de
+                # coordenador (ou a regra de categoria dela).
+                coordinator_comm = self._get_coordinator_commission_for_product(
+                    agent, product
+                )
+                if coordinator_comm:
+                    val[2]["commission_id"] = coordinator_comm.id
             commission = self.env["commission"].browse(val[2]["commission_id"])
             if commission.categ_ids:
                 commission_categ_ids = set(commission.categ_ids.ids)

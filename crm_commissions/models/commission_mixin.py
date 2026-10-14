@@ -11,6 +11,12 @@ CARD_FEE_PRODUCT_XMLIDS = (
     "l10n_br_sale_credit_card_fee.product_credit_card_fee",
 )
 
+# Coordinator commission on the "Defensoria Pública" funnel: a flat 1% on
+# every commissionable item, overriding the per-category matrix. The funnel is
+# matched by the crm.team name, the same way the excluded categories are.
+DEFENSORIA_FUNNEL_TERM = "DEFENSORIA"
+DEFENSORIA_COORDINATOR_RATE = 1.0
+
 
 class CommissionMixin(models.AbstractModel):
     _inherit = "commission.mixin"
@@ -63,6 +69,33 @@ class CommissionLineMixin(models.AbstractModel):
             return order
         sale_lines = getattr(source_line, "sale_line_ids", False)
         return sale_lines[:1].order_id if sale_lines else False
+
+    def _get_commission_funnel_team(self):
+        """The crm.team (funnel) the source sale order belongs to.
+
+        ``sale.order.team_id`` is the order's own sales team; when it is empty
+        the opportunity's team answers, so an order created from a lead keeps
+        the funnel it was captured in.
+        """
+        self.ensure_one()
+        order = self._get_source_sale_order()
+        if not order:
+            return self.env["crm.team"]
+        team = getattr(order, "team_id", False)
+        if not team:
+            opportunity = getattr(order, "opportunity_id", False)
+            team = getattr(opportunity, "team_id", False)
+        return team or self.env["crm.team"]
+
+    def _is_defensoria_commission_funnel(self):
+        """Whether the source order was captured in the Defensoria Pública funnel.
+
+        The clinic pays the coordinator a flat 1% on the Defensoria Pública
+        channel instead of the per-category matrix, so the funnel is matched by
+        the team name the way the excluded categories are.
+        """
+        team = self._get_commission_funnel_team()
+        return bool(team) and DEFENSORIA_FUNNEL_TERM in (team.name or "").upper()
 
     def _can_change_split(self):
         """Whether the split of this row may be rewritten.
@@ -299,6 +332,13 @@ class CommissionLineMixin(models.AbstractModel):
         self.ensure_one()
         if commission and commission.amount_base_type == "net_amount_deduction":
             subtotal = self._get_deducted_base_amount(commission, subtotal)
+        if (
+            self.agent_id.type_partner == "coordenadora"
+            and self._is_defensoria_commission_funnel()
+        ):
+            # Defensoria Pública: flat 1% on every commissionable item, on the
+            # net base (the deduction above), regardless of the category matrix.
+            return subtotal * DEFENSORIA_COORDINATOR_RATE / 100.0
         if commission and commission.commission_type == "coordinator":
             policy = self.env["commission.policy"].search(
                 [("active", "=", True)], order="date_start desc", limit=1

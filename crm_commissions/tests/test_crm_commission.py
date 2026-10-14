@@ -653,7 +653,181 @@ class TestCrmCommission(TransactionCase):
 
         coord_lines = line.agent_ids.filtered(lambda a: a.agent_id == self.coordenadora)
         self.assertEqual(len(coord_lines), 1)
-        self.assertEqual(coord_lines.commission_id, coord_comm)
+        # A coordenadora não herda a comissão do cliente: recebe a política de
+        # coordenador (o bug de espelhamento corrigido).
+        self.assertEqual(
+            coord_lines.commission_id,
+            self.env.ref("crm_commissions.commission_coordinator_policy"),
+        )
+
+    def test_18_coordinator_extras_025_net(self):
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.orientadora.commission_id = prog.id
+        self.orientadora.salesman_as_agent = True
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "Sales Orientadora 18",
+                "login": "sales_orientadora_login_18",
+                "partner_id": self.orientadora.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        extras = self.env.ref("crm_commissions.commission_coordinator_extras_025")
+        cat_sala = self.env["product.category"].create({"name": "TAXA DE SALA"})
+        prod_sala = self._create_product("Taxa de Sala", cat_sala)
+        customer = self.ResPartner.create({"name": "Cliente Teste 18"})
+        line = self._create_sale_line(customer, prod_sala, user_id=sales_user.id)
+        line._compute_agent_ids()
+        coord = line.agent_ids.filtered(lambda a: a.agent_id == self.coordenadora)
+        self.assertTrue(coord)
+        self.assertEqual(coord.commission_id, extras)
+        # 0,25% de 100 (sem impostos/taxa -> líquido = 100)
+        self.assertAlmostEqual(coord.amount, 0.25)
+
+    def test_19_coordinator_lio_05_net(self):
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.CommissionProgressiveLine.create(
+            {
+                "commission_id": prog.id,
+                "percent_from": 0.0,
+                "percent_to": 100.0,
+                "commission_percent": 0.5,
+                "sequence": 10,
+            }
+        )
+        self.orientadora.commission_id = prog.id
+        self.orientadora.salesman_as_agent = True
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "Sales Orientadora 19",
+                "login": "sales_orientadora_login_19",
+                "partner_id": self.orientadora.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        cat_lio = self.env["product.category"].create({"name": "LIO"})
+        prod_lio = self._create_product("Lente LIO", cat_lio)
+        customer = self.ResPartner.create({"name": "Cliente Teste 19"})
+        line = self._create_sale_line(customer, prod_lio, user_id=sales_user.id)
+        line._compute_agent_ids()
+        coord = line.agent_ids.filtered(lambda a: a.agent_id == self.coordenadora)
+        self.assertTrue(coord)
+        self.assertEqual(
+            coord.commission_id,
+            self.env.ref("crm_commissions.commission_coordinator_policy"),
+        )
+        # 0,5% de 100 (líquido = 100)
+        self.assertAlmostEqual(coord.amount, 0.5)
+
+    def test_20_coordinator_defensoria_funnel_one_percent(self):
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.CommissionProgressiveLine.create(
+            {
+                "commission_id": prog.id,
+                "percent_from": 0.0,
+                "percent_to": 100.0,
+                "commission_percent": 0.5,
+                "sequence": 10,
+            }
+        )
+        self.orientadora.commission_id = prog.id
+        self.orientadora.salesman_as_agent = True
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "Sales Orientadora 20",
+                "login": "sales_orientadora_login_20",
+                "partner_id": self.orientadora.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        team = self.env["crm.team"].create({"name": "Defensoria Pública"})
+        cat_lio = self.env["product.category"].create({"name": "LIO DEFENSORIA"})
+        prod_lio = self._create_product("Lente LIO Defensoria", cat_lio)
+        customer = self.ResPartner.create({"name": "Cliente Defensoria"})
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "user_id": sales_user.id,
+                "team_id": team.id,
+            }
+        )
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": prod_lio.id,
+                "product_uom_qty": 1,
+                "price_unit": 100.0,
+            }
+        )
+        line._compute_agent_ids()
+        coord = line.agent_ids.filtered(lambda a: a.agent_id == self.coordenadora)
+        self.assertTrue(coord)
+        # 1% de 100 (líquido = 100)
+        self.assertAlmostEqual(coord.amount, 1.0)
+
+    def test_21_anestesista_excluded(self):
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva", "commission_type": "progressive"}
+        )
+        self.orientadora.commission_id = prog.id
+        self.orientadora.salesman_as_agent = True
+        sales_user = self.env["res.users"].create(
+            {
+                "name": "Sales Orientadora 21",
+                "login": "sales_orientadora_login_21",
+                "partner_id": self.orientadora.id,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, [self.company.id])],
+            }
+        )
+        cat_anest = self.env["product.category"].create({"name": "ANESTESISTA"})
+        prod_anest = self._create_product("Anestesista", cat_anest)
+        customer = self.ResPartner.create({"name": "Cliente Teste 21"})
+        line = self._create_sale_line(customer, prod_anest, user_id=sales_user.id)
+        line._compute_agent_ids()
+        self.assertFalse(
+            line.agent_ids.filtered(lambda a: a.agent_id == self.coordenadora)
+        )
+        self.assertFalse(
+            line.agent_ids.filtered(lambda a: a.agent_id == self.orientadora)
+        )
+
+    def test_22_direct_agent_coordinator_gets_own_commission(self):
+        # A coordenadora como agente direto do cliente (não espelhada) deve
+        # receber a política de coordenador, não a comissão do cliente.
+        self.orientadora.coordenadora_id = self.coordenadora.id
+        orient_comm = self.Commission.create(
+            {"name": "Teste Padrao", "commission_type": "fixed", "fix_qty": 0.5}
+        )
+        self.orientadora.commission_id = orient_comm.id
+        # O bug: a coordenadora com a mesma comissão da orientadora.
+        self.coordenadora.commission_id = orient_comm.id
+        customer = self.ResPartner.create({"name": "Cliente Teste 22"})
+        customer.agent_ids = [(6, 0, [self.orientadora.id, self.coordenadora.id])]
+        cat = self.env["product.category"].create({"name": "TESTE 22"})
+        prod = self._create_product("Produto 22", cat)
+        line = self._create_sale_line(customer, prod)
+        line._compute_agent_ids()
+        coord = line.agent_ids.filtered(lambda a: a.agent_id == self.coordenadora)
+        self.assertTrue(coord)
+        self.assertEqual(
+            coord.commission_id,
+            self.env.ref("crm_commissions.commission_coordinator_policy"),
+        )
+        self.assertNotEqual(coord.commission_id, orient_comm)
 
     def _create_doctor_sale_line(self, customer, product, doctor):
         order = self.env["sale.order"].create(
