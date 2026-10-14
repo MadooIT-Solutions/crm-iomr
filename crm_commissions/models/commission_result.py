@@ -234,28 +234,44 @@ class CommissionResult(models.Model):
     def _calculate_coordinator(self, policy):
         self.ensure_one()
 
-        orientadora_type = self.env["commission.member"].search([
-            ("member_type", "=", "orientadora"),
+        # Soma diretamente das linhas de venda da coordenadora: o campo
+        # ``amount`` já aplica as taxas por categoria (0,25% extras, 0,5%
+        # demais) e o funil Defensoria Pública (1%), então o resultado mensal
+        # reflete exatamente o que será pago a ela.
+        partner = self.member_id.partner_id
+        sale_lines = self.env["sale.order.line"].search([
+            ("agent_ids.agent_id", "=", partner.id),
         ])
-
+        # Força o recálculo do ``amount`` (campo computado) para garantir que
+        # as taxas por categoria e funil estejam aplicadas.
+        sale_lines.modified(["agent_ids"])
         total_commissionable = 0.0
-        total_target = 0.0
         total_lio = 0.0
         total_hospital = 0.0
+        for line in sale_lines:
+            order = line.order_id
+            if not order:
+                continue
+            period = order.date_order.strftime("%Y-%m") if order.date_order else False
+            if period != self.period_code:
+                continue
+            agent_line = line.agent_ids.filtered(
+                lambda a, p=partner: a.agent_id == p
+            )
+            if not agent_line:
+                continue
+            total_commissionable += agent_line.amount or 0.0
+            # Agregações auxiliares (LIO / hospital) para o relatório.
+            if line.product_id and line.product_id.categ_id:
+                categ_names = " ".join(
+                    order._get_product_category_names(line.product_id.categ_id)
+                ).upper()
+                if "LIO" in categ_names:
+                    total_lio += line.price_subtotal
+                    continue
+            total_hospital += line.price_subtotal
 
-        for orientadora in orientadora_type:
-            orientadora_results = self.env["commission.result"].search([
-                ("member_id", "=", orientadora.id),
-                ("period_code", "=", self.period_code),
-                ("state", "in", ("calculated", "approved", "paid")),
-            ])
-            for result in orientadora_results:
-                total_commissionable += result.commission_base_amount
-                total_target += result.target_amount
-                total_lio += result.lio_sales_amount
-                total_hospital += result.hospital_sales_amount
-
-        self.target_amount = total_target
+        self.target_amount = 0.0
         self.lio_sales_amount = total_lio
         self.hospital_sales_amount = total_hospital
         self.commission_base_amount = total_commissionable
