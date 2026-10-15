@@ -36,6 +36,7 @@ class CommissionMassSettle(models.TransientModel):
         selection=[
             ("all", "Todos os Tipos"),
             ("crm_performance", "CRM Performance"),
+            ("crm_quarterly_recovery", "CRM Quarterly Recovery"),
             ("sale_invoice", "Sales Invoice"),
         ],
         string="Tipo de Liquidação",
@@ -66,7 +67,7 @@ class CommissionMassSettle(models.TransientModel):
     def _get_settlement_types(self):
         """Retorna lista de tipos de liquidação para processar."""
         if self.settlement_type == "all":
-            return ["crm_performance", "sale_invoice"]
+            return ["crm_performance", "crm_quarterly_recovery", "sale_invoice"]
         return [self.settlement_type]
 
     def action_settle(self):

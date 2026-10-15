@@ -90,12 +90,20 @@ class TestQuarterlyBonus(TransactionCase):
                             "product_id": self.product.id,
                             "product_uom_qty": 1,
                             "price_unit": amount,
+                            # Keep amount_total equal to the sale figure so
+                            # the achieved amounts (which include taxes in
+                            # the company's default setup) stay predictable.
+                            "tax_id": [(5, 0, 0)],
                         },
                     )
                 ],
             }
         )
+        # The compute already linked the customer's agent, so replace the
+        # commands instead of appending a duplicate one (unique constraint
+        # on (object_id, agent_id)).
         order.order_line.agent_ids = [
+            (5, 0, 0),
             (
                 0,
                 0,
@@ -104,7 +112,7 @@ class TestQuarterlyBonus(TransactionCase):
                     "commission_id": self.commission.id,
                     "commission_split_percent": 100.0,
                 },
-            )
+            ),
         ]
         order._action_confirm()
         return order
@@ -121,11 +129,13 @@ class TestQuarterlyBonus(TransactionCase):
                 amount,
             )
 
-        bonuses = self.Bonus.search([
-            ("agent_id", "=", self.orientadora.id),
-            ("year", "=", future_quarter.year),
-            ("quarter", "=", f"Q{(future_quarter.month - 1) // 3 + 1}"),
-        ])
+        bonuses = self.Bonus.search(
+            [
+                ("agent_id", "=", self.orientadora.id),
+                ("year", "=", future_quarter.year),
+                ("quarter", "=", f"Q{(future_quarter.month - 1) // 3 + 1}"),
+            ]
+        )
         self.assertEqual(len(bonuses), 1)
         self.assertTrue(bonuses.auto_generated)
         self.assertEqual(bonuses.target_count, 3)
@@ -137,11 +147,13 @@ class TestQuarterlyBonus(TransactionCase):
         bonuses.bonus_amount = 125.0
         self.Target._sync_all_quarterly_bonuses()
         self.assertEqual(
-            self.Bonus.search_count([
-                ("agent_id", "=", self.orientadora.id),
-                ("year", "=", future_quarter.year),
-                ("quarter", "=", bonuses.quarter),
-            ]),
+            self.Bonus.search_count(
+                [
+                    ("agent_id", "=", self.orientadora.id),
+                    ("year", "=", future_quarter.year),
+                    ("quarter", "=", bonuses.quarter),
+                ]
+            ),
             1,
         )
         self.assertEqual(bonuses.bonus_amount, 125.0)
@@ -156,11 +168,13 @@ class TestQuarterlyBonus(TransactionCase):
             self._create_confirmed_sale(self.orientadora, target_date, amount)
             self._create_target(self.orientadora, target_date)
 
-        bonus = self.Bonus.search([
-            ("agent_id", "=", self.orientadora.id),
-            ("year", "=", closed_quarter.year),
-            ("quarter", "=", f"Q{(closed_quarter.month - 1) // 3 + 1}"),
-        ])
+        bonus = self.Bonus.search(
+            [
+                ("agent_id", "=", self.orientadora.id),
+                ("year", "=", closed_quarter.year),
+                ("quarter", "=", f"Q{(closed_quarter.month - 1) // 3 + 1}"),
+            ]
+        )
         self.assertEqual(len(bonus), 1)
         self.assertEqual(bonus.total_achieved, 3000.0)
         self.assertAlmostEqual(bonus.quarterly_pct, 100.0)
@@ -176,11 +190,13 @@ class TestQuarterlyBonus(TransactionCase):
         self.Bonus._cron_sync_and_finalize_quarterly_bonuses()
         self.assertEqual(bonus.state, "recovered")
         self.assertEqual(
-            self.Bonus.search_count([
-                ("agent_id", "=", self.orientadora.id),
-                ("year", "=", closed_quarter.year),
-                ("quarter", "=", bonus.quarter),
-            ]),
+            self.Bonus.search_count(
+                [
+                    ("agent_id", "=", self.orientadora.id),
+                    ("year", "=", closed_quarter.year),
+                    ("quarter", "=", bonus.quarter),
+                ]
+            ),
             1,
         )
 
@@ -189,16 +205,16 @@ class TestQuarterlyBonus(TransactionCase):
             fields.Date.context_today(self.env.user) - relativedelta(months=4)
         )
         self._create_target(self.orientadora, closed_quarter)
-        self._create_target(
-            self.orientadora, closed_quarter + relativedelta(months=1)
-        )
+        self._create_target(self.orientadora, closed_quarter + relativedelta(months=1))
         self.Bonus._cron_sync_and_finalize_quarterly_bonuses()
 
-        bonus = self.Bonus.search([
-            ("agent_id", "=", self.orientadora.id),
-            ("year", "=", closed_quarter.year),
-            ("quarter", "=", f"Q{(closed_quarter.month - 1) // 3 + 1}"),
-        ])
+        bonus = self.Bonus.search(
+            [
+                ("agent_id", "=", self.orientadora.id),
+                ("year", "=", closed_quarter.year),
+                ("quarter", "=", f"Q{(closed_quarter.month - 1) // 3 + 1}"),
+            ]
+        )
         self.assertTrue(bonus.is_finalized)
         self.assertFalse(bonus.has_all_months)
         self.assertEqual(bonus.state, "incomplete")
@@ -214,11 +230,13 @@ class TestQuarterlyBonus(TransactionCase):
             )
         self.Bonus._cron_sync_and_finalize_quarterly_bonuses()
 
-        bonus = self.Bonus.search([
-            ("agent_id", "=", self.orientadora.id),
-            ("year", "=", closed_quarter.year),
-            ("quarter", "=", f"Q{(closed_quarter.month - 1) // 3 + 1}"),
-        ])
+        bonus = self.Bonus.search(
+            [
+                ("agent_id", "=", self.orientadora.id),
+                ("year", "=", closed_quarter.year),
+                ("quarter", "=", f"Q{(closed_quarter.month - 1) // 3 + 1}"),
+            ]
+        )
         self.assertTrue(bonus.is_finalized)
         self.assertFalse(bonus.is_eligible)
         self.assertEqual(bonus.state, "lost")
@@ -229,20 +247,24 @@ class TestQuarterlyBonus(TransactionCase):
             fields.Date.context_today(self.env.user) + relativedelta(months=4)
         )
         target = self._create_target(self.orientadora, future_quarter, 1000.0)
-        bonus = self.Bonus.search([
-            ("agent_id", "=", self.orientadora.id),
-            ("year", "=", future_quarter.year),
-            ("quarter", "=", f"Q{(future_quarter.month - 1) // 3 + 1}"),
-        ])
+        bonus = self.Bonus.search(
+            [
+                ("agent_id", "=", self.orientadora.id),
+                ("year", "=", future_quarter.year),
+                ("quarter", "=", f"Q{(future_quarter.month - 1) // 3 + 1}"),
+            ]
+        )
         self.assertEqual(bonus.total_target, 1000.0)
 
         target.target_amount = 1750.0
         self.assertEqual(bonus.total_target, 1750.0)
         self.assertEqual(
-            self.Bonus.search_count([
-                ("agent_id", "=", self.orientadora.id),
-                ("year", "=", future_quarter.year),
-                ("quarter", "=", bonus.quarter),
-            ]),
+            self.Bonus.search_count(
+                [
+                    ("agent_id", "=", self.orientadora.id),
+                    ("year", "=", future_quarter.year),
+                    ("quarter", "=", bonus.quarter),
+                ]
+            ),
             1,
         )

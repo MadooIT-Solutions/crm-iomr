@@ -8,8 +8,14 @@ class CommissionSettlement(models.Model):
     _inherit = "commission.settlement"
 
     settlement_type = fields.Selection(
-        selection_add=[("crm_performance", "CRM Performance")],
-        ondelete={"crm_performance": "set default"},
+        selection_add=[
+            ("crm_performance", "CRM Performance"),
+            ("crm_quarterly_recovery", "CRM Quarterly Recovery"),
+        ],
+        ondelete={
+            "crm_performance": "set default",
+            "crm_quarterly_recovery": "set default",
+        },
     )
     target_id = fields.Many2one(
         "crm.commission.target",
@@ -29,4 +35,13 @@ class CommissionSettlementLine(models.Model):
         copy=False,
         readonly=True,
         ondelete="set null",
+    )
+    quarterly_bonus_id = fields.Many2one(
+        "crm.commission.quarterly.bonus",
+        string="Related quarterly bonus",
+        index=True,
+        copy=False,
+        readonly=True,
+        ondelete="set null",
+        help="Bônus trimestral que originou esta linha de recuperação.",
     )

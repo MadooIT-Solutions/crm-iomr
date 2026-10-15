@@ -577,8 +577,15 @@ class CommissionTarget(models.Model):
                 rec.state = "draft"
 
     def _skip_settlement(self):
-        """Return whether this target already has an active settlement line."""
+        """Return whether this target already has an active settlement line.
+
+        Também pula metas cujo agente não tem regra de comissão, porque
+        ``commission.settlement.line.commission_id`` é obrigatório e a
+        criação da linha falharia no meio do fechamento.
+        """
         self.ensure_one()
+        if not self.commission_id:
+            return True
         return bool(
             self.env["commission.settlement.line"].search_count(
                 [
@@ -593,6 +600,115 @@ class CommissionTarget(models.Model):
                 ]
             )
         )
+
+    @api.model
+    def _select_rate_line(self, lines, performance_pct, from_field, to_field):
+        """Faixa correspondente à performance.
+
+        Quando o valor cai numa lacuna entre faixas (50→51, 80→81, ...),
+        devolve a faixa imediatamente acima; só usa a última quando a
+        performance passa de todos os limites.
+        """
+        for line in lines:
+            if line[from_field] <= performance_pct <= line[to_field]:
+                return line
+        for line in lines:
+            if performance_pct < line[from_field]:
+                return line
+        return lines[-1] if lines else False
+
+    @api.model
+    def _rate_for_period(self, performance_pct, date_from, date_to, commission):
+        """Taxa base da Política de Comissionamento vigente no período.
+
+        Se não houver política para o período, cai nas faixas progressivas
+        da regra de comissão do agente. É o mesmo cálculo usado pelo
+        fechamento do bônus trimestral, para os dois tipos de settlement
+        falarem a mesma moeda.
+        """
+        policy = (
+            self.env["commission.policy"]
+            .sudo()
+            .search(
+                [
+                    ("active", "=", True),
+                    ("date_start", "<=", date_to),
+                ]
+                + expression.OR(
+                    [
+                        [("date_end", "=", False)],
+                        [("date_end", ">=", date_from)],
+                    ]
+                ),
+                order="date_start desc",
+                limit=1,
+            )
+        )
+        if policy:
+            line = self._select_rate_line(
+                policy.line_ids.sorted(key=lambda item: item.sequence),
+                performance_pct,
+                "delivery_pct_from",
+                "delivery_pct_to",
+            )
+            return line.base_rate if line else 0.0
+        if commission:
+            line = self._select_rate_line(
+                commission.progressive_line_ids.sorted(key=lambda item: item.sequence),
+                performance_pct,
+                "percent_from",
+                "percent_to",
+            )
+            return line.commission_percent if line else 0.0
+        return 0.0
+
+    def _get_rate_for_performance(self, performance_pct):
+        """Taxa base aplicável à meta, considerando o mês de referência."""
+        self.ensure_one()
+        reference = self.target_date or fields.Date.context_today(self)
+        date_from = reference.replace(day=1)
+        date_to = date_from + relativedelta(months=1, days=-1)
+        return self._rate_for_period(
+            performance_pct, date_from, date_to, self.commission_id
+        )
+
+    def _get_commission_base(self):
+        """Base elegível do período da meta: vendas − impostos − taxa cartão.
+
+        Usa as vendas de comissão já sincronizadas do mês, com a mesma
+        regra do bônus trimestral e do relatório de resultado.
+        """
+        self.ensure_one()
+        members = (
+            self.env["commission.member"]
+            .sudo()
+            .search(
+                [
+                    ("partner_id", "=", self.agent_id.id),
+                    ("member_type", "=", "orientadora"),
+                ]
+            )
+        )
+        sales = (
+            self.env["commission.sale"]
+            .sudo()
+            .search(
+                [
+                    ("owner_member_id", "in", members.ids),
+                    ("period_code", "=", self.target_date.strftime("%Y-%m")),
+                    ("status", "in", ("confirmed", "invoiced")),
+                ]
+            )
+        )
+        total = 0.0
+        for sale in sales:
+            if sale.is_lens_sale:
+                lens_rate = sale._get_lens_rate()
+                if lens_rate:
+                    total += sale._get_commissionable_amount() * lens_rate / 100.0
+            else:
+                total += sale._get_commissionable_amount()
+        return total
 
     @api.constrains("target_scope", "agent_id", "team_id")
     def _check_target_scope(self):
@@ -980,6 +1096,18 @@ class CommissionQuarterlyBonus(models.Model):
         default=lambda self: self.env.company.currency_id,
         required=True,
     )
+    company_id = fields.Many2one(
+        "res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+        required=True,
+    )
+    invoice_date = fields.Date(
+        string="Settlement date",
+        related="date_to",
+        readonly=True,
+        help="Data usada pelo fechamento de comissões: o fim do trimestre.",
+    )
 
     @api.depends("agent_id", "quarter", "year")
     def _compute_name(self):
@@ -1213,14 +1341,23 @@ class CommissionQuarterlyBonus(models.Model):
         if not coordinator_user:
             return
         coordinator_partner = coordinator_user.partner_id
-        if not coordinator_partner or coordinator_partner.type_partner != "coordenadora":
+        if (
+            not coordinator_partner
+            or coordinator_partner.type_partner != "coordenadora"
+        ):
             return
 
         # Verifica se TODAS as orientadoras da equipe atingiram a meta trimestral
-        orientadoras = self.env["commission.member"].sudo().search([
-            ("member_type", "=", "orientadora"),
-            ("team_id", "=", team.id),
-        ])
+        orientadoras = (
+            self.env["commission.member"]
+            .sudo()
+            .search(
+                [
+                    ("member_type", "=", "orientadora"),
+                    ("team_id", "=", team.id),
+                ]
+            )
+        )
         if not orientadoras:
             return
 
@@ -1230,12 +1367,18 @@ class CommissionQuarterlyBonus(models.Model):
         target_months = set()
 
         for orientadora in orientadoras:
-            targets = self.env["crm.commission.target"].sudo().search([
-                ("target_scope", "=", "salesperson"),
-                ("agent_id", "=", orientadora.partner_id.id),
-                ("target_date", ">=", date_from),
-                ("target_date", "<=", date_to),
-            ])
+            targets = (
+                self.env["crm.commission.target"]
+                .sudo()
+                .search(
+                    [
+                        ("target_scope", "=", "salesperson"),
+                        ("agent_id", "=", orientadora.partner_id.id),
+                        ("target_date", ">=", date_from),
+                        ("target_date", "<=", date_to),
+                    ]
+                )
+            )
             team_total_target += sum(targets.mapped("target_amount"))
             team_total_achieved += sum(targets.mapped("achieved_amount"))
             for t in targets:
@@ -1243,19 +1386,29 @@ class CommissionQuarterlyBonus(models.Model):
 
         # Verifica se tem os 3 meses do trimestre
         quarter_months = {
-            "Q1": {1, 2, 3}, "Q2": {4, 5, 6},
-            "Q3": {7, 8, 9}, "Q4": {10, 11, 12},
+            "Q1": {1, 2, 3},
+            "Q2": {4, 5, 6},
+            "Q3": {7, 8, 9},
+            "Q4": {10, 11, 12},
         }.get(quarter, set())
         has_all_months = quarter_months.issubset(target_months)
 
         # Cria ou atualiza bônus para a coordenadora
-        existing = self.search([
-            ("agent_id", "=", coordinator_partner.id),
-            ("year", "=", year),
-            ("quarter", "=", quarter),
-        ], order="id", limit=1)
+        existing = self.search(
+            [
+                ("agent_id", "=", coordinator_partner.id),
+                ("year", "=", year),
+                ("quarter", "=", quarter),
+            ],
+            order="id",
+            limit=1,
+        )
 
-        if team_total_target > 0 and team_total_achieved >= team_total_target and has_all_months:
+        if (
+            team_total_target > 0
+            and team_total_achieved >= team_total_target
+            and has_all_months
+        ):
             values = {
                 "monthly_targets": [(6, 0, [])],
                 "team_id": team.id,
@@ -1264,13 +1417,15 @@ class CommissionQuarterlyBonus(models.Model):
             if existing:
                 existing.write(values)
             else:
-                existing = self.create({
-                    **values,
-                    "agent_id": coordinator_partner.id,
-                    "year": year,
-                    "quarter": quarter,
-                    "auto_generated": True,
-                })
+                existing = self.create(
+                    {
+                        **values,
+                        "agent_id": coordinator_partner.id,
+                        "year": year,
+                        "quarter": quarter,
+                        "auto_generated": True,
+                    }
+                )
             existing._finalize_if_closed()
         elif existing and existing.auto_generated and not existing.is_finalized:
             existing.unlink()
@@ -1279,85 +1434,14 @@ class CommissionQuarterlyBonus(models.Model):
         self.ensure_one()
         date_from = self.date_from or fields.Date.context_today(self)
         date_to = self.date_to or fields.Date.context_today(self)
-        policy = (
-            self.env["commission.policy"]
-            .sudo()
-            .search(
-                [
-                    ("active", "=", True),
-                    ("date_start", "<=", date_to),
-                ]
-                + expression.OR(
-                    [
-                        [("date_end", "=", False)],
-                        [("date_end", ">=", date_from)],
-                    ]
-                ),
-                order="date_start desc",
-                limit=1,
-            )
+        # Mesma regra da meta, porém valendo o período inteiro do trimestre.
+        return self.env["crm.commission.target"]._rate_for_period(
+            performance_pct, date_from, date_to, self.agent_id.commission_id
         )
-        if policy:
-            line = self._select_rate_line(
-                policy.line_ids.sorted(key=lambda item: item.sequence),
-                performance_pct,
-                "delivery_pct_from",
-                "delivery_pct_to",
-            )
-            return line.base_rate if line else 0.0
-        commission = self.agent_id.commission_id
-        if commission:
-            line = self._select_rate_line(
-                commission.progressive_line_ids.sorted(key=lambda item: item.sequence),
-                performance_pct,
-                "percent_from",
-                "percent_to",
-            )
-            return line.commission_percent if line else 0.0
-        return 0.0
-
-    @api.model
-    def _select_rate_line(self, lines, performance_pct, from_field, to_field):
-        for line in lines:
-            if line[from_field] <= performance_pct <= line[to_field]:
-                return line
-        for line in lines:
-            if performance_pct < line[from_field]:
-                return line
-        return lines[-1] if lines else False
 
     def _get_monthly_commission_base(self, target):
         self.ensure_one()
-        members = (
-            self.env["commission.member"]
-            .sudo()
-            .search(
-                [
-                    ("partner_id", "=", target.agent_id.id),
-                    ("member_type", "=", "orientadora"),
-                ]
-            )
-        )
-        sales = (
-            self.env["commission.sale"]
-            .sudo()
-            .search(
-                [
-                    ("owner_member_id", "in", members.ids),
-                    ("period_code", "=", target.target_date.strftime("%Y-%m")),
-                    ("status", "in", ("confirmed", "invoiced")),
-                ]
-            )
-        )
-        total = 0.0
-        for sale in sales:
-            if sale.is_lens_sale:
-                lens_rate = sale._get_lens_rate()
-                if lens_rate:
-                    total += sale._get_commissionable_amount() * lens_rate / 100.0
-            else:
-                total += sale._get_commissionable_amount()
-        return total
+        return target._get_commission_base()
 
     def _calculate_lost_commission(self):
         self.ensure_one()
@@ -1398,6 +1482,31 @@ class CommissionQuarterlyBonus(models.Model):
     def action_finalize_quarter(self):
         self._finalize_if_closed()
         return True
+
+    def _skip_settlement(self):
+        """Evita faturar duas vezes a mesma recuperação de comissão.
+
+        O assistente de fechamento só processa bônus com estado
+        ``recovered`` e valor recuperado; este método ignora quem já tem
+        linha de settlement ativa (não cancelada) e quem não tem regra de
+        comissão no agente, já que ``commission.settlement.line`` exige
+        a regra.
+        """
+        self.ensure_one()
+        if self.state != "recovered" or self.lost_commission_recovered <= 0:
+            return True
+        if not self.agent_id.commission_id:
+            return True
+        return bool(
+            self.env["commission.settlement.line"]
+            .sudo()
+            .search_count(
+                [
+                    ("quarterly_bonus_id", "=", self.id),
+                    ("settlement_id.state", "!=", "cancel"),
+                ]
+            )
+        )
 
     @api.model
     def _cron_sync_and_finalize_quarterly_bonuses(self):

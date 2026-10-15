@@ -911,7 +911,9 @@ class TestCrmCommission(TransactionCase):
                 "percent": 100.0,
             }
         )
-        self.assertAlmostEqual(order.credit_card_fee_percent, 2.5)
+        # ``credit_card_fee_percent`` became a Char listing each card fee
+        # separated by commas; the numeric total lives in the Sum field.
+        self.assertAlmostEqual(order.credit_card_fee_percent_sum, 2.5)
 
         line = self.env["sale.order.line"].create(
             {

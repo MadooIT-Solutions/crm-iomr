@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 IOMR - Rodrigo
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <!-- Deixa rastreável a origem de cada linha fechada no CRM: a meta mensal
+         que gerou a comissão de performance ou o bônus trimestral cuja
+         comissão perdida foi recuperada. -->
+    <record id="view_settlement_form_crm_sources" model="ir.ui.view">
+        <field name="name">commission.settlement.form.crm.sources</field>
+        <field name="model">commission.settlement</field>
+        <field name="inherit_id" ref="commission_oca.view_settlement_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//list[@editable='top']" position="inside">
+                <field name="target_id" optional="hide" />
+                <field name="quarterly_bonus_id" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_settlement_line_list_crm_sources" model="ir.ui.view">
+        <field name="name">commission.settlement.line.list.crm.sources</field>
+        <field name="model">commission.settlement.line</field>
+        <field name="inherit_id" ref="commission_oca.view_settlement_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="target_id" optional="hide" />
+                <field name="quarterly_bonus_id" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
