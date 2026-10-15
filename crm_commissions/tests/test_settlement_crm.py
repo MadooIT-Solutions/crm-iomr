@@ -175,6 +175,69 @@ class TestCrmSettlement(TransactionCase):
             self.SettleLine.search_count([("quarterly_bonus_id", "=", bonus.id)]), 1
         )
 
+    def test_04_settlement_line_points_back_to_its_sale_order(self):
+        """A linha fechada pela fatura aponta o pedido e o clique abre ele.
+
+        A coluna "Pedido de venda" das linhas de comissão vem de
+        ``sale_order_id``: a linha da fatura aponta as linhas de venda que
+        ela faturou (``sale_line_ids``), e de lá se sobe até o pedido.
+        """
+        invoice_date = date(2026, 3, 15)
+        order = self._create_confirmed_sale(invoice_date, 1000.0)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": order.partner_id.id,
+                "invoice_date": invoice_date,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "tax_ids": [(5, 0, 0)],
+                            "sale_line_ids": [(6, 0, order.order_line.ids)],
+                        },
+                    )
+                ],
+            }
+        )
+        agent_line = invoice.invoice_line_ids.agent_ids
+        self.assertEqual(agent_line.agent_id, self.partner)
+        # Só fatura postada entra em settlement (``_skip_settlement``).
+        invoice.action_post()
+
+        # Fecha o mês de março, onde caiu a fatura.
+        self._make_settle_wizard("sale_invoice", date(2026, 4, 1)).action_settle()
+
+        line = self.SettleLine.search([("invoice_agent_line_id", "=", agent_line.id)])
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line.sale_order_id, order)
+        action = line.action_open_sale_order()
+        self.assertEqual(action["res_model"], "sale.order")
+        self.assertEqual(action["res_id"], order.id)
+
+    def test_05_settlement_line_without_invoice_has_no_sale_order(self):
+        """Fechamento de meta não fatura um pedido único: fica sem pedido.
+
+        A meta do mês cobre todas as vendas sincronizadas do período, então
+        a linha fechada não aponta um pedido só -- e não abre nenhum.
+        """
+        target = self._create_target(date(2026, 3, 1), 1000.0)
+        self._create_confirmed_sale(date(2026, 3, 15), 1000.0)
+        target._refresh_from_sale_changes()
+        self.assertTrue(target.achieved_amount)
+
+        wizard = self._make_settle_wizard("crm_performance", date(2026, 4, 1))
+        wizard.action_settle()
+
+        line = self.SettleLine.search([("target_id", "=", target.id)])
+        self.assertEqual(len(line), 1)
+        self.assertFalse(line.sale_order_id)
+        self.assertFalse(line.action_open_sale_order())
+
     def _create_confirmed_sale(self, target_date, amount):
         customer = self.env["res.partner"].create(
             {
