@@ -1197,6 +1197,83 @@ class CommissionQuarterlyBonus(models.Model):
                     }
                 )
             bonus._finalize_if_closed()
+            # Verifica se a equipe atingiu a meta para criar bônus da coordenadora
+            self._sync_coordinator_bonus(team, year, quarter, date_from, date_to)
+
+    def _sync_coordinator_bonus(self, team, year, quarter, date_from, date_to):
+        """Cria/atualiza bônus trimestral para a coordenadora da equipe.
+
+        Conforme Política de Comissionamento 2026: 'A Coordenadora também
+        participa do bônus se a equipe atingir a meta coletiva do trimestre.'
+        """
+        if not team:
+            return
+        # Encontra a coordenadora (líder da equipe)
+        coordinator_user = team.user_id
+        if not coordinator_user:
+            return
+        coordinator_partner = coordinator_user.partner_id
+        if not coordinator_partner or coordinator_partner.type_partner != "coordenadora":
+            return
+
+        # Verifica se TODAS as orientadoras da equipe atingiram a meta trimestral
+        orientadoras = self.env["commission.member"].sudo().search([
+            ("member_type", "=", "orientadora"),
+            ("team_id", "=", team.id),
+        ])
+        if not orientadoras:
+            return
+
+        team_total_target = 0.0
+        team_total_achieved = 0.0
+        has_all_months = True
+        target_months = set()
+
+        for orientadora in orientadoras:
+            targets = self.env["crm.commission.target"].sudo().search([
+                ("target_scope", "=", "salesperson"),
+                ("agent_id", "=", orientadora.partner_id.id),
+                ("target_date", ">=", date_from),
+                ("target_date", "<=", date_to),
+            ])
+            team_total_target += sum(targets.mapped("target_amount"))
+            team_total_achieved += sum(targets.mapped("achieved_amount"))
+            for t in targets:
+                target_months.add(t.target_date.month)
+
+        # Verifica se tem os 3 meses do trimestre
+        quarter_months = {
+            "Q1": {1, 2, 3}, "Q2": {4, 5, 6},
+            "Q3": {7, 8, 9}, "Q4": {10, 11, 12},
+        }.get(quarter, set())
+        has_all_months = quarter_months.issubset(target_months)
+
+        # Cria ou atualiza bônus para a coordenadora
+        existing = self.search([
+            ("agent_id", "=", coordinator_partner.id),
+            ("year", "=", year),
+            ("quarter", "=", quarter),
+        ], order="id", limit=1)
+
+        if team_total_target > 0 and team_total_achieved >= team_total_target and has_all_months:
+            values = {
+                "monthly_targets": [(6, 0, [])],
+                "team_id": team.id,
+                "currency_id": self.env.company.currency_id.id,
+            }
+            if existing:
+                existing.write(values)
+            else:
+                existing = self.create({
+                    **values,
+                    "agent_id": coordinator_partner.id,
+                    "year": year,
+                    "quarter": quarter,
+                    "auto_generated": True,
+                })
+            existing._finalize_if_closed()
+        elif existing and existing.auto_generated and not existing.is_finalized:
+            existing.unlink()
 
     def _get_rate_for_performance(self, performance_pct):
         self.ensure_one()

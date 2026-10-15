@@ -234,49 +234,61 @@ class CommissionResult(models.Model):
     def _calculate_coordinator(self, policy):
         self.ensure_one()
 
-        # Soma diretamente das linhas de venda da coordenadora: o campo
-        # ``amount`` já aplica as taxas por categoria (0,25% extras, 0,5%
-        # demais) e o funil Defensoria Pública (1%), então o resultado mensal
-        # reflete exatamente o que será pago a ela.
-        partner = self.member_id.partner_id
-        sale_lines = self.env["sale.order.line"].search([
-            ("agent_ids.agent_id", "=", partner.id),
-        ])
-        # Força o recálculo do ``amount`` (campo computado) para garantir que
-        # as taxas por categoria e funil estejam aplicadas.
-        sale_lines.modified(["agent_ids"])
-        total_commissionable = 0.0
+        # Cálculo individualizado por orientadora: a coordenadora recebe a taxa
+        # progressiva correspondente à performance individual de cada orientadora
+        # sobre suas respectivas vendas (conforme Política de Comissionamento 2026).
+        team = self.member_id.team_id
+        if not team:
+            # Fallback: sem equipe definida, usa a taxa fixa padrão
+            orientadoras = self.env["commission.member"].browse()
+        else:
+            orientadoras = self.env["commission.member"].search([
+                ("member_type", "=", "orientadora"),
+                ("team_id", "=", team.id),
+            ])
+
+        total_commission = 0.0
         total_lio = 0.0
         total_hospital = 0.0
-        for line in sale_lines:
-            order = line.order_id
-            if not order:
-                continue
-            period = order.date_order.strftime("%Y-%m") if order.date_order else False
-            if period != self.period_code:
-                continue
-            agent_line = line.agent_ids.filtered(
-                lambda a, p=partner: a.agent_id == p
-            )
-            if not agent_line:
-                continue
-            total_commissionable += agent_line.amount or 0.0
-            # Agregações auxiliares (LIO / hospital) para o relatório.
-            if line.product_id and line.product_id.categ_id:
-                categ_names = " ".join(
-                    order._get_product_category_names(line.product_id.categ_id)
-                ).upper()
-                if "LIO" in categ_names:
-                    total_lio += line.price_subtotal
-                    continue
-            total_hospital += line.price_subtotal
+
+        for orientadora in orientadoras:
+            # Calcula performance individual da orientadora no período
+            target = self.env["commission.target"].search([
+                ("member_id", "=", orientadora.id),
+                ("period_code", "=", self.period_code),
+            ], limit=1)
+
+            sales = self.env["commission.sale"].search([
+                ("owner_member_id", "=", orientadora.id),
+                ("period_code", "=", self.period_code),
+                ("status", "in", ("confirmed", "invoiced")),
+            ])
+
+            achieved = sum(sales.mapped("commission_base_amount"))
+            target_amount = target.individual_target_amount if target else 0.0
+            performance = (achieved / target_amount * 100.0) if target_amount else 0.0
+
+            # Obtém taxa progressiva da política para a performance individual
+            rate_line = self._get_policy_rate(performance, policy)
+            rate = rate_line.base_rate if rate_line else policy.line_ids[0].base_rate
+
+            # Calcula comissão sobre vendas da orientadora
+            orientadora_commission = achieved * rate / 100.0
+            total_commission += orientadora_commission
+
+            # Agregações auxiliares (LIO / hospital) para relatório
+            total_lio += sum(sales.mapped("lio_upgrade_amount"))
+            total_hospital += sum(sales.mapped("hospital_net_amount"))
 
         self.target_amount = 0.0
         self.lio_sales_amount = total_lio
         self.hospital_sales_amount = total_hospital
-        self.commission_base_amount = total_commissionable
+        self.commission_base_amount = total_commission
 
-        self.base_rate = policy.coordinator_rate
+        # Taxa efetiva (média ponderada) para referência
+        self.base_rate = (
+            (total_commission / total_hospital * 100.0) if total_hospital > 0 else 0.0
+        )
         self.range_label = "Coordenador(a)"
         self.crm_bonus_rate = 0.0
         self.is_crm_score = 100.0
