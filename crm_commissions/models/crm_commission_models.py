@@ -453,6 +453,49 @@ class CommissionTarget(models.Model):
                 line.target_id = target.id
 
     @api.model
+    def _sync_settlement_line_quarterly_bonuses(self):
+        """Link existing CRM recovery settlement lines to their source bonus.
+
+        O espelho de ``_sync_settlement_line_targets`` para as linhas de
+        recuperação: ``_prepare_settlement_line_vals`` grava o bônus na
+        criação, mas as linhas lançadas antes disso ficavam sem a origem e
+        a coluna "Related quarterly bonus" aparecia vazia. A chave é o
+        agente + a data da linha, que nas recuperações é sempre o
+        ``date_to`` do bônus (um bônus por agente e por trimestre).
+        """
+        lines = (
+            self.env["commission.settlement.line"]
+            .sudo()
+            .search(
+                [
+                    ("quarterly_bonus_id", "=", False),
+                    ("settlement_id.settlement_type", "=", "crm_quarterly_recovery"),
+                ]
+            )
+        )
+        if not lines:
+            return
+        bonuses = (
+            self.env["crm.commission.quarterly.bonus"]
+            .sudo()
+            .search(
+                [
+                    ("agent_id", "in", lines.mapped("settlement_id.agent_id").ids),
+                    ("state", "=", "recovered"),
+                    ("lost_commission_recovered", ">", 0),
+                ]
+            )
+        )
+        bonuses_by_key = {
+            (bonus.agent_id.id, bonus.date_to): bonus for bonus in bonuses
+        }
+        for line in lines:
+            key = (line.settlement_id.agent_id.id, line.date)
+            bonus = bonuses_by_key.get(key)
+            if bonus:
+                line.quarterly_bonus_id = bonus.id
+
+    @api.model
     def _sync_all_quarterly_bonuses(self):
         """Backfill/refresh every automatically managed quarterly record."""
         targets = self.sudo().search([("target_scope", "=", "salesperson")])

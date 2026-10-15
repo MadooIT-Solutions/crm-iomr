@@ -238,6 +238,53 @@ class TestCrmSettlement(TransactionCase):
         self.assertFalse(line.sale_order_id)
         self.assertFalse(line.action_open_sale_order())
 
+    def test_06_backfill_restores_the_origin_of_old_lines(self):
+        """Linhas lançadas antes da coluna de origem voltam a apontar a origem.
+
+        ``target_id`` e ``quarterly_bonus_id`` são gravados na criação da
+        linha pelo wizard de fechamento; as criadas antes disso ficaram sem
+        origem, e a migração ``18.0.2.7.0`` os reconstrói pelos mesmos syncs.
+        """
+        # Meta do mês → linha de CRM Performance.
+        target = self._create_target(date(2026, 3, 1), 1000.0)
+        self._create_confirmed_sale(date(2026, 3, 15), 1000.0)
+        target._refresh_from_sale_changes()
+        self._make_settle_wizard("crm_performance", date(2026, 4, 1)).action_settle()
+        performance_line = self.SettleLine.search([("target_id", "=", target.id)])
+        self.assertEqual(len(performance_line), 1)
+        performance_line.write({"target_id": False})
+
+        # Bônus do trimestre fechado → linha de recuperação.
+        closed_quarter = self._quarter_start(
+            fields.Date.context_today(self.env.user) - relativedelta(months=4)
+        )
+        for offset, amount in enumerate((700.0, 700.0, 1600.0)):
+            target_date = closed_quarter + relativedelta(months=offset)
+            self._create_confirmed_sale(target_date, amount)
+            self._create_target(target_date, 1000.0)
+        self.Bonus._cron_sync_and_finalize_quarterly_bonuses()
+        bonus = self.Bonus.search(
+            [
+                ("agent_id", "=", self.partner.id),
+                ("year", "=", closed_quarter.year),
+                (
+                    "quarter",
+                    "=",
+                    f"Q{(closed_quarter.month - 1) // 3 + 1}",
+                ),
+            ]
+        )
+        self._make_settle_wizard("crm_quarterly_recovery").action_settle()
+        recovery_line = self.SettleLine.search([("quarterly_bonus_id", "=", bonus.id)])
+        self.assertEqual(len(recovery_line), 1)
+        recovery_line.write({"quarterly_bonus_id": False})
+
+        self.Target._sync_settlement_line_targets()
+        self.Target._sync_settlement_line_quarterly_bonuses()
+
+        self.assertEqual(performance_line.target_id, target)
+        self.assertEqual(recovery_line.quarterly_bonus_id, bonus)
+
     def _create_confirmed_sale(self, target_date, amount):
         customer = self.env["res.partner"].create(
             {

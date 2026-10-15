@@ -76,12 +76,18 @@
               groups="commission_oca.group_commission_manager"/>
 
     <!-- Resulting settlements list: same folder as the mass settle wizard so
-         the generated records can be reviewed, edited or reprocessed. -->
+         the generated records can be reviewed, edited or reprocessed.
+
+         Hoje é redundante: o "Liquidação Faturas" do account_commission_oca
+         abre a mesma lista de settlements (só filtrando as faturas), e os
+         dois menus usam o mesmo formulário. Fica oculto em vez de apagado
+         para o xmlid não se perder nos bancos já instalados. -->
     <menuitem id="menu_commission_settlements"
               name="Comissões Fechadas"
               parent="account_commission_oca.menu_invoicing_commission"
               action="commission_oca.action_commission_settlement"
               sequence="2"
+              active="False"
               groups="commission_oca.group_commission_manager"/>
 
     <menuitem id="menu_commission_mass_invoice"

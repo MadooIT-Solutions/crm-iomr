@@ -21,8 +21,19 @@
                     icon="fa-external-link"
                     title="Abrir pedido de venda"
                 />
-                <field name="target_id" optional="hide" />
-                <field name="quarterly_bonus_id" optional="hide" />
+                <!-- As duas colunas abaixo só têm conteúdo nos fechamentos
+                     do CRM: as linhas de fatura vêm da fatura e não têm
+                     meta nem bônus, então aparecem vazias. -->
+                <field
+                    name="target_id"
+                    optional="hide"
+                    column_invisible="parent.settlement_type != 'crm_performance'"
+                />
+                <field
+                    name="quarterly_bonus_id"
+                    optional="hide"
+                    column_invisible="parent.settlement_type != 'crm_quarterly_recovery'"
+                />
             </xpath>
         </field>
     </record>
