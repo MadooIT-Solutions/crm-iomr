@@ -5,35 +5,50 @@
     <field name="model">crm.lead</field>
     <field name="inherit_id" ref="crm.crm_lead_view_form"/>
     <field name="arch" type="xml">
-      <xpath expr="//div[@id='probability']" position="after">
+
+      <xpath expr="//field[@name='tag_ids']" position="replace"/>
+      <xpath expr="//field[@name='user_id']" position="replace"/>
+
+
+      <xpath expr="//group[@name='lead_partner']" position="before">
+
         <group>
           <group>
             <field name="referred_partner" widget="many2many_tags" options="{'no_create':true}"/>
             <field name="convenio" options="{'no_create':true}"/>
             <field name="doctor" string="Médico(a)" options="{'no_create':true}"/>
+            <field name="user_id"/>
+
           </group>
           <group>
             <field name="expected_revenue" string="Orçamento"/>
             <field name="date" string="Data"/>
             <field name="date_contact" string="Data do Contato"/>
+
+            <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color', 'no_create_edit': True}"/>
           </group>
         </group>
+
       </xpath>
-      <xpath expr="//field[@name='phone']" position="after">
-        <group>
-          <field name="mobile" widget="phone"/>
-          <field name="prontuario"/>
-          <button
-              type="object"
-              name="action_initiate_whatsapp_call"
-              class="btn-sm btn-link mb4 fa fa-phone"
-              aria-label="Iniciar Chamada"
-              title="Iniciar Chamada"
-              invisible="not partner_id or not partner_id.mobile"
-              groups="tus_meta_whatsapp_base.whatsapp_group_user"
-          />
-        </group>
+
+
+      <xpath expr="//field[@name='partner_phone_update']" position="after">
+        <field name="prontuario" id="prontuario_lead_contact"/>
       </xpath>
+
+      <xpath expr="//div[hasclass('o_row')][field[@name='phone']]" position="after">
+
+        <label for="mobile_lead_contact" class="oe_inline"/>
+        <div class="o_row o_row_readonly">
+          <field name="mobile" id="mobile_lead_contact" widget="phone"/>
+          <button type="object" name="action_initiate_whatsapp_call" class="btn-sm btn-link fa fa-phone" aria-label="Iniciar Chamada" title="Iniciar Chamada" invisible="not partner_id or not (partner_id.mobile or mobile)" groups="tus_meta_whatsapp_base.whatsapp_group_user"/>
+        </div>
+      </xpath>
+
+
+
+
+
       <xpath expr="//page[@name='lead']" position="after">
         <page name="import" string="Dados de Importação">
           <group>
@@ -46,25 +61,17 @@
       </xpath>
 
       <xpath expr="//button[@name='action_set_won_rainbowman']" position="before">
-        <button name="action_rotate_seller"
-                string="Rotacionar Vendedor(a)"
-                type="object"
-                class="oe_highlight"
-                invisible="not can_rotate or all_sellers_exhausted"/>
+        <button name="action_rotate_seller" string="Rotacionar Vendedor(a)" type="object" class="oe_highlight" invisible="not can_rotate or all_sellers_exhausted"/>
       </xpath>
 
       <xpath expr="//div[@name='button_box']" position="inside">
-        <button type="object"
-                name="action_open_rotation_history"
-                class="oe_stat_button"
-                icon="fa-history">
+        <button type="object" name="action_open_rotation_history" class="oe_stat_button" icon="fa-history">
           <field name="rotation_count" widget="statinfo"/>
         </button>
       </xpath>
 
       <xpath expr="//group[group[@name='lead_partner']]" position="inside">
-        <group string="Informações de Rotação"
-               invisible="rotation_count == 0">
+        <group string="Informações de Rotação" invisible="rotation_count == 0">
           <field name="rotation_count" readonly="1"/>
           <field name="date_assigned_to_seller" readonly="1"/>
           <field name="days_with_current_seller" readonly="1"/>
@@ -72,6 +79,7 @@
           <field name="last_activity_date" readonly="1"/>
         </group>
       </xpath>
+
     </field>
   </record>
 
