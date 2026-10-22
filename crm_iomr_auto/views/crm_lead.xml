@@ -23,6 +23,15 @@
         <group>
           <field name="mobile" widget="phone"/>
           <field name="prontuario"/>
+          <button
+              type="object"
+              name="action_initiate_whatsapp_call"
+              class="btn-sm btn-link mb4 fa fa-phone"
+              aria-label="Iniciar Chamada"
+              title="Iniciar Chamada"
+              invisible="not partner_id or not partner_id.mobile"
+              groups="tus_meta_whatsapp_base.whatsapp_group_user"
+          />
         </group>
       </xpath>
       <xpath expr="//page[@name='lead']" position="after">

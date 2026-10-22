@@ -244,6 +244,12 @@ class CRMLead(models.Model):
             "context": {"default_lead_id": self.id},
         }
 
+    def action_initiate_whatsapp_call(self):
+        self.ensure_one()
+        if not self.partner_id:
+            return True
+        return self.partner_id.initiate_call_on_whatsapp()
+
     def action_rotate_seller(self):
         """
         Ação manual para rotacionar vendedor(a)
@@ -252,7 +258,6 @@ class CRMLead(models.Model):
             raise UserError("Oportunidade não tem vendedor(a) atribuído")
 
         next_seller = self._get_next_seller()
-
         if not next_seller:
             config = self.env["ir.config_parameter"].sudo()
             sdr_user_id = int(config.get_param("crm.sdr_user_id", 0))
