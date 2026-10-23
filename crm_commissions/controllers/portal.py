@@ -5,6 +5,10 @@ from odoo import http
 from odoo.http import request
 
 
+def _brfmt(val):
+    return "{:,.2f}".format(val or 0.0).replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 class CustomerPortal(http.Controller):
 
     @http.route(
@@ -31,7 +35,6 @@ class CustomerPortal(http.Controller):
             ("doctor", "=", partner.id),
             ("type", "=", "opportunity"),
             ("probability", ">", 0),
-            ("probability", "<", 100),
         ]
         if date_from:
             domain_open.append(("create_date", ">=", date_from + " 00:00:00"))
@@ -60,7 +63,8 @@ class CustomerPortal(http.Controller):
 
         follow_up = request.env["crm.stage"].search([("name", "=", "Follow-up")], limit=1)
         negociacao = request.env["crm.stage"].search([("name", "=", "Negociação")], limit=1)
-        wanted_stages = [s for s in (follow_up, negociacao) if s]
+        ganho_convenio = request.env["crm.stage"].search([("name", "=", "GANHO - 100% CONVÊNIO")], limit=1)
+        wanted_stages = [s for s in (follow_up, negociacao, ganho_convenio) if s]
         wanted_stages.sort(key=lambda s: s.sequence)
 
         opportunities_by_stage = []
@@ -78,7 +82,7 @@ class CustomerPortal(http.Controller):
             )
             total_opps += stage_count
             total_commission_val += stage_commission
-            stage_commission_fmt = "{:,.2f}".format(stage_commission)
+            stage_commission_fmt = _brfmt(stage_commission)
             tooltip_map = {"Follow-up": "Oportunidades em fase de Follow-up (acompanhamento)", "Negocia\u00e7\u00e3o": "Oportunidades em fase de Negocia\u00e7\u00e3o"}
             stage_tooltip = tooltip_map.get(stage_name, "Oportunidades neste est\u00e1gio")
             card_html = (
@@ -117,8 +121,8 @@ class CustomerPortal(http.Controller):
                         opp.sudo().referred_partner.mapped("name")
                     )
                     or "-",
-                    "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0) if show_all else "",
-                    "commission_fmt": "{:,.2f}".format(
+                    "expected_revenue_fmt": _brfmt(opp.expected_revenue or 0.0) if show_all else "",
+                    "commission_fmt": _brfmt(
                         opp.expected_revenue
                         * (opp.commission_percent or commission_rate)
                         / 100.0
@@ -160,7 +164,7 @@ class CustomerPortal(http.Controller):
                 }
             )
 
-        total_commission_fmt = "{:,.2f}".format(total_commission_val) if show_all else ""
+        total_commission_fmt = _brfmt(total_commission_val) if show_all else ""
         total_card_html = (
             '<div class="card o_portal_commission_card" style="min-width:160px">'
             '<div class="card-body py-3 px-3 text-center" style="background-color:#8EBAA6;border-radius:12px">'
@@ -231,6 +235,10 @@ class CustomerPortal(http.Controller):
 
         settlement_data = []
         for settlement in commissions:
+            if date_from and settlement.date_from and str(settlement.date_from) < date_from:
+                continue
+            if date_to and settlement.date_from and str(settlement.date_from) > date_to:
+                continue
             info = {
                 "settlement": settlement,
                 "lines": [],
@@ -289,7 +297,7 @@ class CustomerPortal(http.Controller):
                 }
             pending_by_order[order_id]["amount"] += agent_line.amount or 0.0
         for vals in pending_by_order.values():
-            vals["amount_fmt"] = "{:,.2f}".format(vals["amount"])
+            vals["amount_fmt"] = _brfmt(vals["amount"])
             pending_data.append(vals)
 
         uninvoiced_orders = request.env["sale.order"].search([
@@ -311,7 +319,7 @@ class CustomerPortal(http.Controller):
                 "partner_name": order.sudo().partner_id.name or "-",
                 "order_date": order.date_order.strftime("%d/%m/%Y") if order.date_order else "",
                 "opportunity_name": opportunity.name if opportunity else "-",
-                "commission_fmt": "{:,.2f}".format(
+                "commission_fmt": _brfmt(
                     (order.amount_total or 0.0) * comm_pct / 100.0
                 ),
             })
@@ -335,9 +343,9 @@ class CustomerPortal(http.Controller):
             ganhos_total += amt
             nao_faturado_total += amt
 
-        ganhos_total_fmt = "{:,.2f}".format(ganhos_total) if show_all else ""
-        faturado_total_fmt = "{:,.2f}".format(faturado_total) if show_all else ""
-        nao_faturado_total_fmt = "{:,.2f}".format(nao_faturado_total) if show_all else ""
+        ganhos_total_fmt = _brfmt(ganhos_total) if show_all else ""
+        faturado_total_fmt = _brfmt(faturado_total) if show_all else ""
+        nao_faturado_total_fmt = _brfmt(nao_faturado_total) if show_all else ""
 
         lost_data = []
         for opp in lost_opportunities:
@@ -351,7 +359,7 @@ class CustomerPortal(http.Controller):
                     opp.sudo().referred_partner.mapped("name")
                 )
                 or "-",
-                "expected_revenue_fmt": "{:,.2f}".format(opp.expected_revenue or 0.0) if show_all else "",
+                "expected_revenue_fmt": _brfmt(opp.expected_revenue or 0.0) if show_all else "",
                 "lost_reason": opp.lost_reason_id.sudo().name or "-",
             })
 
