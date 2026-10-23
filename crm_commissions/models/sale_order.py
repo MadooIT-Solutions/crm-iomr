@@ -2,6 +2,8 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
+
+_SDR_COMMISSION_PCT = 25.0
 from odoo.exceptions import ValidationError
 
 
@@ -647,19 +649,28 @@ class SaleOrderLine(models.Model):
         return result
 
     def _apply_sdr_commission_split(self, vals, sdr_partner):
-        """Add the SDR as an independent commission agent.
-
-        The SDR earns its own commission (configured on its agent record) on
-        every opportunity it qualified that reached "Converted/Won". It no
-        longer comes out of the orientadora's commission, which keeps 100%.
+        """SDR keeps earning 25% of the orientadora's commission, but that
+        amount is no longer deducted from the orientadora, who keeps 100%.
         """
         if not sdr_partner or not sdr_partner.agent:
             return vals
         if any(len(v) >= 3 and v[2].get("agent_id") == sdr_partner.id for v in vals):
             return vals
-        sdr_vals = self._prepare_agent_vals(sdr_partner)
-        if not sdr_vals.get("commission_id"):
+        orientadora_vals = [
+            v
+            for v in vals
+            if len(v) >= 3
+            and v[2].get("agent_id")
+            and (
+                self.env["res.partner"].browse(v[2]["agent_id"]).type_partner
+                == "orientadora"
+            )
+        ]
+        if not orientadora_vals:
             return vals
+        sdr_vals = self._prepare_agent_vals(sdr_partner)
+        sdr_vals["commission_id"] = orientadora_vals[0][2]["commission_id"]
+        sdr_vals["commission_split_percent"] = _SDR_COMMISSION_PCT
         vals.append((0, 0, sdr_vals))
         return vals
 
