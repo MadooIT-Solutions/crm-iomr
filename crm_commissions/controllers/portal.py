@@ -282,6 +282,10 @@ class CustomerPortal(http.Controller):
             order = agent_line.object_id.order_id
             if order.name in settled_order_names:
                 continue
+            if date_from and order.date_order and str(order.date_order.date()) < date_from:
+                continue
+            if date_to and order.date_order and str(order.date_order.date()) > date_to:
+                continue
             order_id = order.id
             opportunity = order.opportunity_id
             if order_id not in pending_by_order:
@@ -308,6 +312,10 @@ class CustomerPortal(http.Controller):
 
         uninvoiced_orders_data = []
         for order in uninvoiced_orders:
+            if date_from and order.date_order and str(order.date_order.date()) < date_from:
+                continue
+            if date_to and order.date_order and str(order.date_order.date()) > date_to:
+                continue
             opportunity = order.opportunity_id
             comm_pct = (
                 opportunity.commission_percent
