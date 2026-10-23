@@ -4,7 +4,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
-_SDR_COMMISSION_PCT = 25.0
+
 
 # Categorias que pagam a coordenadora a comissão fixa de 0,25% (líquido).
 # As mesmas categorias extras da orientadora, conforme a regra da clínica.
@@ -647,33 +647,19 @@ class SaleOrderLine(models.Model):
         return result
 
     def _apply_sdr_commission_split(self, vals, sdr_partner):
-        """Split the orientadora's commission when the opportunity passed
-        through an SDR.
+        """Add the SDR as an independent commission agent.
 
-        The SDR receives _SDR_COMMISSION_PCT (25%) of the orientadora's
-        commission and the orientadora keeps the remaining 75%.
+        The SDR earns its own commission (configured on its agent record) on
+        every opportunity it qualified that reached "Converted/Won". It no
+        longer comes out of the orientadora's commission, which keeps 100%.
         """
         if not sdr_partner or not sdr_partner.agent:
             return vals
         if any(len(v) >= 3 and v[2].get("agent_id") == sdr_partner.id for v in vals):
             return vals
-        orientadora_vals = [
-            v
-            for v in vals
-            if len(v) >= 3
-            and v[2].get("agent_id")
-            and (
-                self.env["res.partner"].browse(v[2]["agent_id"]).type_partner
-                == "orientadora"
-            )
-        ]
-        if not orientadora_vals:
-            return vals
-        for v in orientadora_vals:
-            v[2]["commission_split_percent"] = 100.0 - _SDR_COMMISSION_PCT
         sdr_vals = self._prepare_agent_vals(sdr_partner)
-        sdr_vals["commission_id"] = orientadora_vals[0][2]["commission_id"]
-        sdr_vals["commission_split_percent"] = _SDR_COMMISSION_PCT
+        if not sdr_vals.get("commission_id"):
+            return vals
         vals.append((0, 0, sdr_vals))
         return vals
 
