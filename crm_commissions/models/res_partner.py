@@ -160,3 +160,83 @@ class ResPartner(models.Model):
             )
             members._sync_team_from_partner()
         return result
+
+from markupsafe import Markup
+
+
+class ResPartner(models.Model):
+    _inherit = "res.partner"
+
+    commission_related_html = fields.Html(string="Comissões Relacionadas", compute="_compute_commission_related_html", sanitize=False)
+
+    def _compute_commission_related_html(self):
+        commission_type_map = {"fixed": "Percentual fixo", "section": "Por faixas (seções)", "progressive": "Progressivo por desempenho", "coordinator": "Coordenador(a) via política"}
+        base_type_map = {"gross_amount": "Valor de venda/fatura", "net_amount": "Margem (Valor - Custo)", "net_amount_deduction": "Líquido (Bruto - Impostos - Taxa cartão)"}
+        for partner in self:
+            rows = []
+            if getattr(partner, "commission_id", False):
+                comm = partner.commission_id
+                rows.append({"origin": "Padrão (Comissionamento)", "commission": comm.name, "type": commission_type_map.get(comm.commission_type, comm.commission_type), "base": base_type_map.get(comm.amount_base_type, comm.amount_base_type), "details": self._format_commission_details(comm), "categories": ", ".join(comm.categ_ids.mapped("name")) or "Todas as categorias", "explanation": self._format_commission_explanation(comm)})
+            for rule in partner.agent_rule_ids.sorted(key=lambda r: (r.sequence, r.id)):
+                comm = rule.commission_id
+                rows.append({"origin": "Regra por categoria (seq. %s)" % rule.sequence, "commission": comm.name, "type": commission_type_map.get(comm.commission_type, comm.commission_type), "base": base_type_map.get(comm.amount_base_type, comm.amount_base_type), "details": self._format_commission_details(comm), "categories": ", ".join(rule.categ_ids.mapped("name")) or "Todas as categorias", "explanation": self._format_commission_explanation(comm)})
+            if not rows:
+                partner.commission_related_html = "<p><em>Nenhuma comissão configurada para este representante.</em></p>"
+                continue
+            html = ['<table class="table table-sm table-striped" style="width:100%;">', '<thead><tr><th>Origem</th><th>Comissão</th><th>Tipo</th><th>Base de Cálculo</th><th>Detalhamento dos Cálculos</th><th>Categorias</th><th>Explicação</th></tr></thead><tbody>']
+            for row in rows:
+                html.append('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (row["origin"], row["commission"], row["type"], row["base"], row["details"], row["categories"], row["explanation"]))
+            html.append('</tbody></table>')
+            partner.commission_related_html = Markup(''.join(html))
+
+    def _format_commission_details(self, comm):
+        details = []
+        if comm.commission_type == "fixed":
+            details.append("Percentual fixo: %s%%" % comm.fix_qty)
+        elif comm.commission_type == "section":
+            if getattr(comm, "section_ids", False):
+                for sec in comm.section_ids.sorted(key=lambda s: s.amount_from):
+                    details.append("Faixa: de %s até %s = %s%%" % (sec.amount_from, sec.amount_to, sec.percent))
+            else:
+                details.append("Sem faixas configuradas")
+        elif comm.commission_type == "progressive":
+            if getattr(comm, "progressive_line_ids", False):
+                for line in comm.progressive_line_ids.sorted(key=lambda l: l.sequence):
+                    details.append("Desempenho %s%%-%s%% → %s%%" % (line.percent_from, line.percent_to, line.commission_percent))
+            details.append("IS-CRM: >=95%% +%s%% | <95%% -%s%%" % (getattr(comm, "is_crm_bonus", 0), getattr(comm, "is_crm_penalty", 0)))
+        elif comm.commission_type == "coordinator":
+            details.append("Cálculo via política/coordenador")
+        if getattr(comm, "deduct_taxes", False):
+            details.append("Deduz impostos da linha")
+        elif getattr(comm, "tax_deduction_pct", 0):
+            details.append("Dedução impostos: %s%%" % comm.tax_deduction_pct)
+        if getattr(comm, "deduct_card_fee", False):
+            details.append("Deduz taxa de cartão")
+        if getattr(comm, "min_margin", 0):
+            details.append("Margem mínima: %s%%" % comm.min_margin)
+        if getattr(comm, "max_discount", 0):
+            details.append("Desconto máx. sem aprovação: %s%%" % comm.max_discount)
+        return "<br/>".join(details) if details else "-"
+
+    def _format_commission_explanation(self, comm):
+        explanations = []
+        base = comm.amount_base_type
+        if base == "gross_amount":
+            explanations.append("Base = valor bruto da venda/fatura.")
+        elif base == "net_amount":
+            explanations.append("Base = margem (valor - custo).")
+        elif base == "net_amount_deduction":
+            explanations.append("Base = líquido (preço - impostos - taxa cartão).")
+        if comm.commission_type == "fixed":
+            explanations.append("Aplica %s%% sobre a base." % comm.fix_qty)
+        elif comm.commission_type == "section":
+            explanations.append("Aplica alíquota conforme faixa de valor da base.")
+        elif comm.commission_type == "progressive":
+            explanations.append("Alíquota por faixa de desempenho + ajuste por IS-CRM.")
+        elif comm.commission_type == "coordinator":
+            explanations.append("Repasse conforme política de comissionamento.")
+        if getattr(comm, "deduct_taxes", False):
+            explanations.append("Impostos deduzidos conforme impostos da linha.")
+        if getattr(comm, "deduct_card_fee", False):
+            explanations.append("Taxa de cartão deduzida da base.")
+        return " ".join(explanations) if explanations else "-"
