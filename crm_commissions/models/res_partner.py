@@ -1,6 +1,7 @@
-from markupsafe import Markup
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
+
+from markupsafe import Markup
 
 from odoo import api, fields, models
 
@@ -98,30 +99,12 @@ class ResPartner(models.Model):
     )
 
     def is_medical_agent(self):
-        """Whether this partner is a doctor.
-
-        Doctors are the only profile allowed to commission HONORARIO and
-        PROCEDIMENTO categories, and the only one that reaches those lines
-        through the order's ``doctor_id`` / ``referred_partner``.
-        """
         return self.type_partner in self.MEDICAL_AGENT_TYPES
 
     @api.depends("crm_team_id", "crm_team_id.user_id", "type_partner")
     def _compute_coordenadora_id(self):
-        """A coordenadora é a líder da equipe de vendas da orientadora.
-
-        Regra padrão da clínica: cada orientadora pertence a uma equipe
-        (``crm_team_id``) e quem lidera essa equipe (``crm_team.user_id``)
-        coordena sua equipe, recebendo o repasse de coordenador. Assim o
-        vínculo se mantém sozinho quando a equipe muda de líder.
-
-        Só orientador(a)s entram aqui. Nos demais tipos o campo é apenas
-        preservado, para não apagar um valor preenchido à mão por engano.
-        """
         for partner in self:
             if partner.type_partner != "orientadora":
-                # Preserva o valor já gravado (inclusive um ajuste manual) nos
-                # demais tipos: sem atribuição, o ORM gravaria False por cima.
                 partner.coordenadora_id = partner.coordenadora_id
                 continue
             leader = partner.crm_team_id.user_id.partner_id if partner.crm_team_id else False
@@ -142,32 +125,6 @@ class ResPartner(models.Model):
         elif self.type_partner in ("doctorint", "doctorext"):
             self.agent = True
             self.agent_type = "doctor"
-
-    def write(self, vals):
-        result = super().write(vals)
-        if "crm_team_id" in vals and not self.env.context.get(
-            "crm_commissions_skip_member_team_sync"
-        ):
-            members = (
-                self.env["commission.member"]
-                .sudo()
-                .search(
-                    [
-                        ("partner_id", "in", self.ids),
-                        ("team_id", "=", False),
-                    ]
-                )
-            )
-            members._sync_team_from_partner()
-        return result
-
-from markupsafe import Markup
-
-
-class ResPartner(models.Model):
-    _inherit = "res.partner"
-
-    commission_related_html = fields.Html(string="Comissões Relacionadas", compute="_compute_commission_related_html", sanitize=False)
 
     def _compute_commission_related_html(self):
         commission_type_map = {"fixed": "Percentual fixo", "section": "Por faixas (seções)", "progressive": "Progressivo por desempenho", "coordinator": "Coordenador(a) via política"}
@@ -240,3 +197,10 @@ class ResPartner(models.Model):
         if getattr(comm, "deduct_card_fee", False):
             explanations.append("Taxa de cartão deduzida da base.")
         return " ".join(explanations) if explanations else "-"
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "crm_team_id" in vals and not self.env.context.get("crm_commissions_skip_member_team_sync"):
+            members = self.env["commission.member"].sudo().search([("partner_id", "in", self.ids), ("team_id", "=", False)])
+            members._sync_team_from_partner()
+        return result
