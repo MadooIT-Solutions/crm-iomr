@@ -134,9 +134,17 @@ class ResPartner(models.Model):
             if getattr(partner, "commission_id", False):
                 comm = partner.commission_id
                 rows.append({"origin": "Padrão (Comissionamento)", "commission": comm.name, "type": commission_type_map.get(comm.commission_type, comm.commission_type), "base": base_type_map.get(comm.amount_base_type, comm.amount_base_type), "details": self._format_commission_details(comm), "categories": ", ".join(comm.categ_ids.mapped("name")) or "Todas as categorias", "explanation": self._format_commission_explanation(comm)})
-            for rule in partner.agent_rule_ids.sorted(key=lambda r: (r.sequence, r.id)):
-                comm = rule.commission_id
-                rows.append({"origin": "Regra por categoria (seq. %s)" % rule.sequence, "commission": comm.name, "type": commission_type_map.get(comm.commission_type, comm.commission_type), "base": base_type_map.get(comm.amount_base_type, comm.amount_base_type), "details": self._format_commission_details(comm), "categories": ", ".join(rule.categ_ids.mapped("name")) or "Todas as categorias", "explanation": self._format_commission_explanation(comm)})
+            rules = partner.agent_rule_ids
+            if not rules:
+                try:
+                    rules = self.env["commission.agent.rule"].sudo().search([("agent_id", "=", partner.id)], order="sequence,id")
+                except Exception:
+                    rules = partner.agent_rule_ids
+            for rule in rules.sorted(key=lambda r: (getattr(r, "sequence", 10), r.id)):
+                comm = getattr(rule, "commission_id", False)
+                if not comm:
+                    continue
+                rows.append({"origin": "Regra por categoria (seq. %s)" % getattr(rule, "sequence", 10), "commission": comm.name, "type": commission_type_map.get(comm.commission_type, comm.commission_type), "base": base_type_map.get(comm.amount_base_type, comm.amount_base_type), "details": self._format_commission_details(comm), "categories": ", ".join(rule.categ_ids.mapped("name")) or "Todas as categorias", "explanation": self._format_commission_explanation(comm)})
             if not rows:
                 partner.commission_related_html = "<p><em>Nenhuma comissão configurada para este representante.</em></p>"
                 continue
