@@ -1,3 +1,4 @@
+from markupsafe import Markup
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
@@ -80,6 +81,11 @@ class ResPartner(models.Model):
         help="Specific commission rules for this agent based on product "
         "category. When a sale order line matches a category, this commission "
         "is used instead of the default.",
+    )
+    commission_related_html = fields.Html(
+        string="Comissões Relacionadas",
+        compute="_compute_commission_related_html",
+        sanitize=False,
     )
     show_repasse_table = fields.Boolean(
         string="Ver Tabela de Repasses",

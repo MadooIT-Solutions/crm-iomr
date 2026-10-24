@@ -11,6 +11,11 @@
             <xpath expr="//field[@name='agent']" position="after">
                 <field name="agent" invisible="1" />
             </xpath>
+            <xpath expr="//page[@name='agent_information']" position="inside">
+                <group string="Comissões Relacionadas">
+                    <field name="commission_related_html" nolabel="1" readonly="1"/>
+                </group>
+            </xpath>
             <page name="agent_information" position="after">
                 <page
                     name="crm_commission"
