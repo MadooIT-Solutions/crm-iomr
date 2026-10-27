@@ -1,12 +1,16 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import logging
+
 from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.osv import expression
 from odoo.tools import float_round
+
+_logger = logging.getLogger(__name__)
 
 
 class Commission(models.Model):
@@ -1598,3 +1602,107 @@ class CommissionAgentRule(models.Model):
         default=10,
         help="Lower sequence = higher priority when multiple rules match.",
     )
+
+    ORIENTADORA_EXTRA_CATEGORY_NAMES = (
+        "TAXA DE SALA",
+        "MAT/MED",
+        "COLA ORGANICA",
+        "TAXA DE EQUIPAMENTO",
+    )
+    ORIENTADORA_EXTRAS_XMLID = "crm_commissions.commission_fixed_1pct_extras"
+
+    @api.model
+    def _get_orientadora_extras_commission(self):
+        """Return the fixed 1% commission paid on the extras categories."""
+        commission = self.env.ref(
+            self.ORIENTADORA_EXTRAS_XMLID, raise_if_not_found=False
+        )
+        if commission:
+            return commission
+        # Fallback for databases where the xmlid was lost/renamed. The newest
+        # record wins, so the version that also covers TAXA DE EQUIPAMENTO is
+        # preferred over the old one without it.
+        return self.env["commission"].search(
+            [("name", "ilike", "Comissão Fixa 1%")],
+            order="id desc",
+            limit=1,
+        )
+
+    @api.model
+    def _ensure_orientadora_extras_rules(self):
+        """Make every orientadora earn the fixed 1% on the extras categories.
+
+        The progressive commission is restricted to the LIO tree, so without
+        an explicit per-category rule the extras lines would pay nothing at
+        all. This method is idempotent and is used by the module upgrade and
+        by the post-install hook, so a fresh database or a new orientadora
+        gets the same treatment without a manual script.
+        """
+        extras = self._get_orientadora_extras_commission()
+        if not extras:
+            _logger.warning(
+                "Orientadora extras: comissão fixa de 1%% não encontrada; "
+                "as regras por categoria não foram criadas."
+            )
+            return {"created": 0, "updated": 0, "categories": 0}
+
+        categories = self.env["product.category"].search(
+            [("name", "in", list(self.ORIENTADORA_EXTRA_CATEGORY_NAMES))]
+        )
+        missing = set(self.ORIENTADORA_EXTRA_CATEGORY_NAMES) - set(
+            categories.mapped("name")
+        )
+        if missing:
+            _logger.warning(
+                "Orientadora extras: categorias não encontradas: %s",
+                sorted(missing),
+            )
+        if not categories:
+            return {"created": 0, "updated": 0, "categories": 0}
+
+        extra_ids = set(categories.ids)
+        partners = self.env["res.partner"].search(
+            [("type_partner", "=", "orientadora"), ("agent", "=", True)]
+        )
+        created = 0
+        updated = 0
+        for partner in partners:
+            rules = self.search([("agent_id", "=", partner.id)])
+            matching = rules.filtered(
+                lambda rule, extra_ids=extra_ids: set(rule.categ_ids.ids) & extra_ids
+            )
+            if matching:
+                rule = matching[0]
+                current_ids = set(rule.categ_ids.ids)
+                if rule.commission_id != extras or not extra_ids.issubset(current_ids):
+                    rule.write(
+                        {
+                            "commission_id": extras.id,
+                            "categ_ids": [
+                                (6, 0, list(current_ids | extra_ids))
+                            ],
+                        }
+                    )
+                updated += 1
+                continue
+            self.create(
+                {
+                    "agent_id": partner.id,
+                    "commission_id": extras.id,
+                    "categ_ids": [(6, 0, list(extra_ids))],
+                    "sequence": 10,
+                }
+            )
+            created += 1
+        _logger.info(
+            "Orientadora extras: %s regra(s) criada(s), %s atualizada(s), "
+            "%s categoria(s)",
+            created,
+            updated,
+            len(categories),
+        )
+        return {
+            "created": created,
+            "updated": updated,
+            "categories": len(categories),
+        }

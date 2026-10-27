@@ -178,9 +178,9 @@ class TestCrmCommission(TransactionCase):
             v for v in result if v[2].get("agent_id") == self.orientadora.id
         ]
         self.assertTrue(orientadora_lines)
-        self.assertAlmostEqual(
-            orientadora_lines[0][2]["commission_split_percent"], 75.0
-        )
+        # The orientadora keeps 100%: the SDR share is not deducted from her.
+        self.assertNotIn("commission_split_percent", orientadora_lines[0][2])
+        self.assertEqual(orientadora_lines[0][2]["commission_id"], commission.id)
 
     def test_09_sdr_split_guards(self):
         commission = self.Commission.create(
@@ -205,6 +205,44 @@ class TestCrmCommission(TransactionCase):
 
         result3 = line._apply_sdr_commission_split(vals, False)
         self.assertEqual(len(result3), 2)
+
+    def test_09b_sdr_direct_sale_keeps_fixed_commission(self):
+        """Without an orientadora the SDR keeps the fixed 1% commission."""
+        fixed = self.Commission.create(
+            {
+                "name": "Teste SDR 1%",
+                "commission_type": "fixed",
+                "fix_qty": 1.0,
+            }
+        )
+        line = self.env["sale.order.line"].new({})
+        vals = [(0, 0, {"agent_id": self.sdr.id, "commission_id": fixed.id})]
+        result = line._apply_sdr_commission_split(vals, self.sdr)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0][2]["commission_id"], fixed.id)
+
+    def test_09c_sdr_copies_orientadora_commission_when_both_present(self):
+        """When the sale went through an orientadora, 25% wins over the 1%."""
+        fixed = self.Commission.create(
+            {
+                "name": "Teste SDR 1%",
+                "commission_type": "fixed",
+                "fix_qty": 1.0,
+            }
+        )
+        progressive = self.Commission.create(
+            {"name": "Teste Progressiva SDR", "commission_type": "progressive"}
+        )
+        line = self.env["sale.order.line"].new({})
+        vals = [
+            (0, 0, {"agent_id": self.orientadora.id, "commission_id": progressive.id}),
+            (0, 0, {"agent_id": self.sdr.id, "commission_id": fixed.id}),
+        ]
+        result = line._apply_sdr_commission_split(vals, self.sdr)
+        sdr_lines = [v for v in result if v[2].get("agent_id") == self.sdr.id]
+        self.assertEqual(len(sdr_lines), 1)
+        self.assertEqual(sdr_lines[0][2]["commission_id"], progressive.id)
+        self.assertAlmostEqual(sdr_lines[0][2]["commission_split_percent"], 25.0)
 
     def test_10_get_sdr_partner_from_rotation(self):
         sdr_user = self.env["res.users"].create(
@@ -429,6 +467,55 @@ class TestCrmCommission(TransactionCase):
             lambda a: a.agent_id == self.orientadora
         )
         self.assertFalse(agent_other)
+
+    def test_11b_orientadora_without_rule_gets_fixed_on_extras(self):
+        """Even without an explicit agent rule, the extras pay the fixed 1%.
+
+        The progressive commission is restricted to LIO, so the fallback in
+        ``_apply_agent_category_rules`` is what keeps a new orientadora (or a
+        database restored without the rules) from losing the extras lines.
+        """
+        fixed = self.env.ref("crm_commissions.commission_fixed_1pct_extras")
+        prog = self.Commission.create(
+            {"name": "Teste Progressiva sem regra", "commission_type": "progressive"}
+        )
+        self.CommissionProgressiveLine.create(
+            {
+                "commission_id": prog.id,
+                "percent_from": 0.0,
+                "percent_to": 100.0,
+                "commission_percent": 0.5,
+                "sequence": 10,
+            }
+        )
+        self.orientadora.commission_id = prog.id
+        cat_extra = self.env["product.category"].create({"name": "TAXA DE SALA"})
+        cat_lio = self.env["product.category"].create({"name": "LIO FALLBACK"})
+        prod_extra = self._create_product("Produto Extra Fallback", cat_extra)
+        prod_lio = self._create_product("Lente LIO Fallback", cat_lio)
+        prog.categ_ids = [(6, 0, [cat_lio.id])]
+        customer = self.ResPartner.create({"name": "Cliente Fallback"})
+        customer.agent_ids = [(6, 0, [self.orientadora.id])]
+        self.env["commission.agent.rule"].search(
+            [("agent_id", "=", self.orientadora.id)]
+        ).unlink()
+
+        line_extra = self._create_sale_line(customer, prod_extra)
+        line_extra._compute_agent_ids()
+        agent_extra = line_extra.agent_ids.filtered(
+            lambda agent: agent.agent_id == self.orientadora
+        )
+        self.assertTrue(agent_extra)
+        self.assertEqual(agent_extra.commission_id, fixed)
+        self.assertAlmostEqual(agent_extra.amount, 1.0)
+
+        line_lio = self._create_sale_line(customer, prod_lio)
+        line_lio._compute_agent_ids()
+        agent_lio = line_lio.agent_ids.filtered(
+            lambda agent: agent.agent_id == self.orientadora
+        )
+        self.assertTrue(agent_lio)
+        self.assertEqual(agent_lio.commission_id, prog)
 
     def test_13_salesperson_flow_fixed_commission(self):
         fixed = self.Commission.create(

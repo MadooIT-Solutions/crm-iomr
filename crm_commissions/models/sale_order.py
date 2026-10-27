@@ -6,8 +6,6 @@ from odoo import _, api, fields, models
 _SDR_COMMISSION_PCT = 25.0
 from odoo.exceptions import ValidationError
 
-
-
 # Categorias que pagam a coordenadora a comissão fixa de 0,25% (líquido).
 # As mesmas categorias extras da orientadora, conforme a regra da clínica.
 COORDINATOR_EXTRA_CATEGORY_NAMES = (
@@ -470,16 +468,19 @@ class SaleOrderLine(models.Model):
         ):
             vals.append((0, 0, self._prepare_agent_vals(salesperson)))
         vals = self._add_medical_agents(vals)
+        vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
+        # The category rules must run before the SDR split: the SDR earns a
+        # share of the orientadora's commission, so it has to copy the
+        # commission that actually applies to this product (the fixed 1% on
+        # the extras, the progressive on LIO), not the orientadora's default.
+        vals = self._apply_agent_category_rules(vals, self.product_id)
         sdr_partner = (
             self.order_id.opportunity_id
             and self.order_id.opportunity_id._get_sdr_partner()
         )
         if sdr_partner:
             vals = self._apply_sdr_commission_split(vals, sdr_partner)
-        vals = [v for v in vals if len(v) < 3 or v[2].get("commission_id")]
-        return self._add_coordinator_agents(
-            self._apply_agent_category_rules(vals, self.product_id)
-        )
+        return self._add_coordinator_agents(vals)
 
     def _get_expected_agent_partners(self):
         """Partners the commission rules assign to this line.
@@ -591,6 +592,15 @@ class SaleOrderLine(models.Model):
 
     def _product_in_coordinator_extras_categ(self, product):
         """Se o produto pertence a uma categoria extra da coordenadora."""
+        return self._product_in_extras_commission_categ(product)
+
+    def _product_in_extras_commission_categ(self, product):
+        """Se o produto está numa das categorias extras da comissão fixa.
+
+        Taxa de Sala, MAT/MED, Cola Orgânica e Taxa de Equipamento pagam a
+        comissão fixa de 1% (orientadora) e 0,25% (coordenadora), tanto na
+        categoria raiz quanto em eventuais subcategorias.
+        """
         if not product or not product.categ_id:
             return False
         cats = self.env["product.category"].search(
@@ -651,11 +661,23 @@ class SaleOrderLine(models.Model):
     def _apply_sdr_commission_split(self, vals, sdr_partner):
         """SDR keeps earning 25% of the orientadora's commission, but that
         amount is no longer deducted from the orientadora, who keeps 100%.
+
+        The fixed 1% (``SDR 1% fixo``) only applies when the sale did not go
+        through an orientadora, i.e. when it was created directly by the SDR.
+        When an orientadora is on the line the SDR copies her commission at
+        25%, even if the SDR line was already added earlier (for instance as
+        the order's salesperson, which would leave the fixed 1% in place).
         """
         if not sdr_partner or not sdr_partner.agent:
             return vals
-        if any(len(v) >= 3 and v[2].get("agent_id") == sdr_partner.id for v in vals):
-            return vals
+        existing = next(
+            (
+                val
+                for val in vals
+                if len(val) >= 3 and val[2].get("agent_id") == sdr_partner.id
+            ),
+            None,
+        )
         orientadora_vals = [
             v
             for v in vals
@@ -667,6 +689,10 @@ class SaleOrderLine(models.Model):
             )
         ]
         if not orientadora_vals:
+            return vals
+        if existing is not None:
+            existing[2]["commission_id"] = orientadora_vals[0][2]["commission_id"]
+            existing[2]["commission_split_percent"] = _SDR_COMMISSION_PCT
             return vals
         sdr_vals = self._prepare_agent_vals(sdr_partner)
         sdr_vals["commission_id"] = orientadora_vals[0][2]["commission_id"]
@@ -742,6 +768,20 @@ class SaleOrderLine(models.Model):
             )
             if rule:
                 val[2]["commission_id"] = rule.commission_id.id
+            elif (
+                agent.type_partner == "orientadora"
+                and self._product_in_extras_commission_categ(product)
+            ):
+                # Defence in depth: the explicit rule is created by the
+                # upgrade/post-install hook, but a new orientadora (or a
+                # database restored without the rule) still earns the fixed
+                # 1% on the extras categories instead of nothing, since the
+                # progressive policy no longer covers them.
+                extras = self.env[
+                    "commission.agent.rule"
+                ]._get_orientadora_extras_commission()
+                if extras:
+                    val[2]["commission_id"] = extras.id
             if agent.type_partner == "coordenadora":
                 # Bug de espelhamento: quando a coordenadora já está na lista de
                 # agentes do cliente (ou é o vendedor), ela ficava com a
