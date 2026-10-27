@@ -19,13 +19,13 @@ class SaleOrder(models.Model):
         tracking=True,
     )
 
-    tipo_venda = fields.Selection(
+    tipo_paciente = fields.Selection(
         selection=[
             ("iomr", "IOMR"),
             ("externo", "Externo"),
         ],
-        string="Tipo de Venda",
-        related="opportunity_id.tipo_venda",
+        string="Tipo de Paciente",
+        related="opportunity_id.tipo_paciente",
         readonly=True,
         store=True,
     )

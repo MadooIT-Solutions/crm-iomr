@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 {
     "name": "CRM IOMR Sale Product Security",
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.3.0",
     "author": "IOMR, Odoo Community Association (OCA)",
     "category": "Sales",
     "license": "AGPL-3",

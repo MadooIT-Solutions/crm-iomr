@@ -30,12 +30,12 @@ class CRMLead(models.Model):
         domain=[("type_partner", "=", "convenio")],
         tracking=True, required=True
     )
-    tipo_venda = fields.Selection(
+    tipo_paciente = fields.Selection(
         selection=[
             ("iomr", "IOMR"),
             ("externo", "Externo"),
         ],
-        string="Tipo de Venda",
+        string="Tipo de Paciente",
         default="iomr",
         required=True,
         tracking=True,
