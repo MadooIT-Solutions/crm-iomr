@@ -1,8 +1,8 @@
 {
     "name": "CRM IOMR WhatsApp",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Sales/CRM",
-    "summary": "Adds new salesperson to WhatsApp channel on user change",
+    "summary": "Copies WhatsApp channel attachments to the CRM chatter",
     "author": "Rodrigo A. Madureira",
     "company": "Madooit IT Solutions",
     "maintainer": "Madooit IT Solutions",

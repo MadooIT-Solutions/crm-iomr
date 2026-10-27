@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class MailGateway(models.Model):
@@ -27,21 +27,42 @@ class CrmLead(models.Model):
                     lead._add_user_to_whatsapp_channel()
         return result
 
+    def message_post(self, *, attachment_ids=None, **kwargs):
+        """Copy WhatsApp attachments to the opportunity before posting.
+
+        Attachments that come from the WhatsApp/Discuss channel are linked to
+        the ``discuss.channel``.  Mirroring them to the lead only creates a
+        link between the message and the attachment, so only channel members
+        can open the file.  Copying the attachments to the lead makes them
+        available to every user with access to the opportunity, while keeping
+        the original file in the WhatsApp conversation.
+        """
+        if self and kwargs.get("gateway_type") == "whatsapp" and attachment_ids:
+            self.ensure_one()
+            if isinstance(attachment_ids, models.BaseModel):
+                attachments = attachment_ids
+            else:
+                attachments = self.env["ir.attachment"].browse(attachment_ids)
+            if attachments:
+                attachment_ids = attachments._copy_to_record(self).ids
+        return super().message_post(attachment_ids=attachment_ids, **kwargs)
+
     def _add_user_to_whatsapp_channel(self):
         if not self.user_id:
             return
         if not self.env.registry.get("mail.whatsapp.chatter.link"):
             return
-        link = self.env["mail.whatsapp.chatter.link"].sudo().search(
-            [("res_model", "=", "crm.lead"), ("res_id", "=", self.id)], limit=1
+        link = (
+            self.env["mail.whatsapp.chatter.link"]
+            .sudo()
+            .search([("res_model", "=", "crm.lead"), ("res_id", "=", self.id)], limit=1)
         )
         if not link or not link.channel_id:
             return
         channel = link.channel_id.sudo()
         new_partner = self.user_id.partner_id
         if not any(
-            member.partner_id == new_partner
-            for member in channel.channel_member_ids
+            member.partner_id == new_partner for member in channel.channel_member_ids
         ):
             self.env["discuss.channel.member"].sudo().create(
                 {
