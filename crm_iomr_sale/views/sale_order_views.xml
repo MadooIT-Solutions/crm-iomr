@@ -8,6 +8,7 @@
       <field name="partner_id" position="after">
         <field name="prontuario" />
         <field name="convenio"/>
+        <field name="tipo_venda" widget="radio" readonly="1"/>
         <field name="doctor_id" groups="commission_oca.group_commission_user" />
         <field name="referred_partner" widget="many2many_tags" options="{'no_create': true}" groups="commission_oca.group_commission_user" />
         <field name="nota_fiscal"/>

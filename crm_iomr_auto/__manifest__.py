@@ -20,7 +20,7 @@
 ################################################################################
 {
     "name": "CRM IOMR Automations",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Extra Tools",
     "summary": """Custom triggers to CRM""",
     "description": """Custom triggers to CRM""",

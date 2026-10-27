@@ -19,6 +19,17 @@ class SaleOrder(models.Model):
         tracking=True,
     )
 
+    tipo_venda = fields.Selection(
+        selection=[
+            ("iomr", "IOMR"),
+            ("externo", "Externo"),
+        ],
+        string="Tipo de Venda",
+        related="opportunity_id.tipo_venda",
+        readonly=True,
+        store=True,
+    )
+
     doctor_id = fields.Many2one(
         "res.partner",
         string="Doctor/Médico(a)",

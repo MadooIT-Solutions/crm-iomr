@@ -16,6 +16,7 @@
           <group>
             <field name="referred_partner" widget="many2many_tags" options="{'no_create':true}"/>
             <field name="convenio" options="{'no_create':true}"/>
+            <field name="tipo_venda" widget="radio"/>
             <field name="doctor" string="Médico(a)" options="{'no_create':true}"/>
             <field name="user_id"/>
 

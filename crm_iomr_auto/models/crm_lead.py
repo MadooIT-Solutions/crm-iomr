@@ -30,6 +30,16 @@ class CRMLead(models.Model):
         domain=[("type_partner", "=", "convenio")],
         tracking=True, required=True
     )
+    tipo_venda = fields.Selection(
+        selection=[
+            ("iomr", "IOMR"),
+            ("externo", "Externo"),
+        ],
+        string="Tipo de Venda",
+        default="iomr",
+        required=True,
+        tracking=True,
+    )
     doctor = fields.Many2one(
         "res.partner",
         string="Doctor",
