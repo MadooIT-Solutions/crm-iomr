@@ -41,7 +41,7 @@
 
         <label for="mobile_lead_contact" class="oe_inline"/>
         <div class="o_row o_row_readonly">
-          <field name="mobile" id="mobile_lead_contact" widget="phone"/>
+          <field name="mobile" id="mobile_lead_contact"/>
           <button type="object" name="action_initiate_whatsapp_call" class="btn-sm btn-link fa fa-phone" aria-label="Iniciar Chamada" title="Iniciar Chamada" invisible="not partner_id or not (partner_id.mobile or mobile)" groups="tus_meta_whatsapp_base.whatsapp_group_user"/>
         </div>
       </xpath>
