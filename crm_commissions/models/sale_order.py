@@ -428,6 +428,29 @@ class SaleOrderLine(models.Model):
             record.agent_ids = False
             record.agent_ids = record._get_rule_based_agent_vals()
 
+    def _prepare_invoice_line(self, **optional_values):
+        """Copy the commission split to the invoice agent lines.
+
+        The standard invoice copy only carries the agent and the commission.
+        Without the split the SDR (25%) and the referring doctor (50%) would be
+        paid in full on the invoice while the sale line holds the right share.
+        """
+        vals = super()._prepare_invoice_line(**optional_values)
+        vals["agent_ids"] = [
+            (
+                0,
+                0,
+                {
+                    "agent_id": agent.agent_id.id,
+                    "commission_id": agent.commission_id.id,
+                    "commission_split_percent": agent.commission_split_percent,
+                },
+            )
+            for agent in self.agent_ids
+            if agent.commission_id
+        ]
+        return vals
+
     def _get_rule_based_agent_vals(self):
         """Agent values the commission rules assign to this line.
 

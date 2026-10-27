@@ -2,13 +2,14 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 {
     "name": "CRM Commissions IOMR",
-    "version": "18.0.2.9.2",
+    "version": "18.0.2.9.3",
     "author": "IOMR, Odoo Community Association (OCA)",
     "category": "Sales/Commission",
     "license": "AGPL-3",
     "depends": [
         "commission_oca",
         "sale_commission_oca",
+        "sale_commission_oca_product_criteria",
         "sale_commission_salesman",
         "crm",
         "sale_management",
