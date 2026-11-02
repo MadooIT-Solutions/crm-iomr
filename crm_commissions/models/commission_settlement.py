@@ -55,6 +55,23 @@ class CommissionSettlementLine(models.Model):
 
     @api.depends(
         "invoice_agent_line_id",
+        "invoice_agent_line_id.payment_date",
+        "settlement_id.settlement_type",
+    )
+    def _compute_date(self):
+        """Use the payment date on invoice settlements.
+
+        The OCA compute takes ``invoice_date``; for a commission closed after
+        payment, the meaningful date is when the invoice was paid.
+        """
+        super()._compute_date()
+        for line in self:
+            agent_line = line.invoice_agent_line_id
+            if agent_line and line.settlement_id.settlement_type == "sale_invoice":
+                line.date = agent_line.payment_date or agent_line.invoice_date
+
+    @api.depends(
+        "invoice_agent_line_id",
         "invoice_agent_line_id.object_id",
         "invoice_agent_line_id.object_id.sale_line_ids",
     )

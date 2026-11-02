@@ -1,9 +1,12 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from datetime import timedelta
+from datetime import date, timedelta
+from itertools import groupby
 
-from odoo import fields, models
+from odoo import _, api, fields, models
+
+from ..models.account_move import PAYMENT_STATES
 
 
 class CommissionMakeSettle(models.TransientModel):
@@ -21,15 +24,41 @@ class CommissionMakeSettle(models.TransientModel):
         },
     )
 
+    def _get_settlement_date(self, line):
+        """Date that decides the settlement period of a source line.
+
+        Invoice commissions are closed by the date the invoice was **paid**,
+        not by the invoice date. CRM lines keep using their own settlement
+        date (``target_date`` on targets, ``date_to`` on quarterly bonuses),
+        exposed through ``invoice_date`` by those models.
+        """
+        if self.settlement_type == "sale_invoice":
+            return line.payment_date or line.invoice_date
+        return line.invoice_date
+
+    @api.model
+    def _agent_lines_sorted(self, agent_line):
+        """Sort source lines by company, currency and settlement date.
+
+        The settle loop opens a new settlement period whenever the date moves
+        forward, so the lines of each company/currency must arrive in
+        ascending date order. OCA relies on the search order for that; with
+        the payment date in place we make the ordering explicit.
+        """
+        return (
+            agent_line.company_id.id,
+            agent_line.currency_id.id,
+            self._get_settlement_date(agent_line) or date.min,
+        )
+
     def _is_in_mass_period(self, line):
         """Check whether the source line falls inside the chosen period.
 
-        ``invoice_date`` mirrors ``target_date`` on CRM targets and holds the
-        invoice date on invoice agent lines, so it works for both settlement
-        types.
+        The date used here is the settlement date: the invoice payment date
+        for invoice commissions, and the target/bonus date for CRM lines.
         """
         self.ensure_one()
-        line_date = line.invoice_date
+        line_date = self._get_settlement_date(line)
         if not line_date:
             return True
         if self.date_from and line_date < self.date_from:
@@ -71,11 +100,24 @@ class CommissionMakeSettle(models.TransientModel):
                 domain, order="date_to asc"
             )
         else:
-            upper = date_to_agent
-            if strict and self.date_to:
-                # Inclusive upper bound: `< date_to + 1` equals `<= date_to`.
-                upper = self.date_to + timedelta(days=1)
-            lines = super()._get_agent_lines(agent, upper)
+            # Invoice commissions are payment based: only invoices already
+            # paid (or with a registered payment) can be closed, and the date
+            # that matters is the payment date. The OCA domain filters by
+            # ``invoice_date``, which would both close unpaid invoices and put
+            # an invoice paid in October into the September settlement.
+            domain = [
+                ("agent_id", "=", agent.id),
+                ("settled", "=", False),
+                ("object_id.display_type", "=", "product"),
+                ("invoice_id.state", "=", "posted"),
+                ("invoice_id.payment_state", "in", PAYMENT_STATES),
+            ]
+            lines = self.env["account.invoice.line.agent"].search(domain)
+            if not strict and date_to_agent:
+                lines = lines.filtered(
+                    lambda line: line.payment_date
+                    and line.payment_date < date_to_agent
+                )
         if strict:
             lines = lines.filtered(self._is_in_mass_period)
         return lines
@@ -132,7 +174,11 @@ class CommissionMakeSettle(models.TransientModel):
 
     def _prepare_settlement_line_vals(self, settlement, line):
         values = super()._prepare_settlement_line_vals(settlement, line)
-        if self.settlement_type == "crm_performance":
+        if self.settlement_type == "sale_invoice":
+            # The line date follows the payment date, so the settlement line
+            # and its period tell when the commission was actually earned.
+            values["date"] = self._get_settlement_date(line)
+        elif self.settlement_type == "crm_performance":
             values.update(
                 {
                     "settlement_id": settlement.id,
@@ -155,3 +201,78 @@ class CommissionMakeSettle(models.TransientModel):
                 }
             )
         return values
+
+    def action_settle(self):
+        """Create the settlements using the payment date as the period date.
+
+        This is the OCA loop with one change: the period is opened from
+        ``_get_settlement_date(line)`` instead of ``line.invoice_date``. The
+        standard implementation would put an invoice paid in October into the
+        September settlement just because it was issued in September.
+        """
+        self.ensure_one()
+        settlement_obj = self.env["commission.settlement"]
+        settlement_line_obj = self.env["commission.settlement.line"]
+        settlement_ids = []
+        agents = self.agent_ids or self.env["res.partner"].search(
+            [("agent", "=", True)]
+        )
+        date_to = self.date_to
+        for agent in agents:
+            date_to_agent = self._get_period_start(agent, date_to)
+            grouped_agent_lines = groupby(
+                sorted(
+                    self._get_agent_lines(agent, date_to_agent),
+                    key=self._agent_lines_sorted,
+                ),
+                key=self._agent_lines_groupby,
+            )
+            for _k, grouper_agent_lines in grouped_agent_lines:
+                agent_lines = list(grouper_agent_lines)
+                pos = 0
+                sett_to = date(year=1900, month=1, day=1)
+                settlement = settlement_obj
+                settlement_line_vals = []
+                while pos < len(agent_lines):
+                    line = agent_lines[pos]
+                    pos += 1
+                    if line._skip_settlement():
+                        continue
+                    line_date = self._get_settlement_date(line)
+                    if not line_date:
+                        continue
+                    if line_date > sett_to:
+                        sett_from = self._get_period_start(agent, line_date)
+                        sett_to = self._get_next_period_date(agent, sett_from)
+                        sett_to -= timedelta(days=1)
+                        settlement = self._get_settlement(
+                            agent,
+                            line.company_id,
+                            line.currency_id,
+                            sett_from,
+                            sett_to,
+                        )
+                        if not settlement:
+                            settlement = settlement_obj.create(
+                                self._prepare_settlement_vals(
+                                    agent,
+                                    line.company_id,
+                                    sett_from,
+                                    sett_to,
+                                )
+                            )
+                            settlement.currency_id = line.currency_id
+                        settlement_ids.append(settlement.id)
+                    settlement_line_vals.append(
+                        self._prepare_settlement_line_vals(settlement, line)
+                    )
+                settlement_line_obj.create(settlement_line_vals)
+        if settlement_ids:
+            return {
+                "name": _("Created Settlements"),
+                "type": "ir.actions.act_window",
+                "views": [[False, "list"], [False, "form"]],
+                "res_model": "commission.settlement",
+                "domain": [["id", "in", settlement_ids]],
+            }
+        return False

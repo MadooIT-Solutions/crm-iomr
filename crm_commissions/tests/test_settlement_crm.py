@@ -206,18 +206,97 @@ class TestCrmSettlement(TransactionCase):
         )
         agent_line = invoice.invoice_line_ids.agent_ids
         self.assertEqual(agent_line.agent_id, self.partner)
-        # Só fatura postada entra em settlement (``_skip_settlement``).
         invoice.action_post()
 
-        # Fecha o mês de março, onde caiu a fatura.
+        # A fatura postada mas ainda não paga não entra no fechamento.
         self._make_settle_wizard("sale_invoice", date(2026, 4, 1)).action_settle()
+        self.assertFalse(
+            self.SettleLine.search([("invoice_agent_line_id", "=", agent_line.id)])
+        )
+
+        # Paga em abril: o fechamento de abril (rodado em maio) a inclui.
+        self._register_payment(invoice, date(2026, 4, 2))
+        self._make_settle_wizard("sale_invoice", date(2026, 5, 1)).action_settle()
 
         line = self.SettleLine.search([("invoice_agent_line_id", "=", agent_line.id)])
         self.assertEqual(len(line), 1)
+        self.assertEqual(line.date, date(2026, 4, 2))
+        self.assertEqual(line.settlement_id.date_from, date(2026, 4, 1))
+        self.assertEqual(line.settlement_id.date_to, date(2026, 4, 30))
         self.assertEqual(line.sale_order_id, order)
         action = line.action_open_sale_order()
         self.assertEqual(action["res_model"], "sale.order")
         self.assertEqual(action["res_id"], order.id)
+
+    def test_07_invoice_settlement_follows_the_payment_date(self):
+        """Fatura de setembro paga em outubro fecha no período de outubro.
+
+        O fechamento não pode usar a data da fatura: o período (e a data da
+        linha) é o do pagamento. Assim, a fatura não aparece no fechamento de
+        setembro e aparece no de outubro.
+        """
+        invoice_date = date(2026, 9, 20)
+        payment_date = date(2026, 10, 5)
+        order = self._create_confirmed_sale(invoice_date, 1000.0)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": order.partner_id.id,
+                "invoice_date": invoice_date,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "tax_ids": [(5, 0, 0)],
+                            "sale_line_ids": [(6, 0, order.order_line.ids)],
+                        },
+                    )
+                ],
+            }
+        )
+        agent_line = invoice.invoice_line_ids.agent_ids
+        invoice.action_post()
+        self._register_payment(invoice, payment_date)
+
+        # Fechamento de setembro: a fatura está fora do período.
+        self._make_settle_wizard("sale_invoice", date(2026, 10, 1)).action_settle()
+        self.assertFalse(
+            self.SettleLine.search([("invoice_agent_line_id", "=", agent_line.id)])
+        )
+
+        # Fechamento de outubro: entra com a data do pagamento.
+        self._make_settle_wizard("sale_invoice", date(2026, 11, 1)).action_settle()
+        line = self.SettleLine.search([("invoice_agent_line_id", "=", agent_line.id)])
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line.date, payment_date)
+        self.assertEqual(line.settlement_id.date_from, date(2026, 10, 1))
+        self.assertEqual(line.settlement_id.date_to, date(2026, 10, 31))
+
+    def _register_payment(self, invoice, payment_date):
+        """Register a full payment for the invoice on ``payment_date``."""
+        journal = self.env["account.journal"].search(
+            [
+                ("type", "in", ("bank", "cash")),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        wizard = (
+            self.env["account.payment.register"]
+            .with_context(
+                active_model="account.move",
+                active_ids=invoice.ids,
+                dont_redirect_to_payments=True,
+            )
+            .create({"journal_id": journal.id, "payment_date": payment_date})
+        )
+        wizard.action_create_payments()
+        self.assertIn(invoice.payment_state, ("in_payment", "paid"))
+        return invoice.reconciled_payment_ids
 
     def test_05_settlement_line_without_invoice_has_no_sale_order(self):
         """Fechamento de meta não fatura um pedido único: fica sem pedido.

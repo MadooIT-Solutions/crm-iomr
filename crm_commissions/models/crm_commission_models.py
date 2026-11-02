@@ -83,6 +83,16 @@ class Commission(models.Model):
         default=5.0,
         help="Maximum discount allowed without management approval",
     )
+    invoice_state = fields.Selection(
+        selection=[
+            ("open", "Invoice Based"),
+            ("paid", "Payment Based"),
+        ],
+        string="Invoice Status",
+        default="paid",
+        help="Invoice commissions are closed only after the invoice is "
+        "paid, using the payment date as the settlement date.",
+    )
     categ_ids = fields.Many2many(
         "product.category",
         string="Product Categories",
