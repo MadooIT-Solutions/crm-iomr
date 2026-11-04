@@ -38,13 +38,13 @@
         </field>
     </record>
 
-    <record id="view_settlement_line_list_crm_sources" model="commission.settlement.line">
+    <record id="view_settlement_line_list_crm_sources" model="ir.ui.view">
         <field name="name">commission.settlement.line.list.crm.sources</field>
         <field name="model">commission.settlement.line</field>
         <field name="inherit_id" ref="commission_oca.view_settlement_line_tree" />
         <field name="arch" type="xml">
             <xpath expr="//list" position="replace">
-                <list domain="[('settled_amount', '!=', 0)]">
+                <list create="false">
                     <field name="date" />
                     <field name="agent_id" />
                     <field name="commission_id" />
@@ -59,17 +59,6 @@
                     <field name="target_id" optional="hide" />
                     <field name="quarterly_bonus_id" optional="hide" />
                 </list>
-            </xpath>
-            <xpath expr="//list" position="inside">
-                <field name="sale_order_id" readonly="1" optional="show" />
-                <button
-                    name="action_open_sale_order"
-                    type="object"
-                    icon="fa-external-link"
-                    title="Abrir pedido de venda"
-                />
-                <field name="target_id" optional="hide" />
-                <field name="quarterly_bonus_id" optional="hide" />
             </xpath>
         </field>
     </record>
