@@ -3,6 +3,18 @@
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
 
+    <record id="view_settlement_tree_crm_sale_order" model="ir.ui.view">
+        <field name="name">commission.settlement.list.crm.sale.order</field>
+        <field name="model">commission.settlement</field>
+        <field name="inherit_id" ref="commission_oca.view_settlement_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='settlement_type']" position="after">
+                <field name="sale_order_id" optional="hide" />
+                <field name="prontuario" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
     <!-- Deixa rastreável a origem de cada linha fechada no CRM: a meta mensal
          que gerou a comissão de performance ou o bônus trimestral cuja
          comissão perdida foi recuperada. -->
@@ -15,6 +27,7 @@
                 <!-- O pedido de venda que originou a linha, e o clique que
                      abre esse pedido. -->
                 <field name="sale_order_id" readonly="1" optional="show" />
+                <field name="prontuario" readonly="1" optional="show" />
                 <button
                     name="action_open_sale_order"
                     type="object"
@@ -50,6 +63,7 @@
                     <field name="commission_id" />
                     <field name="settled_amount" sum="Settled total" />
                     <field name="sale_order_id" readonly="1" optional="show" />
+                    <field name="prontuario" readonly="1" optional="show" />
                     <button
                         name="action_open_sale_order"
                         type="object"

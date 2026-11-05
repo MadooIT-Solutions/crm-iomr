@@ -23,6 +23,29 @@ class CommissionSettlement(models.Model):
     )
     is_crm_score = fields.Float(string="IS-CRM score")
     performance_pct = fields.Float(string="Performance (%)")
+    sale_order_id = fields.Many2one(
+        comodel_name="sale.order",
+        string="Pedido de venda",
+        compute="_compute_sale_order_info",
+        readonly=True,
+        help="Pedido de venda relacionado às linhas desta liquidação "
+        "(quando houver um único pedido).",
+    )
+    prontuario = fields.Char(
+        string="Prontuário",
+        compute="_compute_sale_order_info",
+        readonly=True,
+        help="Prontuário do cliente no pedido de venda relacionado.",
+    )
+
+    @api.depends("line_ids.sale_order_id", "line_ids.sale_order_id.prontuario")
+    def _compute_sale_order_info(self):
+        for settlement in self:
+            orders = settlement.line_ids.mapped("sale_order_id")
+            settlement.sale_order_id = orders[:1] if len(orders) == 1 else False
+            settlement.prontuario = (
+                settlement.sale_order_id.prontuario if settlement.sale_order_id else False
+            )
 
 
 class CommissionSettlementLine(models.Model):
@@ -51,6 +74,12 @@ class CommissionSettlementLine(models.Model):
         compute="_compute_sale_order_id",
         readonly=True,
         help="Pedido de venda que originou esta linha de comissão.",
+    )
+    prontuario = fields.Char(
+        string="Prontuário",
+        compute="_compute_prontuario",
+        readonly=True,
+        help="Prontuário do cliente no pedido de venda relacionado.",
     )
 
     @api.depends(
@@ -93,6 +122,11 @@ class CommissionSettlementLine(models.Model):
             line.sale_order_id = (
                 agent_line._get_source_sale_order() if agent_line else False
             )
+
+    @api.depends("sale_order_id.prontuario")
+    def _compute_prontuario(self):
+        for line in self:
+            line.prontuario = line.sale_order_id.prontuario or False
 
     def action_open_sale_order(self):
         """Abre o pedido de venda relacionado a esta linha."""
