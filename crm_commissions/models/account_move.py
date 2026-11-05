@@ -10,6 +10,57 @@ from odoo import api, fields, models
 PAYMENT_STATES = ("in_payment", "paid", "reversed")
 
 
+class AccountMoveLine(models.Model):
+    _inherit = "account.move.line"
+
+    def _prepare_agent_vals_from_sale_line(self, sol_agent):
+        """Valores do agente copiados da linha do pedido, preservando o split.
+
+        Usado na reconstrução dos agentes da fatura a partir das linhas de
+        venda vinculadas (incluindo adiantamento/entrada). Sem o
+        ``commission_split_percent`` a comissão do SDR (25%) e do médico
+        indicador (50%) seria paga integral no fechamento da fatura.
+        """
+        return {
+            "agent_id": sol_agent.agent_id.id,
+            "commission_id": sol_agent.commission_id.id,
+            "commission_split_percent": sol_agent.commission_split_percent or 100.0,
+        }
+
+    @api.model
+    def _downpayment_sale_line_agent_commands(self, line):
+        """Comandos de agentes vindos das linhas de venda (com split)."""
+        commands = [(5, 0, 0)]
+        for sol in line.sale_line_ids:
+            for agent in sol.agent_ids.filtered("commission_id"):
+                commands.append((0, 0, self._prepare_agent_vals_from_sale_line(agent)))
+        return commands
+
+    @api.depends("move_id.partner_id", "sale_line_ids", "sale_line_ids.is_downpayment")
+    def _compute_agent_ids(self):
+        """Garante agentes (com rateio/split) nas linhas de adiantamento.
+
+        O adiantamento (entrada) gera uma linha de fatura vinculada às linhas
+        de venda com ``is_downpayment=True``; os agentes comissionados do pedido
+        devem receber a comissão proporcional ao valor pago na entrada. Quando
+        a linha vem de venda, os agentes são copiados das linhas de venda
+        preservando o ``commission_split_percent`` (que a cópia padrão pode
+        omitir). Linhas fiscais brasileiras sem repasse (CFOP financeiro) seguem
+        sem agentes. A cópia inclui também as linhas de produto regular vindas
+        de venda para manter o split correto nessas faturas.
+        """
+        sale_lines = self.filtered(lambda line: line.sale_line_ids)
+        other_lines = self - sale_lines
+        if other_lines:
+            super(AccountMoveLine, other_lines)._compute_agent_ids()
+        for line in sale_lines:
+            cfop = getattr(line, "cfop_id", False)
+            if line.commission_free or (cfop and not getattr(cfop, "finance_move", True)):
+                line.agent_ids = False
+            else:
+                line.agent_ids = self._downpayment_sale_line_agent_commands(line)
+
+
 class AccountInvoiceLineAgent(models.Model):
     _inherit = "account.invoice.line.agent"
 

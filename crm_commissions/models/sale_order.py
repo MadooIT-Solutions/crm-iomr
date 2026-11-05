@@ -462,6 +462,14 @@ class SaleOrderLine(models.Model):
         self.ensure_one()
         if not self.order_id.partner_id or self.commission_free:
             return []
+        # Adiantamento/entrada (down payment): a comissão é rateada
+        # proporcionalmente entre os agentes comissionados do pedido, com a
+        # mesma política/split das linhas do pedido. Os agentes são derivados
+        # das linhas comissionáveis do pedido (e não do cliente/produto de
+        # depósito) para respeitar médico, orientadora, SDR, coordenadora e o
+        # split; o valor proporcional vem do subtotal desta linha no cálculo.
+        if self.is_downpayment:
+            return self._get_downpayment_agent_vals()
         # The card fee reaches the invoice, not the order line, so this is a
         # safety net: if the fee ever shows up on a sale line it must not
         # commission anyone either.
@@ -519,6 +527,59 @@ class SaleOrderLine(models.Model):
                 if len(val) >= 3 and val[2].get("agent_id")
             ]
         )
+
+    def _get_downpayment_agent_vals(self):
+        """Agentes da entrada rateados proporcionalmente entre os comissionados.
+
+        A linha de adiantamento (``is_downpayment``) não representa um produto
+        comissionável isolado: ela antecipa parte do valor do pedido. A comissão
+        da entrada é, portanto, a comissão que cabe aos agentes do pedido sobre o
+        valor pago — calculada de forma proporcional ao subtotal da entrada — e
+        distribuída entre os mesmos agentes, preservando comissão e
+        ``commission_split_percent`` (ex.: orientadora 100%, SDR 25% da
+        orientadora, médico indicador 50%). A regra de comissionamento considerada
+        é a das linhas comissionáveis do pedido: usa-se a composição de agentes
+        (agente/comissão/split) que efetivamente se aplica ao pedido, para que a
+        entrada gere exatamente o rateio que esses agentes recebem. Linhas sem
+        comissão no pedido não entram; o valor final nasce do cálculo padrão de
+        comissão aplicado ao subtotal da entrada (``_compute_amount``).
+        """
+        self.ensure_one()
+        order = self.order_id
+        agent_map = {}
+        order_lines = order.order_line.filtered(
+            lambda l: not l.display_type and not l.is_downpayment
+        )
+        for line in order_lines:
+            vals = line._get_rule_based_agent_vals()
+            for val in vals:
+                if len(val) < 3 or not val[2].get("agent_id") or not val[2].get("commission_id"):
+                    continue
+                data = val[2]
+                key = (
+                    data["agent_id"],
+                    data["commission_id"],
+                    float(data.get("commission_split_percent") or 100.0),
+                )
+                agent_map.setdefault(key, data)
+        if not agent_map:
+            # Fallback: se não houver regra derivável das linhas (caso atípico),
+            # replica os agentes já presentes nas linhas do pedido.
+            for agent in order_lines.mapped("agent_ids").filtered("commission_id"):
+                key = (
+                    agent.agent_id.id,
+                    agent.commission_id.id,
+                    float(agent.commission_split_percent or 100.0),
+                )
+                agent_map.setdefault(
+                    key,
+                    {
+                        "agent_id": agent.agent_id.id,
+                        "commission_id": agent.commission_id.id,
+                        "commission_split_percent": agent.commission_split_percent or 100.0,
+                    },
+                )
+        return [(0, 0, dict(data)) for data in agent_map.values()]
 
     @api.model_create_multi
     def create(self, vals_list):
