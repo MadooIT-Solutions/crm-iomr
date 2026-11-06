@@ -3,8 +3,10 @@
 
 """Corrige settled_amount de liquidacoes de fatura ja fechadas.
 
-Recalcula o valor liquidado aplicando o rateio proporcional para faturas
-pagas parcialmente (payment_state == 'partial').
+Recalcula o amount da linha de agente (que pode ter ficado zerado se foi
+computado antes da fatura ser postada/paga) e o settled_amount da linha de
+liquidacao, aplicando o rateio proporcional para faturas pagas parcialmente
+(payment_state == 'partial').
 
 Uso (odoo shell, da raiz do repo):
     /home/iomr/odoo/odoo-bin shell \
@@ -22,13 +24,13 @@ def _fix(cr):
 
     env = api.Environment(cr, SUPERUSER_ID, {})
 
-    # Recompute amount das linhas de agente de faturas pagas parcialmente,
-    # pois o compute nao depende de invoice_id.payment_state e pode estar
-    # defasado (zerado se foi computado antes do pagamento).
+    # Recompute amount de TODAS as linhas de agente de faturas postadas e
+    # pagas (paid, in_payment, partial, reversed), pois o compute pode ter
+    # sido executado antes da fatura ser postada, deixando amount = 0.
     agent_lines = env["account.invoice.line.agent"].search(
         [
-            ("invoice_id.payment_state", "=", "partial"),
-            ("settled", "=", False),
+            ("invoice_id.state", "=", "posted"),
+            ("invoice_id.payment_state", "in", ("in_payment", "paid", "partial", "reversed")),
         ]
     )
     if agent_lines:
@@ -38,7 +40,7 @@ def _fix(cr):
         env.flush_all()
         env.invalidate_all()
         _logger.info(
-            "Amount recomputado para %s linha(s) de agente de fatura parcial.",
+            "Amount recomputado para %s linha(s) de agente de fatura paga.",
             len(agent_lines),
         )
 

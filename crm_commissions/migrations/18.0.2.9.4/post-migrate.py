@@ -45,6 +45,26 @@ def migrate(cr, version):
         len(commissions),
     )
 
+    # Recompute amount de todas as linhas de agente de faturas postadas e
+    # pagas (paid, in_payment, partial, reversed). O amount pode ter ficado
+    # zerado se o compute foi executado antes da fatura ser postada.
+    agent_lines = env["account.invoice.line.agent"].search(
+        [
+            ("invoice_id.state", "=", "posted"),
+            ("invoice_id.payment_state", "in", ("in_payment", "paid", "partial", "reversed")),
+        ]
+    )
+    if agent_lines:
+        env.add_to_compute(
+            agent_lines._fields["amount"], agent_lines
+        )
+        env.flush_all()
+        env.invalidate_all()
+        _logger.info(
+            "Amount recomputado para %s linha(s) de agente de fatura paga.",
+            len(agent_lines),
+        )
+
     # Recalculate settled_amount of existing invoice settlement lines.
     # Lines closed before this fix may have settled_amount = 0 or the full
     # invoiced amount instead of the prorated value for partial payments.

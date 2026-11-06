@@ -142,6 +142,7 @@ class AccountInvoiceLineAgent(models.Model):
         # amount da linha de agente precisa ser recomputado para refletir o
         # valor real da comissão sobre o pagamento efetivo.
         "invoice_id.payment_state",
+        "invoice_id.state",
     )
     def _compute_amount(self):
         """Apply the agent split to the invoice commission amount.
@@ -153,6 +154,24 @@ class AccountInvoiceLineAgent(models.Model):
         result = super()._compute_amount()
         for line in self:
             line.amount = line.amount or 0.0
+            # Se a fatura esta postada e paga (ou parcialmente paga), mas o
+            # amount ficou zerado (compute executado antes da fatura ser
+            # postada), forca o recalculo com base no price_subtotal atual.
+            if (
+                line.amount == 0.0
+                and line.invoice_id.state == "posted"
+                and line.invoice_id.payment_state in PAYMENT_STATES
+            ):
+                inv_line = line.object_id
+                recomputed = line._get_commission_amount(
+                    line.commission_id,
+                    inv_line.price_subtotal,
+                    inv_line.product_id,
+                    inv_line.quantity,
+                )
+                if line.invoice_id.move_type and "refund" in line.invoice_id.move_type:
+                    recomputed = -recomputed
+                line.amount = recomputed or 0.0
             if line.commission_split_percent:
                 line.amount *= line.commission_split_percent / 100.0
         return result

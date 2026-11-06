@@ -179,10 +179,10 @@ class CommissionMakeSettle(models.TransientModel):
             # and its period tell when the commission was actually earned.
             values["date"] = self._get_settlement_date(line)
             # O amount da linha de agente pode estar defasado se foi computado
-            # antes da fatura ser paga (o compute nao depende de
-            # invoice_id.payment_state). Forca o recompute para garantir o
-            # valor correto antes de aplicar o rateio proporcional.
-            line.invalidate_model(["amount"])
+            # antes da fatura ser postada/paga (ex.: fatura criada como draft
+            # e depois paga). Forca o recompute para garantir o valor correto
+            # antes de aplicar o rateio proporcional.
+            line.with_env(self.env)._compute_amount()
             agent_line = line
             invoice = agent_line.invoice_id
             if (
