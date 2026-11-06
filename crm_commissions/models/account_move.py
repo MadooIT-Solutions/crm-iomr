@@ -6,8 +6,9 @@ from odoo import api, fields, models
 # OCA uses these states to decide whether an invoice is already paid enough
 # to settle its commission. ``in_payment`` is a registered payment still on
 # its way to the bank; ``reversed`` is kept for refunds, matching the OCA
-# ``_skip_settlement`` rule.
-PAYMENT_STATES = ("in_payment", "paid", "reversed")
+# ``_skip_settlement`` rule. ``partial`` is included so that invoices paid in
+# part can be settled proportionally to the amount actually received.
+PAYMENT_STATES = ("in_payment", "paid", "reversed", "partial")
 
 
 class AccountMoveLine(models.Model):
@@ -117,18 +118,19 @@ class AccountInvoiceLineAgent(models.Model):
     def _skip_settlement(self):
         """Never settle an invoice commission before the invoice is paid.
 
-        This is the hard business rule, independent from the per-commission
-        ``invoice_state`` setting: the closing of invoice commissions follows
-        the payment date, not the invoice date. It keeps old/misconfigured
-        commissions from being closed when the patient has not paid yet.
+        Invoices paid in part (``partial``) are now settleable: the settled
+        amount is then prorated to the amount actually received, computed in
+        ``commission.settlement.line._compute_settled_amount``.
         """
         self.ensure_one()
-        if (
-            self.invoice_id.state != "posted"
-            or self.invoice_id.payment_state not in PAYMENT_STATES
-        ):
+        if self.invoice_id.state != "posted":
             return True
-        return super()._skip_settlement()
+        if self.invoice_id.payment_state not in PAYMENT_STATES:
+            return True
+        # Fatura postada e em um estado de pagamento aceitavel: nao pulamos.
+        # (A regra do OCA so adiciona a restricao de invoice_state == "paid"
+        # com uma lista hardcoded que nao inclui "partial"; ja tratamos acima.)
+        return False
 
     @api.depends(
         "object_id.price_subtotal",

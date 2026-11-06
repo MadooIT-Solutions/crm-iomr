@@ -128,6 +128,53 @@ class CommissionSettlementLine(models.Model):
         for line in self:
             line.prontuario = line.sale_order_id.prontuario or False
 
+    @api.depends(
+        "invoice_agent_line_id",
+        "invoice_agent_line_id.amount",
+        "invoice_agent_line_id.invoice_id.payment_state",
+        "invoice_agent_line_id.invoice_id.amount_total",
+        "invoice_agent_line_id.invoice_id.amount_residual",
+        "settlement_id.settlement_type",
+    )
+    def _compute_settled_amount(self):
+        """Valor liquidado da linha de fechamento.
+
+        Para fechamentos de fatura (``sale_invoice``) o valor segue o
+        pagamento da fatura, não o valor faturado:
+
+        * Fatura quitada (``paid``, ``in_payment``, ``reversed``): o
+          ``settled_amount`` é o ``amount`` completo da linha de agente.
+        * Fatura paga parcialmente (``partial``): a comissão é rateada
+          proporcionalmente ao valor efetivamente recebido
+          (``amount_total - amount_residual``) sobre o total da fatura.
+        * Fatura não paga: não chega aqui porque ``_skip_settlement`` a
+          afasta antes de ser incluída num fechamento.
+
+        Para outros tipos de fechamento (CRM performance, recuperação
+        trimestral, manual) o valor é o que foi gravado na criação da linha
+        (herdado do OCA), sem rateio.
+        """
+        for line in self:
+            if (
+                line.settlement_id.settlement_type == "sale_invoice"
+                and line.invoice_agent_line_id
+            ):
+                agent_line = line.invoice_agent_line_id
+                invoice = agent_line.invoice_id
+                base_amount = agent_line.amount or 0.0
+                if invoice and invoice.payment_state == "partial" and invoice.amount_total:
+                    amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
+                    ratio = amount_paid / invoice.amount_total
+                    line.settled_amount = base_amount * ratio
+                else:
+                    line.settled_amount = base_amount
+            else:
+                # Tipos não-fatura: preserva o valor gravado na criação
+                # (behavior padrão do OCA, que não tem _compute_settled_amount
+                # efetivo). Não sobrescrevemos se o usuário editou manualmente.
+                if not line.invoice_agent_line_id:
+                    continue
+
     def action_open_sale_order(self):
         """Abre o pedido de venda relacionado a esta linha."""
         self.ensure_one()
