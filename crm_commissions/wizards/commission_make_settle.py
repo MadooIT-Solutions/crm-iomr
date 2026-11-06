@@ -145,6 +145,33 @@ class CommissionMakeSettle(models.TransientModel):
         """
         return target._get_rate_for_performance(target.performance_pct or 0.0)
 
+    def _get_commission_from_sale_order(self, sale_order, agent, invoice_total):
+        """Calcula a comissao do agente baseado nas sale_order_line_agent.
+
+        Usado quando a linha da fatura nao tem product_id (ex.: linha de
+        entrada/adiantamento), entao o _compute_amount nao consegue calcular
+        o amount. Nesses casos, soma as comissoes do agente nas linhas de
+        venda do pedido e rateia proporcionalmente ao valor da fatura sobre
+        o total do pedido.
+        """
+        self.ensure_one()
+        if not sale_order or not agent:
+            return 0.0
+        sale_lines = sale_order.order_line.filtered(
+            lambda l: not l.display_type
+        )
+        agent_commission = 0.0
+        order_total = sale_order.amount_total or 0.0
+        for sol in sale_lines:
+            for sa in sol.agent_ids:
+                if sa.agent_id.id == agent.id and sa.amount:
+                    agent_commission += sa.amount
+        if not agent_commission or not order_total:
+            return 0.0
+        # Rateia proporcionalmente ao valor da fatura sobre o total do pedido
+        ratio = invoice_total / order_total if invoice_total else 0.0
+        return agent_commission * ratio
+
     def _calculate_crm_performance_commission(self, target):
         """Calcula o valor da comissão CRM Performance.
 
@@ -178,13 +205,26 @@ class CommissionMakeSettle(models.TransientModel):
             # The line date follows the payment date, so the settlement line
             # and its period tell when the commission was actually earned.
             values["date"] = self._get_settlement_date(line)
-            # O amount da linha de agente pode estar defasado se foi computado
-            # antes da fatura ser postada/paga (ex.: fatura criada como draft
-            # e depois paga). Forca o recompute para garantir o valor correto
-            # antes de aplicar o rateio proporcional.
+            # Forca o recompute do amount para garantir o valor correto
+            # antes de aplicar qualquer rateio.
             line.with_env(self.env)._compute_amount()
             agent_line = line
             invoice = agent_line.invoice_id
+            base_amount = agent_line.amount or 0.0
+            # Se o amount ficou zerado (linha da fatura sem product_id),
+            # calcula baseado nas comissoes das sale_order_line_agent do
+            # pedido de venda de origem (invoice_origin).
+            if base_amount == 0.0 and invoice and invoice.invoice_origin:
+                sale_order = (
+                    self.env["sale.order"]
+                    .search([("name", "=", invoice.invoice_origin)], limit=1)
+                )
+                if sale_order:
+                    base_amount = self._get_commission_from_sale_order(
+                        sale_order, agent_line.agent_id, invoice.amount_total
+                    )
+            # Aplica rateio proporcional quando a fatura esta paga
+            # parcialmente. Faturas quitadas pagam o amount completo.
             if (
                 invoice
                 and invoice.payment_state == "partial"
@@ -192,7 +232,9 @@ class CommissionMakeSettle(models.TransientModel):
             ):
                 amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
                 ratio = amount_paid / invoice.amount_total
-                values["settled_amount"] = (agent_line.amount or 0.0) * ratio
+                values["settled_amount"] = base_amount * ratio
+            else:
+                values["settled_amount"] = base_amount
         elif self.settlement_type == "crm_performance":
             values.update(
                 {
