@@ -175,6 +175,33 @@ class CommissionSettlementLine(models.Model):
                 if not line.invoice_agent_line_id:
                     continue
 
+    def action_recompute_settled_amount(self):
+        """Recalcula o settled_amount de linhas de liquidacao de fatura.
+
+        Usado para corrigir registros ja existentes que foram fechados antes
+        da correcao do rateio proporcional. Para cada linha de tipo
+        ``sale_invoice``, reaplica a regra:
+
+        * Fatura quitada (paid/in_payment/reversed): settled_amount = amount
+          completo da linha de agente.
+        * Fatura paga parcialmente (partial): rateia proporcionalmente
+          (valor_pago / total_fatura).
+        """
+        for line in self.filtered(
+            lambda l: l.settlement_id.settlement_type == "sale_invoice"
+            and l.invoice_agent_line_id
+        ):
+            agent_line = line.invoice_agent_line_id
+            invoice = agent_line.invoice_id
+            base_amount = agent_line.amount or 0.0
+            if invoice and invoice.payment_state == "partial" and invoice.amount_total:
+                amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
+                ratio = amount_paid / invoice.amount_total
+                line.settled_amount = base_amount * ratio
+            else:
+                line.settled_amount = base_amount
+        return True
+
     def action_open_sale_order(self):
         """Abre o pedido de venda relacionado a esta linha."""
         self.ensure_one()
