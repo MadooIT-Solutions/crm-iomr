@@ -178,9 +178,11 @@ class CommissionMakeSettle(models.TransientModel):
             # The line date follows the payment date, so the settlement line
             # and its period tell when the commission was actually earned.
             values["date"] = self._get_settlement_date(line)
-            # Prorrateia a comissão proporcionalmente ao valor efetivamente
-            # pago quando a fatura está parcialmente quitada. Faturas quitadas
-            # pagam o amount completo da linha de agente.
+            # O amount da linha de agente pode estar defasado se foi computado
+            # antes da fatura ser paga (o compute nao depende de
+            # invoice_id.payment_state). Forca o recompute para garantir o
+            # valor correto antes de aplicar o rateio proporcional.
+            line.invalidate_model(["amount"])
             agent_line = line
             invoice = agent_line.invoice_id
             if (

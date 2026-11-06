@@ -138,6 +138,10 @@ class AccountInvoiceLineAgent(models.Model):
         "object_id.quantity",
         "commission_id",
         "commission_split_percent",
+        # Quando o pagamento da fatura muda (ex.: not_paid -> partial), o
+        # amount da linha de agente precisa ser recomputado para refletir o
+        # valor real da comissão sobre o pagamento efetivo.
+        "invoice_id.payment_state",
     )
     def _compute_amount(self):
         """Apply the agent split to the invoice commission amount.
