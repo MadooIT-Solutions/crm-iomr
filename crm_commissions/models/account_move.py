@@ -156,22 +156,55 @@ class AccountInvoiceLineAgent(models.Model):
             line.amount = line.amount or 0.0
             # Se a fatura esta postada e paga (ou parcialmente paga), mas o
             # amount ficou zerado (compute executado antes da fatura ser
-            # postada), forca o recalculo com base no price_subtotal atual.
+            # postada, ou linha sem produto), forca o recalculo com base no
+            # price_subtotal atual.
             if (
                 line.amount == 0.0
                 and line.invoice_id.state == "posted"
                 and line.invoice_id.payment_state in PAYMENT_STATES
             ):
                 inv_line = line.object_id
-                recomputed = line._get_commission_amount(
-                    line.commission_id,
-                    inv_line.price_subtotal,
-                    inv_line.product_id,
-                    inv_line.quantity,
-                )
+                # Quando nao há produto na linha da fatura, nao e possivel
+                # aplicar regras de categoria ou deducao de produto. Nesses
+                # casos usa-se o price_subtotal como base direta da comissao,
+                # aplicando a taxa fixa da comissao configurada no agente.
+                if inv_line.product_id:
+                    recomputed = line._get_commission_amount(
+                        line.commission_id,
+                        inv_line.price_subtotal,
+                        inv_line.product_id,
+                        inv_line.quantity,
+                    )
+                else:
+                    recomputed = line._compute_amount_without_product(
+                        line.commission_id, inv_line.price_subtotal
+                    )
                 if line.invoice_id.move_type and "refund" in line.invoice_id.move_type:
                     recomputed = -recomputed
                 line.amount = recomputed or 0.0
             if line.commission_split_percent:
                 line.amount *= line.commission_split_percent / 100.0
         return result
+
+    def _compute_amount_without_product(self, commission, subtotal):
+        """Calcula a comissao quando a linha da fatura nao tem produto.
+
+        Usa o subtotal como base direta e aplica a taxa da comissao
+        configurada (fixq ou section), sem deducao de produto.
+        """
+        self.ensure_one()
+        if not commission:
+            return 0.0
+        if commission.commission_type == "fixed":
+            return subtotal * (commission.fix_qty or 0.0) / 100.0
+        elif commission.commission_type == "section":
+            return commission.calculate_section(subtotal)
+        elif commission.commission_type == "product":
+            # Politica por item: nao há produto, entao nao há item aplicavel
+            return 0.0
+        elif commission.commission_type == "progressive":
+            # Progressive precisa de produto para a regra de categoria
+            return 0.0
+        elif commission.commission_type == "coordinator":
+            return 0.0
+        return 0.0
