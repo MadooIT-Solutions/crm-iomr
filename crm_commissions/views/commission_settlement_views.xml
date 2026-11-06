@@ -57,7 +57,7 @@
         <field name="inherit_id" ref="commission_oca.view_settlement_line_tree" />
         <field name="arch" type="xml">
             <xpath expr="//list" position="replace">
-                <list create="false" domain="[('settled_amount', '!=', 0.0)]">
+                <list create="false">
                     <field name="date" />
                     <field name="agent_id" />
                     <field name="commission_id" />
