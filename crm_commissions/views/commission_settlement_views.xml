@@ -70,6 +70,16 @@
                         icon="fa-external-link"
                         title="Abrir pedido de venda"
                     />
+                    <!-- Recalcula o valor liquidado aplicando o rateio
+                         proporcional quando a fatura esta paga parcialmente.
+                         Útil para corrigir liquidacoes fechadas antes da
+                         correcao (ex.: S00740 com valor zerado). -->
+                    <button
+                        name="action_recompute_settled_amount"
+                        type="object"
+                        icon="fa-refresh"
+                        title="Recalcular valor liquidado"
+                    />
                     <field name="target_id" optional="hide" />
                     <field name="quarterly_bonus_id" optional="hide" />
                 </list>
