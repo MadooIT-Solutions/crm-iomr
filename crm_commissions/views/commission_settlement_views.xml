@@ -48,6 +48,11 @@
                     column_invisible="parent.settlement_type != 'crm_quarterly_recovery'"
                 />
             </xpath>
+            <!-- Oculta linhas de liquidacao com settled_amount zerado na
+                 lista one2embedded do formulario de settlement. -->
+            <xpath expr="//field[@name='line_ids']" position="attributes">
+                <attribute name="domain">[('settled_amount', '!=', 0.0)]</attribute>
+            </xpath>
         </field>
     </record>
 
