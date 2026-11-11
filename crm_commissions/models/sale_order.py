@@ -436,6 +436,14 @@ class SaleOrderLine(models.Model):
         paid in full on the invoice while the sale line holds the right share.
         """
         vals = super()._prepare_invoice_line(**optional_values)
+        # Remove duplicate agents (same agent_id) to avoid constraint error:
+        # "A operação não pode ser concluída: Você só pode adicionar cada agente uma vez"
+        seen_agent_ids = set()
+        unique_agents = []
+        for agent in self.agent_ids:
+            if agent.commission_id and agent.agent_id.id not in seen_agent_ids:
+                seen_agent_ids.add(agent.agent_id.id)
+                unique_agents.append(agent)
         vals["agent_ids"] = [
             (
                 0,
@@ -446,8 +454,7 @@ class SaleOrderLine(models.Model):
                     "commission_split_percent": agent.commission_split_percent,
                 },
             )
-            for agent in self.agent_ids
-            if agent.commission_id
+            for agent in unique_agents
         ]
         return vals
 

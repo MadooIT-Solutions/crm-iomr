@@ -32,9 +32,12 @@ class AccountMoveLine(models.Model):
     def _downpayment_sale_line_agent_commands(self, line):
         """Comandos de agentes vindos das linhas de venda (com split)."""
         commands = [(5, 0, 0)]
+        seen_agent_ids = set()
         for sol in line.sale_line_ids:
             for agent in sol.agent_ids.filtered("commission_id"):
-                commands.append((0, 0, self._prepare_agent_vals_from_sale_line(agent)))
+                if agent.agent_id.id not in seen_agent_ids:
+                    seen_agent_ids.add(agent.agent_id.id)
+                    commands.append((0, 0, self._prepare_agent_vals_from_sale_line(agent)))
         return commands
 
     @api.depends("move_id.partner_id", "sale_line_ids", "sale_line_ids.is_downpayment")
