@@ -106,6 +106,43 @@ class ResPartner(models.Model):
         """
         return self.type_partner in self.MEDICAL_AGENT_TYPES
 
+    def _compute_commission_related_html(self):
+        """HTML com as comissões relacionadas ao parceiro.
+
+        O campo ``commission_related_html`` é declarado como computado (sem
+        ``store=True``) no módulo de comissões, portanto o ORM exige o método
+        ``_compute_commission_related_html`` na leitura. Este método popula o
+        cache com o HTML das comissões relacionadas ao parceiro (agentes/repasses).
+        """
+        for partner in self:
+            commissions = self.env["commission.settlement"].sudo().search(
+                [("agent_id", "=", partner.id)],
+                order="date_from desc",
+            )
+            rows = []
+            for settlement in commissions:
+                rows.append(
+                    "<tr>"
+                    "<td>%s</td>"
+                    "<td>%s</td>"
+                    "<td>R$ %s</td>"
+                    "</tr>"
+                    % (
+                        settlement.name or "Comissao",
+                        settlement.date_from or "",
+                        settlement.total or 0.0,
+                    )
+                )
+            partner.commission_related_html = (
+                "<div class='o_commission_related_html'>"
+                "<table class='o_commission_related_html_table'>"
+                "<tbody>%s</tbody>"
+                "</table>"
+                "</div>"
+                % "".join(rows)
+            )
+
+
     @api.depends("crm_team_id", "crm_team_id.user_id", "type_partner")
     def _compute_coordenadora_id(self):
         """A coordenadora é a líder da equipe de vendas da orientadora.
