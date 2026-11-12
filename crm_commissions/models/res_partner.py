@@ -142,7 +142,6 @@ class ResPartner(models.Model):
                 % "".join(rows)
             )
 
-
     @api.depends("crm_team_id", "crm_team_id.user_id", "type_partner")
     def _compute_coordenadora_id(self):
         """A coordenadora é a líder da equipe de vendas da orientadora.
