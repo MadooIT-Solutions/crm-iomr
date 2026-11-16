@@ -426,7 +426,29 @@ class SaleOrderLine(models.Model):
             # stacking agents on every recompute (and hit the ``unique_agent``
             # constraint).
             record.agent_ids = False
-            record.agent_ids = record._get_rule_based_agent_vals()
+            record.agent_ids = record._dedupe_agent_vals(
+                record._get_rule_based_agent_vals()
+            )
+
+    @api.model
+    def _dedupe_agent_vals(self, vals):
+        """Keep a single row per agent.
+
+        ``sale_order_line_agent`` is unique on ``(object_id, agent_id)``. The
+        rule engine combines several sources (customer agents, medical
+        referrals, SDR split, coordinator), and some of them can legitimately
+        point at the same partner with different commissions. Writing them all
+        would violate the constraint, so the first composition wins.
+        """
+        seen = set()
+        result = []
+        for val in vals:
+            agent_id = val[2].get("agent_id") if len(val) >= 3 else False
+            if not agent_id or agent_id in seen:
+                continue
+            seen.add(agent_id)
+            result.append(val)
+        return result
 
     def _prepare_invoice_line(self, **optional_values):
         """Copy the commission split to the invoice agent lines.
@@ -563,23 +585,23 @@ class SaleOrderLine(models.Model):
                 if len(val) < 3 or not val[2].get("agent_id") or not val[2].get("commission_id"):
                     continue
                 data = val[2]
-                key = (
-                    data["agent_id"],
-                    data["commission_id"],
-                    float(data.get("commission_split_percent") or 100.0),
-                )
-                agent_map.setdefault(key, data)
+                # The downpayment is a single line, and
+                # ``sale_order_line_agent`` is unique on
+                # ``(object_id, agent_id)``: every agent may appear only once.
+                # The same agent can carry a different commission on different
+                # order lines (e.g. the fixed 1% on the extras and the
+                # progressive one on the LIO), so indexing by
+                # ``(agent_id, commission_id, split)`` used to emit several
+                # rows for the same agent and blow up with "Você só pode
+                # adicionar cada agente uma vez". Keep the first composition
+                # found for each agent.
+                agent_map.setdefault(data["agent_id"], dict(data))
         if not agent_map:
             # Fallback: se não houver regra derivável das linhas (caso atípico),
             # replica os agentes já presentes nas linhas do pedido.
             for agent in order_lines.mapped("agent_ids").filtered("commission_id"):
-                key = (
-                    agent.agent_id.id,
-                    agent.commission_id.id,
-                    float(agent.commission_split_percent or 100.0),
-                )
                 agent_map.setdefault(
-                    key,
+                    agent.agent_id.id,
                     {
                         "agent_id": agent.agent_id.id,
                         "commission_id": agent.commission_id.id,

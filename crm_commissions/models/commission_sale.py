@@ -209,4 +209,6 @@ class CommissionSale(models.Model):
             key=lambda sale: (sale.date or fields.Date.context_today(self), sale.id),
             reverse=True,
         )[:1]
-        return latest_sale.crm_pct if latest_sale else 100.0
+        if not latest_sale:
+            return 100.0
+        return latest_sale.crm_pct
