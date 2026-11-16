@@ -379,9 +379,15 @@ class CommissionLineMixin(models.AbstractModel):
                         order="target_date desc",
                         limit=1,
                     )
+                    if target:
+                        # No fechamento a comissão é recalculada com o último
+                        # IS-CRM registrado dentro do mês e a performance (%)
+                        # mais recente da meta do mês correspondente.
+                        target._refresh_closing_indicators()
+            performance_pct = target.performance_pct if target else 100.0
+            is_crm_ok = target.is_crm_ok if target else True
             if "is_crm_ok" in self.env.context:
                 is_crm_ok = self.env.context.get("is_crm_ok", True)
-            performance_pct = target.performance_pct if target else 100.0
             return commission.compute_progressive_commission(
                 subtotal, performance_pct, is_crm_ok
             )
