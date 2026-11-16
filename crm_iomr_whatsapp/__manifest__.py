@@ -1,6 +1,6 @@
 {
     "name": "CRM IOMR WhatsApp",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "Sales/CRM",
     "summary": "Copies WhatsApp channel attachments to the CRM chatter",
     "author": "Rodrigo A. Madureira",
