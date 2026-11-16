@@ -48,6 +48,23 @@
                     column_invisible="parent.settlement_type != 'crm_quarterly_recovery'"
                 />
             </xpath>
+            <!-- Valores da fatura de origem: só fazem sentido nas linhas
+                 de liquidação de faturas (as linhas do CRM não têm fatura). -->
+            <xpath
+                expr="//field[@name='line_ids']/list/field[@name='settled_amount']"
+                position="before"
+            >
+                <field
+                    name="invoice_amount"
+                    optional="show"
+                    column_invisible="parent.settlement_type != 'sale_invoice'"
+                />
+                <field
+                    name="amount_paid"
+                    optional="show"
+                    column_invisible="parent.settlement_type != 'sale_invoice'"
+                />
+            </xpath>
             <!-- Oculta linhas de liquidacao com settled_amount zerado na
                  lista one2embedded do formulario de settlement. -->
             <xpath expr="//field[@name='line_ids']" position="attributes">
@@ -66,6 +83,16 @@
                     <field name="date" />
                     <field name="agent_id" />
                     <field name="commission_id" />
+                    <field
+                        name="invoice_amount"
+                        optional="show"
+                        column_invisible="settlement_id.settlement_type != 'sale_invoice'"
+                    />
+                    <field
+                        name="amount_paid"
+                        optional="show"
+                        column_invisible="settlement_id.settlement_type != 'sale_invoice'"
+                    />
                     <field name="settled_amount" sum="Settled total" />
                     <field name="sale_order_id" readonly="1" optional="show" />
                     <field name="prontuario" readonly="1" optional="show" />

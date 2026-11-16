@@ -481,11 +481,15 @@ class TestInvoiceDiscountSettlement(TransactionCase):
         self.assertEqual(len(line), 1)
         self.assertAlmostEqual(line.invoice_base_amount, 9.0, places=2)
         self.assertAlmostEqual(line.settled_amount, 4.5, places=2)
+        # Colunas exibidas nas linhas de liquidação de fatura.
+        self.assertAlmostEqual(line.invoice_amount, 900.0, places=2)
+        self.assertAlmostEqual(line.amount_paid, 450.0, places=2)
 
         self._pay(invoice, date(2026, 3, 20))
         line.invalidate_recordset()
         self.assertAlmostEqual(line.settled_amount, 9.0, places=2)
         self.assertAlmostEqual(line.invoice_base_amount, 9.0, places=2)
+        self.assertAlmostEqual(line.amount_paid, 900.0, places=2)
 
     def test_08_closed_base_is_frozen_and_invoiced_lines_are_not_rewritten(self):
         """Recalcular não muda a base fechada, nem fechamento já faturado."""

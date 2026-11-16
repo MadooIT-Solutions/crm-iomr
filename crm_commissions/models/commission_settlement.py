@@ -109,6 +109,42 @@ class CommissionSettlementLine(models.Model):
         "only the paid ratio, without the historical value being zeroed when "
         "the source line is recomputed.",
     )
+    invoice_amount = fields.Monetary(
+        string="Valor da Fatura",
+        compute="_compute_invoice_payment_amounts",
+        readonly=True,
+        currency_field="currency_id",
+        help="Valor total da fatura de origem desta linha de comissão.",
+    )
+    amount_paid = fields.Monetary(
+        string="Valor Pago",
+        compute="_compute_invoice_payment_amounts",
+        readonly=True,
+        currency_field="currency_id",
+        help="Valor efetivamente pago da fatura de origem desta linha.",
+    )
+
+    @api.depends(
+        "invoice_agent_line_id",
+        "invoice_agent_line_id.invoice_id",
+        "invoice_agent_line_id.invoice_id.amount_total",
+        "invoice_agent_line_id.invoice_id.amount_residual",
+    )
+    def _compute_invoice_payment_amounts(self):
+        """Total e valor pago da fatura de origem da linha.
+
+        O valor pago espelha o rateio usado em ``_compute_settled_amount``:
+        ``amount_total - amount_residual`` da fatura. Linhas que não vêm de
+        fatura (CRM, fechamentos manuais) ficam com os valores zerados.
+        """
+        for line in self:
+            invoice = line.invoice_agent_line_id.invoice_id
+            line.invoice_amount = invoice.amount_total if invoice else 0.0
+            line.amount_paid = (
+                invoice.amount_total - (invoice.amount_residual or 0.0)
+                if invoice
+                else 0.0
+            )
 
     @api.depends(
         "invoice_agent_line_id",
