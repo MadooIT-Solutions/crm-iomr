@@ -160,10 +160,17 @@ def run(cr, commit=True):
         if agent.type_partner in ("doctorint", "doctorext"):
             continue
         if line.settled:
-            # Linha já fechada: a edição é bloqueada pelo OCA, então apenas a
-            # linha de settlement correspondente é realinhada.
+            # Linha já fechada: o OCA bloqueia a escrita pelo ORM, então a
+            # linha de agente é corrigida por SQL (a raiz do problema: o
+            # fechamento copia a comissão daqui) e a linha de settlement é
+            # realinhada via ORM.
             commission = _corrected_commission_from_sale_line(env, line)
             amount = _correction_amount(env, line, commission)
+            env.cr.execute(
+                "UPDATE account_invoice_line_agent"
+                " SET commission_id = %s, amount = %s WHERE id = %s",
+                (commission.id, amount, line.id),
+            )
             for settlement_line in line.settlement_line_ids:
                 settlement_line.write(
                     {
@@ -187,6 +194,7 @@ def run(cr, commit=True):
             line._compute_amount()
 
     env.flush_all()
+    env.invalidate_all()
     if commit:
         cr.commit()
     return {
