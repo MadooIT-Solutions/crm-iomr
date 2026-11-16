@@ -176,21 +176,30 @@ class CommissionSettlementLine(models.Model):
                     continue
 
     def action_recompute_settled_amount(self):
-        """Recalcula o settled_amount de linhas de liquidacao de fatura.
+        """Recalcula o settled_amount de linhas de liquidacao e de fechamento.
 
         Usado para corrigir registros ja existentes que foram fechados antes
-        da correcao do rateio proporcional. Para cada linha de tipo
-        ``sale_invoice``, reaplica a regra:
+        da correcao (ex.: fechamento com performance/IS-CRM desatualizados).
 
-        * Fatura quitada (paid/in_payment/reversed): settled_amount = amount
-          completo da linha de agente.
-        * Fatura paga parcialmente (partial): rateia proporcionalmente
-          (valor_pago / total_fatura).
+        * Para linhas de liquidacao de fatura (``sale_invoice``), reaplica a
+          regra de liquidacao: quitada -> valor completo; parcial -> rateio
+          proporcional (valor pago / total fatura).
+        * Para fechamentos de performance do CRM (``crm_performance``), recalcula
+          a comissao a partir da meta, com os indicadores mais recentes (ultimo
+          IS-CRM do mes de fechamento e performance (%) da meta).
         """
-        for line in self.filtered(
-            lambda l: l.settlement_id.settlement_type == "sale_invoice"
-            and l.invoice_agent_line_id
-        ):
+        for line in self:
+            if line.settlement_id.settlement_type == "crm_performance":
+                if line.target_id:
+                    line.settled_amount = (
+                        line.target_id._calculate_crm_performance_commission()
+                    )
+                continue
+            if (
+                line.settlement_id.settlement_type != "sale_invoice"
+                or not line.invoice_agent_line_id
+            ):
+                continue
             agent_line = line.invoice_agent_line_id
             invoice = agent_line.invoice_id
             base_amount = agent_line.amount or 0.0

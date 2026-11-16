@@ -828,6 +828,31 @@ class CommissionTarget(models.Model):
         crm_min_pct = policy.crm_min_pct if policy else 95.0
         self.is_crm_ok = self.is_crm_score >= crm_min_pct
 
+    def _calculate_crm_performance_commission(self):
+        """Valor da comissão CRM Performance da meta (Política 2026).
+
+        Valor = base_elegível × taxa_final / 100
+        taxa_final = taxa_base + bônus_IS_CRM (ou - penalidade_IS_CRM)
+
+        No fechamento a comissão é recalculada com o último IS-CRM registrado
+        dentro do mês de fechamento e a performance (%) mais recente da meta do
+        mês correspondente.
+        """
+        if not self.agent_id:
+            return 0.0
+        base = self._get_commission_base()
+        if not base:
+            return 0.0
+        self._refresh_closing_indicators()
+        rate = self._get_rate_for_performance(self.performance_pct)
+        commission = self.commission_id
+        if commission:
+            if self.is_crm_ok:
+                rate += commission.is_crm_bonus
+            else:
+                rate -= commission.is_crm_penalty
+        return max(base * rate / 100.0, 0.0)
+
     @api.constrains("target_scope", "agent_id", "team_id")
     def _check_target_scope(self):
         for rec in self:

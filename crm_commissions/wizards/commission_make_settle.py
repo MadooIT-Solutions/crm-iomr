@@ -181,28 +181,7 @@ class CommissionMakeSettle(models.TransientModel):
         if not target or not target.agent_id:
             return 0.0
 
-        base = self._get_crm_performance_base(target)
-        if not base:
-            return 0.0
-
-        # No fechamento a comissão é recalculada com o último IS-CRM registrado
-        # dentro do mês de fechamento e a performance (%) mais recente da meta
-        # do mês correspondente.
-        target._refresh_closing_indicators()
-
-        rate = self._get_crm_performance_rate(target)
-
-        # Aplica bônus/penalidade IS-CRM
-        is_crm_ok = target.is_crm_ok
-        commission = target.commission_id
-        if commission:
-            if is_crm_ok:
-                rate += commission.is_crm_bonus
-            else:
-                rate -= commission.is_crm_penalty
-
-        commission_amount = base * rate / 100.0
-        return max(commission_amount, 0.0)
+        return target._calculate_crm_performance_commission()
 
     def _prepare_settlement_line_vals(self, settlement, line):
         values = super()._prepare_settlement_line_vals(settlement, line)
