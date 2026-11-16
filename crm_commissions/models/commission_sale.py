@@ -204,8 +204,7 @@ class CommissionSale(models.Model):
         O fechamento da comissão usa o último IS-CRM registrado dentro do mês
         de fechamento, e não uma média das vendas do período.
         """
-        latest_sale = sorted(
-            self,
+        latest_sale = self.sorted(
             key=lambda sale: (sale.date or fields.Date.context_today(self), sale.id),
             reverse=True,
         )[:1]
