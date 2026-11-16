@@ -44,7 +44,9 @@ class CommissionSettlement(models.Model):
             orders = settlement.line_ids.mapped("sale_order_id")
             settlement.sale_order_id = orders[:1] if len(orders) == 1 else False
             settlement.prontuario = (
-                settlement.sale_order_id.prontuario if settlement.sale_order_id else False
+                settlement.sale_order_id.prontuario
+                if settlement.sale_order_id
+                else False
             )
 
 
@@ -80,6 +82,32 @@ class CommissionSettlementLine(models.Model):
         compute="_compute_prontuario",
         readonly=True,
         help="Prontuário do cliente no pedido de venda relacionado.",
+    )
+    # ``invoice_line_id`` was a stored related field on
+    # ``invoice_agent_line_id.object_id``. The FK to the agent row is
+    # ``ON DELETE SET NULL``, so recomputing the invoice agents erased the
+    # origin of already-closed lines. Keeping it as an independent field,
+    # written once when the settlement line is created, lets the closing
+    # recognise an invoice line that was already closed even after its agent
+    # row was recreated and avoid paying the commission twice.
+    invoice_line_id = fields.Many2one(
+        comodel_name="account.move.line",
+        string="Source invoice line",
+        index=True,
+        readonly=True,
+        copy=False,
+        ondelete="set null",
+        related=False,
+    )
+    invoice_base_amount = fields.Monetary(
+        string="Commission base",
+        readonly=True,
+        copy=False,
+        currency_field="currency_id",
+        help="Commission base frozen when the line was closed. Keeping it "
+        "separate from the source agent amount lets partial payments adjust "
+        "only the paid ratio, without the historical value being zeroed when "
+        "the source line is recomputed.",
     )
 
     @api.depends(
@@ -134,78 +162,121 @@ class CommissionSettlementLine(models.Model):
         "invoice_agent_line_id.invoice_id.payment_state",
         "invoice_agent_line_id.invoice_id.amount_total",
         "invoice_agent_line_id.invoice_id.amount_residual",
+        "invoice_base_amount",
         "settlement_id.settlement_type",
     )
     def _compute_settled_amount(self):
         """Valor liquidado da linha de fechamento.
 
-        Para fechamentos de fatura (``sale_invoice``) o valor segue o
-        pagamento da fatura, não o valor faturado:
+        Para fechamentos de fatura (``sale_invoice``) a base é a comissão do
+        agente no pedido rateada pelo valor faturado das linhas **desse
+        agente** (ver ``account.invoice.line.agent._get_settlement_base_amount``),
+        e o valor liquidado segue o pagamento da fatura:
 
         * Fatura quitada (``paid``, ``in_payment``, ``reversed``): o
-          ``settled_amount`` é o ``amount`` completo da linha de agente.
-        * Fatura paga parcialmente (``partial``): a comissão é rateada
+          ``settled_amount`` é a base completa da linha de fechamento.
+        * Fatura paga parcialmente (``partial``): a base é rateada
           proporcionalmente ao valor efetivamente recebido
           (``amount_total - amount_residual``) sobre o total da fatura.
         * Fatura não paga: não chega aqui porque ``_skip_settlement`` a
           afasta antes de ser incluída num fechamento.
+
+        A base é congelada em ``invoice_base_amount`` na criação (e a
+        migração faz o backfill das linhas antigas), de modo que um recálculo
+        posterior do ``amount`` do agente não altera o valor já fechado, e um
+        desconto aplicado só na fatura reduz a comissão na mesma proporção.
 
         Para outros tipos de fechamento (CRM performance, recuperação
         trimestral, manual) o valor é o que foi gravado na criação da linha
         (herdado do OCA), sem rateio.
         """
         for line in self:
+            # A settlement that was already invoiced is a closed accounting
+            # fact: later payments must not silently rewrite its value (the
+            # commission invoice would be left behind). Keep its history.
+            if line.settlement_id.state != "settled":
+                line.settled_amount = line.settled_amount
+                continue
+            agent_line = line.invoice_agent_line_id
             if (
-                line.settlement_id.settlement_type == "sale_invoice"
-                and line.invoice_agent_line_id
+                line.settlement_id.settlement_type != "sale_invoice"
+                or not agent_line
             ):
-                agent_line = line.invoice_agent_line_id
-                invoice = agent_line.invoice_id
-                base_amount = agent_line.amount or 0.0
-                if invoice and invoice.payment_state == "partial" and invoice.amount_total:
-                    amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
-                    ratio = amount_paid / invoice.amount_total
-                    line.settled_amount = base_amount * ratio
-                else:
-                    line.settled_amount = base_amount
-            else:
-                # Tipos não-fatura: preserva o valor gravado na criação
-                # (behavior padrão do OCA, que não tem _compute_settled_amount
-                # efetivo). Não sobrescrevemos se o usuário editou manualmente.
-                if not line.invoice_agent_line_id:
-                    continue
+                # Tipos não-fatura: preserva o valor gravado na criação.
+                line.settled_amount = line.settled_amount
+                continue
+            invoice = agent_line.invoice_id
+            base_amount = (
+                line.invoice_base_amount
+                or agent_line._get_settlement_base_amount()
+            )
+            ratio = 1.0
+            if (
+                invoice
+                and invoice.payment_state == "partial"
+                and invoice.amount_total
+            ):
+                amount_paid = invoice.amount_total - (
+                    invoice.amount_residual or 0.0
+                )
+                ratio = max(0.0, min(amount_paid / invoice.amount_total, 1.0))
+            line.settled_amount = base_amount * ratio
 
     def action_recompute_settled_amount(self):
         """Recalcula o settled_amount de linhas de liquidacao e de fechamento.
 
         Usado para corrigir registros ja existentes que foram fechados antes
-        da correcao (ex.: fechamento com performance/IS-CRM desatualizados).
+        das correcoes de rateio/origem ou com indicadores do CRM
+        desatualizados. Somente fechamentos ainda nao faturados
+        (``state == "settled"``) sao recalculados: um fechamento faturado e
+        fato contabil e nao pode ser reescrito.
 
-        * Para linhas de liquidacao de fatura (``sale_invoice``), reaplica a
-          regra de liquidacao: quitada -> valor completo; parcial -> rateio
-          proporcional (valor pago / total fatura).
-        * Para fechamentos de performance do CRM (``crm_performance``), recalcula
-          a comissao a partir da meta, com os indicadores mais recentes (ultimo
-          IS-CRM do mes de fechamento e performance (%) da meta).
+        * Fatura (``sale_invoice``): a base e refeita por
+          ``_get_settlement_base_amount`` (comissao do agente no pedido
+          rateada pelo valor faturado das linhas do agente) e congelada em
+          ``invoice_base_amount``. Fatura quitada paga a base completa;
+          fatura paga parcialmente rateia pelo percentual recebido
+          (``valor_pago / total_fatura``).
+        * Performance do CRM (``crm_performance``): recalcula a comissao a
+          partir da meta, com os indicadores mais recentes (ultimo IS-CRM do
+          mes de fechamento e performance (%) da meta).
+        * Recuperacao trimestral (``crm_quarterly_recovery``): repoe a
+          comissao perdida recuperada no bonus trimestral.
         """
         for line in self:
-            if line.settlement_id.settlement_type == "crm_performance":
+            if line.settlement_id.state != "settled":
+                continue
+            settlement_type = line.settlement_id.settlement_type
+            if settlement_type == "crm_performance":
                 if line.target_id:
                     line.settled_amount = (
                         line.target_id._calculate_crm_performance_commission()
                     )
                 continue
-            if (
-                line.settlement_id.settlement_type != "sale_invoice"
-                or not line.invoice_agent_line_id
-            ):
+            if settlement_type == "crm_quarterly_recovery":
+                if line.quarterly_bonus_id:
+                    line.settled_amount = (
+                        line.quarterly_bonus_id.lost_commission_recovered
+                    )
+                continue
+            if settlement_type != "sale_invoice" or not line.invoice_agent_line_id:
                 continue
             agent_line = line.invoice_agent_line_id
             invoice = agent_line.invoice_id
-            base_amount = agent_line.amount or 0.0
-            if invoice and invoice.payment_state == "partial" and invoice.amount_total:
-                amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
-                ratio = amount_paid / invoice.amount_total
+            base_amount = agent_line._get_settlement_base_amount()
+            if not base_amount:
+                # Sem base confiável, não zera um valor histórico.
+                continue
+            line.invoice_base_amount = base_amount
+            if (
+                invoice
+                and invoice.payment_state == "partial"
+                and invoice.amount_total
+            ):
+                amount_paid = invoice.amount_total - (
+                    invoice.amount_residual or 0.0
+                )
+                ratio = max(0.0, min(amount_paid / invoice.amount_total, 1.0))
                 line.settled_amount = base_amount * ratio
             else:
                 line.settled_amount = base_amount

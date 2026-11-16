@@ -83,6 +83,13 @@ class CommissionMakeSettle(models.TransientModel):
             lines = self.env["crm.commission.target"].search(
                 domain, order="target_date asc"
             )
+            # A zero-amount line would mark the target as closed and hide it
+            # from every later closing (the form filters zero lines out), so
+            # only settle targets whose commission is actually positive.
+            lines = lines.filtered(
+                lambda target: self._calculate_crm_performance_commission(target)
+                > 0.0
+            )
         elif self.settlement_type == "crm_quarterly_recovery":
             # Bônus trimestrais com recuperação de comissão que ainda não
             # foram faturados. A ordenação precisa ser ascendente por data:
@@ -120,7 +127,79 @@ class CommissionMakeSettle(models.TransientModel):
                 )
         if strict:
             lines = lines.filtered(self._is_in_mass_period)
+        if self.settlement_type == "sale_invoice":
+            lines = self._exclude_already_settled_invoice_lines(lines)
         return lines
+
+    def _exclude_already_settled_invoice_lines(self, agent_lines):
+        """Drop invoice lines that already have a settlement line.
+
+        ``settled`` (OCA) is computed from the settlement lines and cannot be
+        trusted as the only guard: when an invoice line is recomputed its
+        agent rows are deleted/recreated, the settlement loses the link and
+        the new row is born with ``settled=False``. Looking at the invoice
+        line itself closes that hole and lets an orphan settlement line be
+        re-linked to its current agent row instead of paying it again.
+        """
+        self.ensure_one()
+        if not agent_lines:
+            return agent_lines
+        SettlementLine = self.env["commission.settlement.line"]
+        # Backfill the stable invoice-line reference on old rows before using
+        # it as the dedup key (it used to be a related field that vanished
+        # together with the agent row).
+        legacy_lines = SettlementLine.search(
+            [
+                ("invoice_line_id", "=", False),
+                ("invoice_agent_line_id", "in", agent_lines.ids),
+            ]
+        )
+        for settlement_line in legacy_lines:
+            settlement_line.invoice_line_id = (
+                settlement_line.invoice_agent_line_id.object_id
+            )
+        existing = SettlementLine.search(
+            [
+                ("settlement_id.settlement_type", "=", "sale_invoice"),
+                ("settlement_id.state", "!=", "cancel"),
+                "|",
+                ("invoice_agent_line_id", "in", agent_lines.ids),
+                ("invoice_line_id", "in", agent_lines.mapped("object_id").ids),
+            ]
+        )
+        by_agent_line = {
+            settlement_line.invoice_agent_line_id.id: settlement_line
+            for settlement_line in existing
+            if settlement_line.invoice_agent_line_id
+        }
+        by_invoice_line = {}
+        for settlement_line in existing:
+            if not settlement_line.invoice_line_id:
+                continue
+            key = (settlement_line.invoice_line_id.id, settlement_line.agent_id.id)
+            by_invoice_line.setdefault(key, settlement_line)
+        skipped = self.env["account.invoice.line.agent"]
+        for agent_line in agent_lines:
+            if agent_line.id in by_agent_line:
+                skipped |= agent_line
+                continue
+            settlement_line = by_invoice_line.get(
+                (agent_line.object_id.id, agent_line.agent_id.id)
+            )
+            if not settlement_line:
+                continue
+            # The invoice line was already closed, but its agent row was
+            # recreated. Re-link the old settlement line (restoring the
+            # source) and skip the new row. Only settlements still open to
+            # editing are relinked; invoiced ones are left untouched but the
+            # new row is skipped all the same.
+            if (
+                not settlement_line.invoice_agent_line_id
+                and settlement_line.settlement_id.state == "settled"
+            ):
+                settlement_line.invoice_agent_line_id = agent_line.id
+            skipped |= agent_line
+        return agent_lines - skipped
 
     def _get_crm_performance_base(self, target):
         """Base elegível de comissão da meta (Política 2026).
@@ -145,33 +224,6 @@ class CommissionMakeSettle(models.TransientModel):
         """
         return target._get_rate_for_performance(target.performance_pct or 0.0)
 
-    def _get_commission_from_sale_order(self, sale_order, agent, invoice_total):
-        """Calcula a comissao do agente baseado nas sale_order_line_agent.
-
-        Usado quando a linha da fatura nao tem product_id (ex.: linha de
-        entrada/adiantamento), entao o _compute_amount nao consegue calcular
-        o amount. Nesses casos, soma as comissoes do agente nas linhas de
-        venda do pedido e rateia proporcionalmente ao valor da fatura sobre
-        o total do pedido.
-        """
-        self.ensure_one()
-        if not sale_order or not agent:
-            return 0.0
-        sale_lines = sale_order.order_line.filtered(
-            lambda l: not l.display_type
-        )
-        agent_commission = 0.0
-        order_total = sale_order.amount_total or 0.0
-        for sol in sale_lines:
-            for sa in sol.agent_ids:
-                if sa.agent_id.id == agent.id and sa.amount:
-                    agent_commission += sa.amount
-        if not agent_commission or not order_total:
-            return 0.0
-        # Rateia proporcionalmente ao valor da fatura sobre o total do pedido
-        ratio = invoice_total / order_total if invoice_total else 0.0
-        return agent_commission * ratio
-
     def _calculate_crm_performance_commission(self, target):
         """Calcula o valor da comissão CRM Performance.
 
@@ -189,36 +241,16 @@ class CommissionMakeSettle(models.TransientModel):
             # The line date follows the payment date, so the settlement line
             # and its period tell when the commission was actually earned.
             values["date"] = self._get_settlement_date(line)
-            # Forca o recompute do amount para garantir o valor correto
-            # antes de aplicar qualquer rateio.
-            line.with_env(self.env)._compute_amount()
-            agent_line = line
-            invoice = agent_line.invoice_id
-            base_amount = agent_line.amount or 0.0
-            # Se o amount ficou zerado (linha da fatura sem product_id),
-            # calcula baseado nas comissoes das sale_order_line_agent do
-            # pedido de venda de origem (invoice_origin).
-            if base_amount == 0.0 and invoice and invoice.invoice_origin:
-                sale_order = (
-                    self.env["sale.order"]
-                    .search([("name", "=", invoice.invoice_origin)], limit=1)
-                )
-                if sale_order:
-                    base_amount = self._get_commission_from_sale_order(
-                        sale_order, agent_line.agent_id, invoice.amount_total
-                    )
-            # Aplica rateio proporcional quando a fatura esta paga
-            # parcialmente. Faturas quitadas pagam o amount completo.
-            if (
-                invoice
-                and invoice.payment_state == "partial"
-                and invoice.amount_total
-            ):
-                amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
-                ratio = amount_paid / invoice.amount_total
-                values["settled_amount"] = base_amount * ratio
-            else:
-                values["settled_amount"] = base_amount
+            # Keep the invoice line reference independent from the agent row:
+            # recomputing the invoice agents deletes/recreates them and the
+            # related field used to disappear, allowing the same commission
+            # to be closed twice.
+            values["invoice_line_id"] = line.object_id.id
+            base_amount = line._get_settlement_base_amount()
+            values["invoice_base_amount"] = base_amount
+            values["settled_amount"] = self._get_invoice_settlement_amount(
+                line, base_amount
+            )
         elif self.settlement_type == "crm_performance":
             values.update(
                 {
@@ -242,6 +274,19 @@ class CommissionMakeSettle(models.TransientModel):
                 }
             )
         return values
+
+    def _get_invoice_settlement_amount(self, agent_line, base_amount):
+        """Commission amount proportional to the amount actually received."""
+        invoice = agent_line.invoice_id
+        if (
+            invoice
+            and invoice.payment_state == "partial"
+            and invoice.amount_total
+        ):
+            amount_paid = invoice.amount_total - (invoice.amount_residual or 0.0)
+            ratio = max(0.0, min(amount_paid / invoice.amount_total, 1.0))
+            return base_amount * ratio
+        return base_amount
 
     def action_settle(self):
         """Create the settlements using the payment date as the period date.
@@ -303,7 +348,8 @@ class CommissionMakeSettle(models.TransientModel):
                                 )
                             )
                             settlement.currency_id = line.currency_id
-                        settlement_ids.append(settlement.id)
+                        if settlement.id not in settlement_ids:
+                            settlement_ids.append(settlement.id)
                     settlement_line_vals.append(
                         self._prepare_settlement_line_vals(settlement, line)
                     )

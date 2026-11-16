@@ -314,27 +314,302 @@ class TestCrmSettlement(TransactionCase):
         # 1000 * (0,75 - 0,25) / 100 = 5,00 — penalidade do último IS-CRM do mês.
         self.assertAlmostEqual(line.settled_amount, 5.0)
 
-    def _register_payment(self, invoice, payment_date):
-        """Register a full payment for the invoice on ``payment_date``."""
-        journal = self.env["account.journal"].search(
-            [
-                ("type", "in", ("bank", "cash")),
-                ("company_id", "=", self.env.company.id),
-            ],
-            limit=1,
+    def test_08_recomputing_invoice_agents_does_not_duplicate_the_closing(self):
+        """Recalcular os agentes da fatura não pode refechar a comissão.
+
+        O recálculo de ``agent_ids`` apaga/recria a linha de agente. Se o
+        fechamento já existe, a linha de settlement perdia o vínculo
+        (``invoice_agent_line_id`` é ``ON DELETE SET NULL``) e a mesma
+        comissão era fechada de novo na rodada seguinte.
+        """
+        order = self._create_confirmed_sale(date(2026, 3, 15), 1000.0)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": order.partner_id.id,
+                "invoice_date": date(2026, 3, 15),
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "tax_ids": [(5, 0, 0)],
+                            "sale_line_ids": [(6, 0, order.order_line.ids)],
+                        },
+                    )
+                ],
+            }
         )
-        wizard = (
-            self.env["account.payment.register"]
-            .with_context(
-                active_model="account.move",
-                active_ids=invoice.ids,
-                dont_redirect_to_payments=True,
-            )
-            .create({"journal_id": journal.id, "payment_date": payment_date})
+        invoice.action_post()
+        self._register_payment(invoice, date(2026, 3, 16))
+        agent_line = invoice.invoice_line_ids.agent_ids
+        self.assertTrue(agent_line)
+
+        self._make_settle_wizard("sale_invoice", date(2026, 4, 1)).action_settle()
+        settlement_line = self.SettleLine.search(
+            [("invoice_agent_line_id", "=", agent_line.id)]
         )
-        wizard.action_create_payments()
+        self.assertEqual(len(settlement_line), 1)
+
+        # Simula o recálculo dos agentes que apagava a linha de origem.
+        invoice.invoice_line_ids._compute_agent_ids()
+        self.assertTrue(agent_line.exists())
+
+        self._make_settle_wizard("sale_invoice", date(2026, 4, 1)).action_settle()
+        self.assertEqual(
+            self.SettleLine.search_count(
+                [("invoice_line_id", "=", invoice.invoice_line_ids.id)]
+            ),
+            1,
+        )
+
+    def test_11_orphan_settlement_line_is_relinked_instead_of_duplicated(self):
+        """Linha órfã (agente apagado) é religada, não fechada de novo.
+
+        É o que acontece quando a FK ``invoice_agent_line_id`` é zerada por um
+        delete fora do ORM (migração/script). O fechamento seguinte encontra o
+        agente recriado, restaura o vínculo da linha antiga e não cria uma
+        segunda linha para a mesma fatura.
+        """
+        order = self._create_confirmed_sale(date(2026, 3, 15), 1000.0)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": order.partner_id.id,
+                "invoice_date": date(2026, 3, 15),
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "tax_ids": [(5, 0, 0)],
+                            "sale_line_ids": [(6, 0, order.order_line.ids)],
+                        },
+                    )
+                ],
+            }
+        )
+        invoice.action_post()
+        self._register_payment(invoice, date(2026, 3, 16))
+        agent_line = invoice.invoice_line_ids.agent_ids.filtered(
+            lambda line: line.agent_id == self.partner
+        )
+        self._make_settle_wizard("sale_invoice", date(2026, 4, 1)).action_settle()
+        settlement_line = self.SettleLine.search(
+            [("invoice_agent_line_id", "=", agent_line.id)]
+        )
+        self.assertEqual(len(settlement_line), 1)
+        invoice_line = invoice.invoice_line_ids
+        self.env.cr.execute(
+            "UPDATE commission_settlement_line "
+            "SET invoice_agent_line_id = NULL WHERE id = %s",
+            (settlement_line.id,),
+        )
+        # Delete the agent row without the ORM (as the FK cascade did) and
+        # rebuild the invoice agents.
+        self.env.cr.execute(
+            "DELETE FROM account_invoice_line_agent WHERE id = %s",
+            (agent_line.id,),
+        )
+        self.env.invalidate_all()
+        invoice_line._compute_agent_ids()
+        self.env.flush_all()
+        new_agent_line = invoice_line.agent_ids.filtered(
+            lambda line: line.agent_id == self.partner
+        )
+        self.assertTrue(new_agent_line)
+        self.assertNotEqual(new_agent_line, agent_line)
+
+        self._make_settle_wizard("sale_invoice", date(2026, 4, 1)).action_settle()
+        settlement_lines = self.SettleLine.search(
+            [("invoice_line_id", "=", invoice_line.id)]
+        )
+        self.assertEqual(len(settlement_lines), 1)
+        self.assertEqual(
+            settlement_lines.invoice_agent_line_id, new_agent_line
+        )
+
+    def test_09_partial_payment_value_follows_the_received_amount(self):
+        """Fatura paga em parte fecha proporcionalmente ao valor recebido.
+
+        O valor base é congelado em ``invoice_base_amount``; quando o restante
+        é pago, apenas o percentual recebido muda, sem depender do ``amount``
+        atual da linha de agente.
+        """
+        commission = self.env["commission"].create(
+            {
+                "name": "Fixa 1% - teste parcial",
+                "commission_type": "fixed",
+                "fix_qty": 1.0,
+            }
+        )
+        agent = self.env["res.partner"].create(
+            {
+                "name": "Orientadora Parcial",
+                "type_partner": "orientadora",
+                "agent": True,
+                "agent_type": "orientadora",
+                "commission_id": commission.id,
+                "settlement": "monthly",
+            }
+        )
+        customer = self.env["res.partner"].create(
+            {"name": "Cliente Parcial", "agent_ids": [(6, 0, [agent.id])]}
+        )
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "date_order": datetime.combine(date(2026, 3, 15), time(12, 0)),
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 1,
+                            "price_unit": 1000.0,
+                            "tax_id": [(5, 0, 0)],
+                        },
+                    )
+                ],
+            }
+        )
+        order.order_line.agent_ids = [
+            (5, 0, 0),
+            (
+                0,
+                0,
+                {
+                    "agent_id": agent.id,
+                    "commission_id": commission.id,
+                    "commission_split_percent": 100.0,
+                },
+            ),
+        ]
+        order._action_confirm()
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": customer.id,
+                "invoice_date": date(2026, 3, 15),
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "tax_ids": [(5, 0, 0)],
+                            "sale_line_ids": [(6, 0, order.order_line.ids)],
+                        },
+                    )
+                ],
+            }
+        )
+        invoice.action_post()
+        agent_line = invoice.invoice_line_ids.agent_ids.filtered(
+            lambda line: line.agent_id == agent
+        )
+        self.assertAlmostEqual(agent_line.amount, 10.0)
+
+        self._register_payment(invoice, date(2026, 3, 16), amount=400.0)
+        self.assertEqual(invoice.payment_state, "partial")
+        wizard = self.env["commission.make.settle"].create(
+            {
+                "date_to": date(2026, 4, 1),
+                "agent_ids": [(6, 0, [agent.id])],
+                "settlement_type": "sale_invoice",
+            }
+        )
+        wizard.action_settle()
+        settlement_line = self.SettleLine.search(
+            [("invoice_line_id", "=", invoice.invoice_line_ids.id)]
+        )
+        self.assertEqual(len(settlement_line), 1)
+        self.assertAlmostEqual(settlement_line.settled_amount, 4.0)
+        self.assertAlmostEqual(settlement_line.invoice_base_amount, 10.0)
+
+        # Paga o restante: a mesma linha passa a valer a comissão inteira.
+        self._register_payment(invoice, date(2026, 3, 20))
         self.assertIn(invoice.payment_state, ("in_payment", "paid"))
-        return invoice.reconciled_payment_ids
+        settlement_line.invalidate_recordset()
+        self.assertAlmostEqual(settlement_line.settled_amount, 10.0)
+
+    def test_10_zero_performance_commission_is_not_closed(self):
+        """Meta sem base não pode gerar linha zero e bloquear o fechamento.
+
+        Uma linha de valor zero fica escondida na tela e marca a meta como
+        fechada para sempre, então o fechamento seguinte nunca pagaria a
+        comissão quando a base aparecesse.
+        """
+        commission = self.env["commission"].create(
+            {
+                "name": "Progressiva teste zero",
+                "commission_type": "fixed",
+                "fix_qty": 1.0,
+            }
+        )
+        agent = self.env["res.partner"].create(
+            {
+                "name": "Orientadora Zero",
+                "type_partner": "orientadora",
+                "agent": True,
+                "agent_type": "orientadora",
+                "commission_id": commission.id,
+                "settlement": "monthly",
+            }
+        )
+        member = self.env["commission.member"].create(
+            {
+                "name": "Orientadora Zero",
+                "member_type": "orientadora",
+                "partner_id": agent.id,
+            }
+        )
+        target = self.Target.create(
+            {
+                "target_scope": "salesperson",
+                "agent_id": agent.id,
+                "target_date": date(2026, 3, 1),
+                "target_amount": 1000.0,
+            }
+        )
+        # Venda sem linhas de detalhe: o atingido existe, mas a base é zero.
+        self.env["commission.sale"].create(
+            {
+                "name": "Venda sem detalhe",
+                "owner_member_id": member.id,
+                "patient_name": "Paciente Zero",
+                "surgery_type": "catarata",
+                "sale_category": "particular",
+                "date": date(2026, 3, 15),
+                "hospital_gross_amount": 1000.0,
+                "status": "confirmed",
+            }
+        )
+        target._refresh_from_sale_changes()
+        self.assertGreater(target.achieved_amount, 0.0)
+        self.assertEqual(target._get_commission_base(), 0.0)
+
+        wizard = self.env["commission.make.settle"].create(
+            {
+                "date_to": date(2026, 4, 1),
+                "agent_ids": [(6, 0, [agent.id])],
+                "settlement_type": "crm_performance",
+            }
+        )
+        wizard.action_settle()
+        self.assertFalse(
+            self.SettleLine.search([("target_id", "=", target.id)])
+        )
+        self.assertFalse(target._skip_settlement())
 
     def test_05_settlement_line_without_invoice_has_no_sale_order(self):
         """Fechamento de meta não fatura um pedido único: fica sem pedido.
@@ -401,6 +676,36 @@ class TestCrmSettlement(TransactionCase):
 
         self.assertEqual(performance_line.target_id, target)
         self.assertEqual(recovery_line.quarterly_bonus_id, bonus)
+
+    def _register_payment(self, invoice, payment_date, amount=None):
+        """Register a payment for the invoice on ``payment_date``.
+
+        ``amount`` limits the payment to a partial value; by default the
+        whole residual is paid.
+        """
+        journal = self.env["account.journal"].search(
+            [
+                ("type", "in", ("bank", "cash")),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        values = {"journal_id": journal.id, "payment_date": payment_date}
+        if amount is not None:
+            values["amount"] = amount
+        wizard = (
+            self.env["account.payment.register"]
+            .with_context(
+                active_model="account.move",
+                active_ids=invoice.ids,
+                dont_redirect_to_payments=True,
+            )
+            .create(values)
+        )
+        wizard.action_create_payments()
+        if amount is None:
+            self.assertIn(invoice.payment_state, ("in_payment", "paid"))
+        return invoice.reconciled_payment_ids
 
     def _create_confirmed_sale(self, target_date, amount):
         customer = self.env["res.partner"].create(

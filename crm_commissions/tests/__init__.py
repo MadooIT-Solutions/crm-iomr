@@ -13,3 +13,4 @@ from . import test_commission_validation
 from . import test_commission_mass_settle
 from . import test_commission_mass_invoice
 from . import test_settlement_crm
+from . import test_settlement_invoice_discount

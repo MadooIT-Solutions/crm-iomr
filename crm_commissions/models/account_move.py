@@ -1,7 +1,13 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+import logging
+from datetime import date
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 # OCA uses these states to decide whether an invoice is already paid enough
 # to settle its commission. ``in_payment`` is a registered payment still on
@@ -37,7 +43,9 @@ class AccountMoveLine(models.Model):
             for agent in sol.agent_ids.filtered("commission_id"):
                 if agent.agent_id.id not in seen_agent_ids:
                     seen_agent_ids.add(agent.agent_id.id)
-                    commands.append((0, 0, self._prepare_agent_vals_from_sale_line(agent)))
+                    commands.append(
+                        (0, 0, self._prepare_agent_vals_from_sale_line(agent))
+                    )
         return commands
 
     @api.depends("move_id.partner_id", "sale_line_ids", "sale_line_ids.is_downpayment")
@@ -52,14 +60,30 @@ class AccountMoveLine(models.Model):
         omitir). Linhas fiscais brasileiras sem repasse (CFOP financeiro) seguem
         sem agentes. A cópia inclui também as linhas de produto regular vindas
         de venda para manter o split correto nessas faturas.
+
+        Duas proteções evitam que o fechamento perca a origem da comissão:
+
+        * linhas que já têm agente fechado por um *settlement* não são
+          recalculadas -- apagar e recriar o agente zeraria o vínculo
+          ``commission.settlement.line.invoice_agent_line_id`` (a FK é
+          ``ON DELETE SET NULL``) e a mesma comissão seria fechada de novo;
+        * somente linhas de produto recebem agentes. Notas, seções, impostos
+          e condições de pagamento não têm comissão e geravam linhas de
+          agente com valor zero no fechamento.
         """
-        sale_lines = self.filtered(lambda line: line.sale_line_ids)
-        other_lines = self - sale_lines
+        locked = self.filtered(lambda line: line.agent_ids.filtered("settled"))
+        todo = self - locked
+        sale_lines = todo.filtered(
+            lambda line: line.display_type == "product" and line.sale_line_ids
+        )
+        other_lines = todo - sale_lines
         if other_lines:
             super(AccountMoveLine, other_lines)._compute_agent_ids()
         for line in sale_lines:
             cfop = getattr(line, "cfop_id", False)
-            if line.commission_free or (cfop and not getattr(cfop, "finance_move", True)):
+            if line.commission_free or (
+                cfop and not getattr(cfop, "finance_move", True)
+            ):
                 line.agent_ids = False
             else:
                 line.agent_ids = self._downpayment_sale_line_agent_commands(line)
@@ -134,6 +158,342 @@ class AccountInvoiceLineAgent(models.Model):
         # (A regra do OCA so adiciona a restricao de invoice_state == "paid"
         # com uma lista hardcoded que nao inclui "partial"; ja tratamos acima.)
         return False
+
+    def _has_active_settlement(self):
+        """Whether this agent row was already closed by a settlement."""
+        self.ensure_one()
+        return any(
+            line.settlement_id.state != "cancel"
+            for line in self.settlement_line_ids
+        )
+
+    def unlink(self):
+        """Block deleting a commission row that is already closed.
+
+        ``commission.settlement.line.invoice_agent_line_id`` is an
+        ``ON DELETE SET NULL`` foreign key. Recomputing the agents of an
+        invoice line deletes/recreates its rows; when that happens after the
+        commission was closed, the settlement line loses its origin and the
+        recreated row looks unsettled -- so the next closing pays the same
+        commission again. Protecting the closed rows keeps the history and
+        the closing idempotent.
+        """
+        protected = self.filtered(lambda line: line._has_active_settlement())
+        if protected and not self.env.context.get(
+            "crm_commissions_allow_settled_agent_unlink"
+        ):
+            raise UserError(
+                _(
+                    "Não é possível excluir agentes de comissão já fechados "
+                    "por um fechamento. Cancele o fechamento antes de alterar "
+                    "os agentes da fatura."
+                )
+            )
+        return super().unlink()
+
+    def _get_settlement_sale_orders(self):
+        """Pedidos de venda que a linha da fatura está faturando.
+
+        A origem confiável é a linha de venda vinculada à linha da fatura
+        (``sale_line_ids``), que cobre também adiantamentos e faturas
+        parciais. ``invoice_origin`` é o fallback para linhas antigas ou
+        digitadas sem vínculo. O resultado pode ter mais de um pedido quando
+        a fatura cobre vários pedidos.
+        """
+        self.ensure_one()
+        source_line = self.object_id
+        if source_line and source_line.sale_line_ids:
+            return source_line.sale_line_ids.order_id
+        invoice = self.invoice_id
+        if invoice and invoice.invoice_origin:
+            names = [
+                name.strip()
+                for name in invoice.invoice_origin.split(",")
+                if name.strip()
+            ]
+            if len(names) == 1:
+                return self.env["sale.order"].search(
+                    [("name", "=", names[0])], limit=1
+                )
+        return self.env["sale.order"]
+
+    def _get_agent_order_lines(self, sale_order):
+        """Linhas do pedido que carregam comissão para este agente.
+
+        Adiantamentos (``is_downpayment``) não entram: o valor deles é uma
+        antecipação das linhas de produto e seria contado duas vezes. Linhas
+        de seção/nota também não têm comissão própria. Linhas de valor zero
+        entram quando têm comissão: um repasse fixo pode existir em uma linha
+        de cortesia e precisa ser pago quando o pedido for faturado.
+        """
+        self.ensure_one()
+        return sale_order.order_line.filtered(
+            lambda line: not line.display_type
+            and not line.is_downpayment
+            and any(
+                agent.agent_id == self.agent_id for agent in line.agent_ids
+            )
+        )
+
+    def _get_agent_order_commission(self, sale_order):
+        """Comissão total do agente no pedido (com o split já aplicado)."""
+        self.ensure_one()
+        commission = 0.0
+        for line in self._get_agent_order_lines(sale_order):
+            for agent in line.agent_ids:
+                if agent.agent_id == self.agent_id:
+                    commission += agent.amount or 0.0
+        return commission
+
+    def _get_agent_ordered_base(self, sale_order):
+        """Valor de produto das linhas do agente no pedido."""
+        self.ensure_one()
+        return sum(
+            line.price_subtotal or 0.0
+            for line in self._get_agent_order_lines(sale_order)
+        )
+
+    def _get_sale_order_invoices(self, sale_order):
+        """Faturas postadas que cobrem o pedido, em ordem cronológica."""
+        invoices = sale_order.order_line.invoice_lines.move_id
+        invoices = invoices.filtered(
+            lambda move: move.state == "posted"
+            and move.move_type in ("out_invoice", "out_refund")
+        )
+        if not invoices and sale_order.name:
+            invoices = self.env["account.move"].search(
+                [
+                    ("invoice_origin", "=", sale_order.name),
+                    ("state", "=", "posted"),
+                    ("move_type", "in", ("out_invoice", "out_refund")),
+                ]
+            )
+        return invoices.sorted(
+            lambda move: (move.invoice_date or date.min, move.id)
+        )
+
+    def _order_has_commissioned_advances(self, sale_order):
+        """Whether an adiantamento invoice of the order carries this agent.
+
+        Adiantamentos sem agente nunca receberam comissão; nesse caso as
+        linhas de adiantamento (a positiva na entrada e a negativa na fatura
+        final) não podem entrar no valor faturado, senão a fatia seria
+        descontada duas vezes. Quando o adiantamento tem o agente, as duas
+        pontas entram e o acumulado fecha exatamente no valor do pedido.
+        """
+        self.ensure_one()
+        for invoice in self._get_sale_order_invoices(sale_order):
+            for line in invoice.invoice_line_ids:
+                if line.display_type != "product":
+                    continue
+                sale_lines = line.sale_line_ids.filtered(
+                    lambda sol: sol.order_id == sale_order
+                )
+                if not sale_lines:
+                    continue
+                if not any(sol.is_downpayment for sol in sale_lines):
+                    continue
+                if any(
+                    agent.agent_id == self.agent_id for agent in line.agent_ids
+                ):
+                    return True
+        return False
+
+    def _get_invoice_agent_billed_value(
+        self, invoice, sale_order, include_downpayments
+    ):
+        """Valor faturado da fatura que pertence a este agente.
+
+        Linhas de produto vinculadas ao pedido entram pelo ``price_subtotal``
+        (já líquido de ``discount``/``discount_fixed``). Linhas de
+        adiantamento entram rateadas pela participação do agente no pedido:
+        o adiantamento não tem produto do agente, mas reduz proporcionalmente
+        o valor de todas as linhas. Sem esse rateio, um adiantamento maior
+        que a base do agente estouraria o acumulado e a fatura final ficaria
+        negativa.
+        """
+        self.ensure_one()
+        direct = 0.0
+        downpayment = 0.0
+        for line in invoice.invoice_line_ids:
+            if line.display_type != "product":
+                continue
+            sale_lines = line.sale_line_ids.filtered(
+                lambda sol: sol.order_id == sale_order
+            )
+            if not sale_lines:
+                continue
+            # Uma linha de adiantamento representa valor de todas as linhas
+            # do pedido, não de um produto específico: entra pelo rateio.
+            if any(sol.is_downpayment for sol in sale_lines):
+                if include_downpayments:
+                    downpayment += line.price_subtotal or 0.0
+            elif any(agent.agent_id == self.agent_id for agent in line.agent_ids):
+                direct += line.price_subtotal or 0.0
+        order_base = self._get_agent_ordered_base(sale_order)
+        order_total = sale_order.amount_total or 0.0
+        share = order_base / order_total if order_total else 0.0
+        return direct + downpayment * share
+
+    def _get_billed_slice(self, sale_order):
+        """Fatia do pedido que esta fatura representa para o agente.
+
+        A fatia é acumulada: cada fatura usa o faturado até ela, descontado o
+        que as faturas anteriores já consumiram. Entradas sem agente contam
+        para o acumulado, então a fatura final absorve a parte delas em vez de
+        perder a comissão. O acumulado é limitado ao valor do agente para que
+        o total fechado nunca passe da comissão do pedido. Faturas de
+        devolução podem gerar fatia negativa (estorno proporcional).
+
+        Retorna ``None`` quando a fatura atual não pertence ao pedido.
+        """
+        self.ensure_one()
+        invoices = self._get_sale_order_invoices(sale_order)
+        if self.invoice_id not in invoices:
+            return None
+        order_base = self._get_agent_ordered_base(sale_order)
+        if order_base <= 0.0:
+            return None
+        include_downpayments = self._order_has_commissioned_advances(sale_order)
+        before = 0.0
+        through = 0.0
+        for invoice in invoices:
+            billed = self._get_invoice_agent_billed_value(
+                invoice, sale_order, include_downpayments
+            )
+            if invoice == self.invoice_id:
+                through = before + billed
+                break
+            before += billed
+        before = min(max(before, 0.0), order_base)
+        through = min(max(through, 0.0), order_base)
+        return through - before
+
+    def _distribute_invoice_base(self, base_amount, sale_order):
+        """Divide a base da fatura entre as linhas do mesmo agente.
+
+        O rateio é por pedido/agente, não por linha: se o agente tiver mais de
+        uma linha na fatura (vários produtos, adiantamento e linha negativa),
+        repetir a base em cada linha multiplicaria a comissão. O peso é o
+        ``amount`` da linha, que já carrega o split e a regra de cada produto;
+        se todas estiverem zeradas, usa o valor de produto. Linhas de outros
+        pedidos na mesma fatura ficam de fora, para a base de um pedido não
+        vazar para o outro.
+
+        Linhas de adiantamento ficam de fora do rateio quando há linhas de
+        produto na mesma fatura: a entrada já recebeu a sua fatia na própria
+        fatura de adiantamento e a linha negativa da fatura final só corrige
+        o acumulado. Sem isso, o valor final seria dividido entre o produto e
+        a linha negativa, pagando a menos no produto e "devolvendo" comissão
+        na linha de entrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_id
+        if not invoice:
+            return base_amount
+        siblings = invoice.invoice_line_ids.agent_ids.filtered(
+            lambda line: line.agent_id == self.agent_id
+            and sale_order in line.object_id.sale_line_ids.order_id
+        )
+        if self not in siblings:
+            return base_amount
+        product_siblings = siblings.filtered(
+            lambda line: not any(
+                sol.is_downpayment for sol in line.object_id.sale_line_ids
+            )
+        )
+        if product_siblings:
+            if self not in product_siblings:
+                return 0.0
+            siblings = product_siblings
+        if len(siblings) <= 1:
+            return base_amount
+        weights = [abs(line.amount or 0.0) for line in siblings]
+        if not sum(weights):
+            weights = [
+                abs(line.object_id.price_subtotal or 0.0) for line in siblings
+            ]
+        total = sum(weights)
+        if not total:
+            return base_amount / len(siblings)
+        index = siblings.ids.index(self.id)
+        return base_amount * weights[index] / total
+
+    def _is_single_full_invoice(self, sale_order):
+        """Whether this is the only invoice and it bills the whole order."""
+        self.ensure_one()
+        invoices = self._get_sale_order_invoices(sale_order)
+        return (
+            len(invoices) == 1
+            and invoices == self.invoice_id
+            and abs(
+                (self.invoice_id.amount_total or 0.0)
+                - (sale_order.amount_total or 0.0)
+            )
+            <= 0.01
+        )
+
+    def _get_settlement_base_amount(self):
+        """Base da comissão quando esta linha de fatura é fechada.
+
+        A comissão do agente no pedido é rateada pelo valor efetivamente
+        faturado das linhas do agente, não pelo total do pedido/fatura::
+
+            base = comissão_do_pedido × faturado_do_agente / valor_do_agente
+
+        O faturado é acumulado por fatura, então o total fechado nunca passa
+        da comissão do pedido e um desconto aplicado só na fatura reduz todas
+        as comissões (inclusive repasses fixos) na mesma proporção. Entradas
+        sem agente entram no acumulado; entradas com agente são descontadas
+        na fatura final para não pagar duas vezes.
+
+        Exceção: a fatura única que cobre o pedido inteiro preserva o
+        ``amount`` calculado na fatura. Faturas com mais de um pedido, ou
+        linhas sem pedido de origem, também usam o ``amount`` -- o rateio
+        entre pedidos não é trivial e não pode alterar o valor.
+        """
+        self.ensure_one()
+        amount = self.amount or 0.0
+        invoice = self.invoice_id
+        if not invoice:
+            return amount
+        if not self.object_id or self.object_id.display_type != "product":
+            return amount
+
+        orders = self._get_settlement_sale_orders()
+        if len(orders) > 1:
+            _logger.warning(
+                "Fatura %s cobre mais de um pedido; a comissão do agente %s "
+                "usará o valor da linha da fatura.",
+                invoice.name,
+                self.agent_id.display_name,
+            )
+            return amount
+        if not orders:
+            return amount
+        sale_order = orders
+
+        if self._is_single_full_invoice(sale_order) and amount:
+            return amount
+
+        order_base = self._get_agent_ordered_base(sale_order)
+        order_commission = self._get_agent_order_commission(sale_order)
+        if order_base <= 0.0 or not order_commission:
+            if amount:
+                _logger.warning(
+                    "Pedido %s sem base/comissão calculável para o agente "
+                    "%s; mantendo o valor da fatura %s.",
+                    sale_order.name,
+                    self.agent_id.display_name,
+                    invoice.name,
+                )
+            return amount
+
+        billed_slice = self._get_billed_slice(sale_order)
+        if billed_slice is None:
+            return amount
+        base_amount = order_commission * billed_slice / order_base
+        return self._distribute_invoice_base(base_amount, sale_order)
 
     @api.depends(
         "object_id.price_subtotal",

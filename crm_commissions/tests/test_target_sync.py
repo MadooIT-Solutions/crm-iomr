@@ -170,6 +170,10 @@ class TestTargetSync(TransactionCase):
                 "date": target_date,
                 "hospital_gross_amount": 50.0,
                 "status": "confirmed",
+                # A base da comissão vem das linhas de detalhe: sem elas o
+                # atingido existe mas a comissão é zero e a meta não deve ser
+                # fechada (o fechamento ignora linhas de valor zero).
+                "line_ids": [(0, 0, {"line_type": "hospital", "amount": 50.0})],
             }
         )
         target._refresh_from_sale_changes()

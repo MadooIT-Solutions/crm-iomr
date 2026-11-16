@@ -639,6 +639,11 @@ class CommissionTarget(models.Model):
         Também pula metas cujo agente não tem regra de comissão, porque
         ``commission.settlement.line.commission_id`` é obrigatório e a
         criação da linha falharia no meio do fechamento.
+
+        Linhas de valor zero não contam como fechamento: elas ficam ocultas
+        na tela e, se a base da comissão aparecer depois, precisam permitir um
+        novo fechamento (o fechamento em si ignora metas de valor zero, então
+        não há risco de acumular linhas zeradas).
         """
         self.ensure_one()
         if not self.commission_id:
@@ -648,6 +653,7 @@ class CommissionTarget(models.Model):
                 [
                     ("settlement_id.settlement_type", "=", "crm_performance"),
                     ("settlement_id.state", "!=", "cancel"),
+                    ("settled_amount", "!=", 0.0),
                     "|",
                     ("target_id", "=", self.id),
                     "&",
