@@ -40,7 +40,7 @@ Calcular mensalmente a comissão devida a cada orientadora com base nas vendas r
 ### IS-CRM
 | Campo | Descrição |
 |-------|-----------|
-| IS-CRM Score (%) | Média dos IS-CRM scores de todas as vendas do período |
+| IS-CRM Score (%) | IS-CRM da última venda do período |
 | IS-CRM OK | True se IS-CRM Score >= política.crm_min_pct (95%) |
 
 ## Como calcular a comissão
@@ -53,7 +53,7 @@ Calcular mensalmente a comissão devida a cada orientadora com base nas vendas r
    a. Buscar todas as `commission.sale` do período para a orientadora
    b. Calcular o `delivery_pct` com base na meta
    c. Identificar a faixa de taxa na política
-   d. Calcular o IS-CRM médio do período
+   d. Calcular o IS-CRM do período (última venda do mês)
    e. Aplicar bônus/penalidade
    f. Calcular o valor final da comissão
 6. Revise os valores e clique em **Aprovar**.

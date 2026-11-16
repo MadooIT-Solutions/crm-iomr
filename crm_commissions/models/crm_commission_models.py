@@ -767,6 +767,67 @@ class CommissionTarget(models.Model):
                 total += sale._get_commissionable_amount()
         return total
 
+    def _get_period_sales(self):
+        """Vendas de comissão do mês da meta, usadas no fechamento."""
+        self.ensure_one()
+        period_code = self.target_date.strftime("%Y-%m") if self.target_date else False
+        members = (
+            self.env["commission.member"]
+            .sudo()
+            .search(
+                [
+                    ("partner_id", "=", self.agent_id.id),
+                    ("member_type", "=", "orientadora"),
+                ]
+            )
+        )
+        return self.env["commission.sale"].sudo().search(
+            [
+                ("owner_member_id", "in", members.ids),
+                ("period_code", "=", period_code),
+                ("status", "in", ("confirmed", "invoiced")),
+            ]
+        )
+
+    def _refresh_closing_indicators(self):
+        """Recalcula os indicadores do mês para o fechamento da comissão.
+
+        No fechamento a comissão passa a considerar o último IS-CRM registrado
+        dentro do mês de fechamento (``crm_pct`` da última venda do mês) e a
+        performance (%) mais recente da meta do mês correspondente, em vez de
+        valores em cache ou de médias sobre as vendas do período.
+        """
+        self.ensure_one()
+        if not self.agent_id or not self.target_date:
+            return
+        sales = self._get_period_sales()
+        achieved_amount = sum(sales.mapped("hospital_gross_amount"))
+        self.achieved_amount = achieved_amount
+        self.performance_pct = (
+            (achieved_amount / self.target_amount * 100.0) if self.target_amount else 0.0
+        )
+        self.is_crm_score = sales._get_last_crm_pct() if sales else 100.0
+        policy = (
+            self.env["commission.policy"]
+            .sudo()
+            .search(
+                [
+                    ("active", "=", True),
+                    ("date_start", "<=", self.target_date),
+                ]
+                + expression.OR(
+                    [
+                        [("date_end", "=", False)],
+                        [("date_end", ">=", self.target_date)],
+                    ]
+                ),
+                order="date_start desc",
+                limit=1,
+            )
+        )
+        crm_min_pct = policy.crm_min_pct if policy else 95.0
+        self.is_crm_ok = self.is_crm_score >= crm_min_pct
+
     @api.constrains("target_scope", "agent_id", "team_id")
     def _check_target_scope(self):
         for rec in self:

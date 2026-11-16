@@ -331,7 +331,7 @@ Registrar manualmente cirurgias, vendas de LIOs e exames realizados por cada ori
 
 - **Medical Fee** e **LIO Package** nunca geram comissão.
 - A base de comissionamento é calculada a partir dos valores elegíveis.
-- O IS-CRM da venda alimenta a média do período para cálculo de bônus/penalidade.
+- O IS-CRM da venda alimenta o fechamento (último IS-CRM do mês) para cálculo de bônus/penalidade.
 
 
 ================================================================================
@@ -424,7 +424,7 @@ Calcular mensalmente a comissão devida a cada orientadora com base nas vendas r
 ### IS-CRM
 | Campo | Descrição |
 |-------|-----------|
-| IS-CRM Score (%) | Média dos IS-CRM scores de todas as vendas do período |
+| IS-CRM Score (%) | IS-CRM da última venda do período |
 | IS-CRM OK | True se IS-CRM Score >= política.crm_min_pct (95%) |
 
 ## Como calcular a comissão
@@ -437,7 +437,7 @@ Calcular mensalmente a comissão devida a cada orientadora com base nas vendas r
    a. Buscar todas as `commission.sale` do período para a orientadora
    b. Calcular o `delivery_pct` com base na meta
    c. Identificar a faixa de taxa na política
-   d. Calcular o IS-CRM médio do período
+   d. Calcular o IS-CRM do período (última venda do mês)
    e. Aplicar bônus/penalidade
    f. Calcular o valor final da comissão
 6. Revise os valores e clique em **Aprovar**.
@@ -657,8 +657,8 @@ O IS-CRM pode ser definido em vários níveis:
 
 ### 3. No Resultado (commission.result)
 - Campo: **IS-CRM Score** (is_crm_score)
-- **Calculado automaticamente** como a média dos IS-CRM scores de todas as vendas do período
-- Fórmula: `is_crm_score = soma dos crm_pct das vendas / quantidade de vendas`
+- **Calculado automaticamente** como o IS-CRM da última venda do período
+- Fórmula: `is_crm_score = crm_pct da última venda do período`
 - Se não houver vendas no período, o score é 100%
 
 ### 4. Na Oportunidade (crm.lead)
@@ -677,7 +677,7 @@ O IS-CRM pode ser definido em vários níveis:
 
 ```
 Vendas do Período (commission.sale)
-  → Média do IS-CRM de todas as vendas
+  → IS-CRM da última venda do mês
   → IS-CRM Score do Resultado (commission.result)
   → Comparação com o mínimo da política (crm_min_pct = 95%)
   → Se >= 95%: Bônus (+) aplicado à taxa base

@@ -25,8 +25,8 @@ O IS-CRM pode ser definido em vários níveis:
 
 ### 3. No Resultado (commission.result)
 - Campo: **IS-CRM Score** (is_crm_score)
-- **Calculado automaticamente** como a média dos IS-CRM scores de todas as vendas do período
-- Fórmula: `is_crm_score = soma dos crm_pct das vendas / quantidade de vendas`
+- **Calculado automaticamente** como o IS-CRM da última venda do período
+- Fórmula: `is_crm_score = crm_pct da última venda do período`
 - Se não houver vendas no período, o score é 100%
 
 ### 4. Na Oportunidade (crm.lead)
@@ -45,7 +45,7 @@ O IS-CRM pode ser definido em vários níveis:
 
 ```
 Vendas do Período (commission.sale)
-  → Média do IS-CRM de todas as vendas
+  → IS-CRM da última venda do mês
   → IS-CRM Score do Resultado (commission.result)
   → Comparação com o mínimo da política (crm_min_pct = 95%)
   → Se >= 95%: Bônus (+) aplicado à taxa base

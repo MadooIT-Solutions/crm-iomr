@@ -185,6 +185,11 @@ class CommissionMakeSettle(models.TransientModel):
         if not base:
             return 0.0
 
+        # No fechamento a comissão é recalculada com o último IS-CRM registrado
+        # dentro do mês de fechamento e a performance (%) mais recente da meta
+        # do mês correspondente.
+        target._refresh_closing_indicators()
+
         rate = self._get_crm_performance_rate(target)
 
         # Aplica bônus/penalidade IS-CRM

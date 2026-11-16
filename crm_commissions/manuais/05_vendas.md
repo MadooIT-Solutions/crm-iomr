@@ -69,4 +69,4 @@ Registrar manualmente cirurgias, vendas de LIOs e exames realizados por cada ori
 
 - **Medical Fee** e **LIO Package** nunca geram comissão.
 - A base de comissionamento é calculada a partir dos valores elegíveis.
-- O IS-CRM da venda alimenta a média do período para cálculo de bônus/penalidade.
+- O IS-CRM da venda alimenta o fechamento (último IS-CRM do mês) para cálculo de bônus/penalidade.

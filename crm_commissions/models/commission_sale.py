@@ -197,3 +197,16 @@ class CommissionSale(models.Model):
         if self.lens_commission_type == "without_exam":
             return 5.0
         return 1.5
+
+    def _get_last_crm_pct(self):
+        """IS-CRM da última venda do conjunto (data/id).
+
+        O fechamento da comissão usa o último IS-CRM registrado dentro do mês
+        de fechamento, e não uma média das vendas do período.
+        """
+        latest_sale = sorted(
+            self,
+            key=lambda sale: (sale.date or fields.Date.context_today(self), sale.id),
+            reverse=True,
+        )[:1]
+        return latest_sale.crm_pct if latest_sale else 100.0

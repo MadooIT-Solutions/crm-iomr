@@ -276,6 +276,44 @@ class TestCrmSettlement(TransactionCase):
         self.assertEqual(line.settlement_id.date_from, date(2026, 10, 1))
         self.assertEqual(line.settlement_id.date_to, date(2026, 10, 31))
 
+    def test_08_closing_bills_the_last_crm_of_the_closing_month(self):
+        """O fechamento usa o último IS-CRM do mês de fechamento.
+
+        As vendas do mês foram boas, mas a última registrada dentro do mês
+        (20/03) teve IS-CRM 90%: o fechamento deve aplicar a penalidade sobre
+        o último IS-CRM do mês, e não a média das vendas do período.
+        """
+        target = self._create_target(date(2026, 3, 1), 1000.0)
+        for day, crm_pct in ((10, 100.0), (20, 90.0)):
+            self.env["commission.sale"].create(
+                {
+                    "name": f"Venda Settlement CRM 2026-03-{day}",
+                    "owner_member_id": self.member.id,
+                    "patient_name": f"Paciente Settlement CRM {day}",
+                    "surgery_type": "catarata",
+                    "sale_category": "particular",
+                    "date": date(2026, 3, day),
+                    "hospital_gross_amount": 500.0,
+                    "crm_pct": crm_pct,
+                    "status": "confirmed",
+                    "line_ids": [(0, 0, {"line_type": "hospital", "amount": 500.0})],
+                }
+            )
+        target._refresh_closing_indicators()
+
+        self.assertEqual(target.achieved_amount, 1000.0)
+        self.assertEqual(target.performance_pct, 100.0)
+        self.assertEqual(target.is_crm_score, 90.0)
+        self.assertFalse(target.is_crm_ok)
+
+        wizard = self._make_settle_wizard("crm_performance", date(2026, 4, 1))
+        wizard.action_settle()
+
+        line = self.SettleLine.search([("target_id", "=", target.id)])
+        self.assertEqual(len(line), 1)
+        # 1000 * (0,75 - 0,25) / 100 = 5,00 — penalidade do último IS-CRM do mês.
+        self.assertAlmostEqual(line.settled_amount, 5.0)
+
     def _register_payment(self, invoice, payment_date):
         """Register a full payment for the invoice on ``payment_date``."""
         journal = self.env["account.journal"].search(

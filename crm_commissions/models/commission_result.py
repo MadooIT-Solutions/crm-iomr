@@ -208,8 +208,6 @@ class CommissionResult(models.Model):
         self.hospital_sales_amount = sum(sales.mapped("hospital_net_amount"))
 
         commissionable = 0.0
-        crm_score_sum = 0.0
-        sale_count = len(sales)
 
         for sale in sales:
             if sale.is_lens_sale:
@@ -218,10 +216,10 @@ class CommissionResult(models.Model):
                     commissionable += sale._get_commissionable_amount() * lens_rate / 100.0
             else:
                 commissionable += sale._get_commissionable_amount()
-            crm_score_sum += sale.crm_pct
 
         self.commission_base_amount = commissionable
-        self.is_crm_score = (crm_score_sum / sale_count) if sale_count else 100.0
+        # O fechamento usa o último IS-CRM registrado dentro do mês do período.
+        self.is_crm_score = sales._get_last_crm_pct() if sales else 100.0
 
         rate_line = self._get_policy_rate(self.delivery_pct, policy)
         if rate_line:

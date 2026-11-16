@@ -170,14 +170,14 @@ class CommissionTarget(models.Model):
                     ("status", "in", ("confirmed", "invoiced")),
                 ]
             )
-            scores = sales.mapped("crm_pct")
             rec.achieved_amount = sum(sales.mapped("hospital_gross_amount"))
             rec.performance_pct = (
                 (rec.achieved_amount / rec.individual_target_amount) * 100.0
                 if rec.individual_target_amount
                 else 0.0
             )
-            rec.is_crm_score = min(scores) if scores else 100.0
+            # O fechamento usa o último IS-CRM registrado dentro do mês do período.
+            rec.is_crm_score = sales._get_last_crm_pct() if sales else 100.0
             rec.is_crm_ok = rec.is_crm_score >= 95.0
 
     @api.depends("member_id", "year", "month")

@@ -131,8 +131,9 @@ class TestLegacyTargetIndicators(TransactionCase):
 
         self.assertEqual(target.achieved_amount, 1000.0)
         self.assertEqual(target.performance_pct, 100.0)
-        self.assertEqual(target.is_crm_score, 94.0)
-        self.assertFalse(target.is_crm_ok)
+        # O último IS-CRM do mês (20/03) prevalece sobre os demais da meta.
+        self.assertEqual(target.is_crm_score, 98.0)
+        self.assertTrue(target.is_crm_ok)
 
     def test_04_period_without_sales_is_fully_achieved_zero(self):
         target = (
