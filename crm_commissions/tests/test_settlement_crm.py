@@ -26,7 +26,11 @@ class TestCrmSettlement(TransactionCase):
         cls.Bonus = cls.env["crm.commission.quarterly.bonus"]
         cls.commission = cls.env.ref("crm_commissions.commission_progressive_lios")
         cls.policy = cls.env.ref("crm_commissions.policy_2026")
-        cls.category = cls.env["product.category"].create({"name": "Settlement CRM"})
+        # Usa uma categoria aceita pela comissão (quando ela restringe
+        # categorias) para que os testes de fechamento tenham valor positivo.
+        cls.category = cls.commission.categ_ids[:1] or cls.env[
+            "product.category"
+        ].create({"name": "Settlement CRM"})
         cls.product = cls.env["product.product"].create(
             {
                 "name": "Produto Settlement CRM",
@@ -227,6 +231,56 @@ class TestCrmSettlement(TransactionCase):
         action = line.action_open_sale_order()
         self.assertEqual(action["res_model"], "sale.order")
         self.assertEqual(action["res_id"], order.id)
+
+    def test_04a_zero_invoice_commission_is_not_closed(self):
+        """Linha de fatura sem comissão não gera linha zero no fechamento.
+
+        Adiantamentos e entradas com ``amount = 0`` chegavam ao fechamento e
+        apareciam como linhas zeradas, escondidas na tela. Com o filtro pelo
+        valor calculado, somente a linha com comissão é fechada.
+        """
+        order = self._create_confirmed_sale(date(2026, 3, 15), 1000.0)
+        _invoice, agent_lines = self._create_paid_invoice(
+            order, date(2026, 3, 15), date(2026, 4, 2), extra_lines=(0.0,)
+        )
+        self.assertEqual(len(agent_lines), 2)
+
+        self._make_settle_wizard("sale_invoice", date(2026, 5, 1)).action_settle()
+
+        lines = self.SettleLine.search(
+            [("invoice_agent_line_id", "in", agent_lines.ids)]
+        )
+        self.assertEqual(len(lines), 1)
+        self.assertGreater(lines.settled_amount, 0.0)
+
+    def test_04b_settlement_lines_are_ordered_by_date_and_sale_order(self):
+        """As linhas do fechamento vêm por data e número de pedido de venda."""
+        specs = [
+            ("S00300", date(2026, 4, 12)),
+            ("S00100", date(2026, 4, 10)),
+            ("S00200", date(2026, 4, 10)),
+        ]
+        all_lines = self.env["account.invoice.line.agent"]
+        for name, payment_date in specs:
+            order = self._create_confirmed_sale(date(2026, 3, 10), 1000.0)
+            order.name = name
+            _invoice, agent_lines = self._create_paid_invoice(
+                order, date(2026, 3, 10), payment_date
+            )
+            all_lines |= agent_lines
+
+        self._make_settle_wizard("sale_invoice", date(2026, 5, 1)).action_settle()
+        lines = self.SettleLine.search(
+            [("invoice_agent_line_id", "in", all_lines.ids)]
+        )
+        self.assertEqual(len(lines), 3)
+        self.assertEqual(
+            lines.mapped("sale_order_name"), ["S00100", "S00200", "S00300"]
+        )
+        self.assertEqual(
+            lines.mapped("date"),
+            [date(2026, 4, 10), date(2026, 4, 10), date(2026, 4, 12)],
+        )
 
     def test_07_invoice_settlement_follows_the_payment_date(self):
         """Fatura de setembro paga em outubro fecha no período de outubro.
@@ -706,6 +760,48 @@ class TestCrmSettlement(TransactionCase):
         if amount is None:
             self.assertIn(invoice.payment_state, ("in_payment", "paid"))
         return invoice.reconciled_payment_ids
+
+    def _create_paid_invoice(self, order, invoice_date, payment_date, extra_lines=()):
+        """Cria, posta e paga uma fatura ligada ao pedido informado."""
+        lines = [
+            (
+                0,
+                0,
+                {
+                    "product_id": self.product.id,
+                    "quantity": 1,
+                    "price_unit": 1000.0,
+                    "tax_ids": [(5, 0, 0)],
+                    "sale_line_ids": [(6, 0, order.order_line.ids)],
+                },
+            )
+        ]
+        for price_unit in extra_lines:
+            lines.append(
+                (
+                    0,
+                    0,
+                    {
+                        "product_id": self.product.id,
+                        "quantity": 1,
+                        "price_unit": price_unit,
+                        "tax_ids": [(5, 0, 0)],
+                        "sale_line_ids": [(6, 0, order.order_line.ids)],
+                    },
+                )
+            )
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": order.partner_id.id,
+                "invoice_date": invoice_date,
+                "invoice_line_ids": lines,
+            }
+        )
+        agent_lines = invoice.invoice_line_ids.agent_ids
+        invoice.action_post()
+        self._register_payment(invoice, payment_date)
+        return invoice, agent_lines
 
     def _create_confirmed_sale(self, target_date, amount):
         customer = self.env["res.partner"].create(

@@ -129,6 +129,15 @@ class CommissionMakeSettle(models.TransientModel):
             lines = lines.filtered(self._is_in_mass_period)
         if self.settlement_type == "sale_invoice":
             lines = self._exclude_already_settled_invoice_lines(lines)
+        # Linhas de origem cujo valor calculado é zero (adiantamentos, entradas,
+        # descontos sem comissão) não devem virar linha de fechamento: ficam
+        # escondidas na tela e só poluem a lista. Filtrar aqui evita também
+        # criar uma liquidação vazia quando todas as linhas do período são zero.
+        lines = lines.filtered(
+            lambda line: not self._is_zero_settlement_amount(
+                line, self._get_settlement_line_amount(line)
+            )
+        )
         return lines
 
     def _exclude_already_settled_invoice_lines(self, agent_lines):
@@ -273,6 +282,9 @@ class CommissionMakeSettle(models.TransientModel):
                     "settled_amount": line.lost_commission_recovered,
                 }
             )
+        else:
+            # Fechamentos manuais também não podem nascer com valor zero.
+            values["settled_amount"] = self._get_settlement_line_amount(line)
         return values
 
     def _get_invoice_settlement_amount(self, agent_line, base_amount):
@@ -287,6 +299,27 @@ class CommissionMakeSettle(models.TransientModel):
             ratio = max(0.0, min(amount_paid / invoice.amount_total, 1.0))
             return base_amount * ratio
         return base_amount
+
+    def _get_settlement_line_amount(self, line):
+        """Valor que a linha de origem fecharia, antes de ser criada.
+
+        Usado para descartar linhas de valor zero. Mantém o mesmo cálculo de
+        ``_prepare_settlement_line_vals`` para todos os tipos de fechamento.
+        """
+        if line._name == "account.invoice.line.agent":
+            base_amount = line._get_settlement_base_amount()
+            return self._get_invoice_settlement_amount(line, base_amount)
+        if self.settlement_type == "crm_performance":
+            return self._calculate_crm_performance_commission(line)
+        if self.settlement_type == "crm_quarterly_recovery":
+            return line.lost_commission_recovered or 0.0
+        return getattr(line, "amount", 0.0) or 0.0
+
+    @api.model
+    def _is_zero_settlement_amount(self, line, amount):
+        """Compara o valor com zero usando a moeda da linha de origem."""
+        currency = getattr(line, "currency_id", False) or self.env.company.currency_id
+        return currency.is_zero(amount or 0.0)
 
     def action_settle(self):
         """Create the settlements using the payment date as the period date.

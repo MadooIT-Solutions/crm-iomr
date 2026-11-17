@@ -52,6 +52,10 @@ class CommissionSettlement(models.Model):
 
 class CommissionSettlementLine(models.Model):
     _inherit = "commission.settlement.line"
+    # Ordem padrão das linhas na liquidação: data do pagamento, número do
+    # pedido de venda e, como desempate, a própria linha. ``sale_order_name``
+    # é armazenada porque `_order` é SQL e não aceita campos computed.
+    _order = "date, sale_order_name, id"
 
     target_id = fields.Many2one(
         "crm.commission.target",
@@ -75,7 +79,16 @@ class CommissionSettlementLine(models.Model):
         string="Pedido de venda",
         compute="_compute_sale_order_id",
         readonly=True,
+        store=True,
         help="Pedido de venda que originou esta linha de comissão.",
+    )
+    sale_order_name = fields.Char(
+        string="Número do pedido de venda",
+        related="sale_order_id.name",
+        readonly=True,
+        store=True,
+        index=True,
+        help="Número do pedido de venda, usado para ordenar as linhas.",
     )
     prontuario = fields.Char(
         string="Prontuário",
