@@ -48,7 +48,22 @@ class AccountMoveLine(models.Model):
                     )
         return commands
 
-    @api.depends("move_id.partner_id", "sale_line_ids", "sale_line_ids.is_downpayment")
+    @api.depends(
+        "move_id.partner_id",
+        "sale_line_ids",
+        "sale_line_ids.is_downpayment",
+        # Commission rules are often created/changed *after* the invoice was
+        # issued (e.g. the 1% extras rule added in October). The agents of a
+        # confirmed order are then recomputed, but the invoice kept the old
+        # set and the closing silently lost those commissions (order S00580 /
+        # Thaisy: MAT/MED had no invoice agent row). Depending on the source
+        # agents keeps both sides in sync; lines already closed are protected
+        # by the ``locked`` filter below.
+        "sale_line_ids.agent_ids",
+        "sale_line_ids.agent_ids.agent_id",
+        "sale_line_ids.agent_ids.commission_id",
+        "sale_line_ids.agent_ids.commission_split_percent",
+    )
     def _compute_agent_ids(self):
         """Garante agentes (com rateio/split) nas linhas de adiantamento.
 
@@ -87,6 +102,48 @@ class AccountMoveLine(models.Model):
                 line.agent_ids = False
             else:
                 line.agent_ids = self._downpayment_sale_line_agent_commands(line)
+
+    def _backfill_missing_agents_from_sale_lines(self):
+        """Create invoice agent rows that the linked sale lines owe.
+
+        Rules created after an invoice was posted (or a manual edit of the
+        order's agents) used to leave the invoice without the corresponding
+        agent row, so the commission was never picked up by the closing. This
+        only *adds* missing rows: existing agents -- especially the ones
+        already closed by a settlement -- are never changed, which keeps the
+        repair idempotent and safe for historical invoices.
+
+        Returns the number of created rows.
+        """
+        Agent = self.env["account.invoice.line.agent"].sudo()
+        existing = Agent.search([("object_id", "in", self.ids)])
+        existing_by_line = {}
+        for agent in existing:
+            existing_by_line.setdefault(agent.object_id.id, set()).add(
+                agent.agent_id.id
+            )
+
+        created = 0
+        for line in self.sudo():
+            if line.display_type != "product" or not line.sale_line_ids:
+                continue
+            cfop = getattr(line, "cfop_id", False)
+            if line.commission_free or (
+                cfop and not getattr(cfop, "finance_move", True)
+            ):
+                continue
+            present = existing_by_line.get(line.id, set())
+            for command in self._downpayment_sale_line_agent_commands(line):
+                if command[0] != 0:
+                    continue
+                vals = command[2]
+                agent_id = vals.get("agent_id")
+                if not agent_id or agent_id in present:
+                    continue
+                Agent.create(dict(vals, object_id=line.id))
+                present.add(agent_id)
+                created += 1
+        return created
 
 
 class AccountInvoiceLineAgent(models.Model):
