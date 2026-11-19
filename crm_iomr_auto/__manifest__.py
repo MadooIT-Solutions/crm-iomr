@@ -20,7 +20,7 @@
 ################################################################################
 {
     "name": "CRM IOMR Automations",
-    "version": "18.0.1.2.1",
+    "version": "18.0.1.2.2",
     "category": "Extra Tools",
     "summary": """Custom triggers to CRM""",
     "description": """Custom triggers to CRM""",
@@ -33,6 +33,7 @@
         "security/ir.model.access.csv",
         "security/crm_lead_rotation_sdr_wizard_security.xml",
         "views/crm_lead.xml",
+        "views/mail_activity_views.xml",
         "views/crm_lead_rotation.xml",
         "views/res_partner.xml",
         "views/res_config_settings.xml",

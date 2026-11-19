@@ -28,6 +28,14 @@ class CrmLeadRotation(models.Model):
     contact_name = fields.Char(string="Nome do Contato", related="lead_id.contact_name")
     prontuario = fields.Char(string="Prontuário", related="lead_id.prontuario")
     stage_id = fields.Many2one("crm.stage", string="Status da Oportunidade", related="lead_id.stage_id")
+    expected_revenue = fields.Monetary(
+        string="Orçamento",
+        related="lead_id.expected_revenue",
+        currency_field="currency_id",
+    )
+    currency_id = fields.Many2one(
+        "res.currency", related="lead_id.company_id.currency_id"
+    )
     notes = fields.Text(string="Observações")
 
     @api.model

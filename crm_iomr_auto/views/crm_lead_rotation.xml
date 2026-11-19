@@ -10,6 +10,8 @@
                 <field name="contact_name"/>
                 <field name="prontuario"/>
                 <field name="stage_id"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="expected_revenue"/>
                 <field name="user_from_id"/>
                 <field name="user_to_id"/>
                 <field name="rotation_type"/>
@@ -31,6 +33,8 @@
                     <field name="contact_name"/>
                     <field name="prontuario"/>
                     <field name="stage_id"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="expected_revenue"/>
                     <field name="rotation_sequence"/>
                     <field name="date_rotation"/>
                     <field name="rotation_type"/>
