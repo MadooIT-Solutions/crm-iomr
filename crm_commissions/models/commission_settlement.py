@@ -107,6 +107,13 @@ class CommissionSettlementLine(models.Model):
         readonly=True,
         help="Prontuário do cliente no pedido de venda relacionado.",
     )
+
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Paciente",
+        compute="_compute_partner_id",
+        readonly=True,
+    )
     # ``invoice_line_id`` was a stored related field on
     # ``invoice_agent_line_id.object_id``. The FK to the agent row is
     # ``ON DELETE SET NULL``, so recomputing the invoice agents erased the
@@ -215,6 +222,11 @@ class CommissionSettlementLine(models.Model):
     def _compute_prontuario(self):
         for line in self:
             line.prontuario = line.sale_order_id.prontuario or False
+
+    @api.depends("sale_order_id.partner_id")
+    def _compute_prontuario(self):
+        for line in self:
+            line.partner_id = line.sale_order_id.partner_id or False
 
     @api.depends(
         "invoice_agent_line_id",
