@@ -10,6 +10,7 @@
         <field name="arch" type="xml">
             <xpath expr="//list/field[@name='settlement_type']" position="after">
                 <field name="sale_order_id" optional="hide" />
+                <field name="partner_id"/>
                 <field name="prontuario" optional="hide" />
             </xpath>
         </field>
@@ -27,6 +28,7 @@
                 <!-- O pedido de venda que originou a linha, e o clique que
                      abre esse pedido. -->
                 <field name="sale_order_id" readonly="1" optional="show" />
+                <field name="partner_id" readonly="1" optional="show"/>
                 <field name="prontuario" readonly="1" optional="show" />
                 <button
                     name="action_open_sale_order"
@@ -95,6 +97,7 @@
                     />
                     <field name="settled_amount" sum="Settled total" />
                     <field name="sale_order_id" readonly="1" optional="show" />
+                    <field name="partner_id" readonly="1" optional="show"/>
                     <field name="prontuario" readonly="1" optional="show" />
                     <button
                         name="action_open_sale_order"

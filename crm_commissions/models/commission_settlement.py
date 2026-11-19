@@ -31,12 +31,19 @@ class CommissionSettlement(models.Model):
         help="Pedido de venda relacionado às linhas desta liquidação "
         "(quando houver um único pedido).",
     )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Paciente",
+        related="sale_order_id.partner_id",
+        readonly=True,
+    )
     prontuario = fields.Char(
         string="Prontuário",
         compute="_compute_sale_order_info",
         readonly=True,
         help="Prontuário do cliente no pedido de venda relacionado.",
     )
+
 
     @api.depends("line_ids.sale_order_id", "line_ids.sale_order_id.prontuario")
     def _compute_sale_order_info(self):
