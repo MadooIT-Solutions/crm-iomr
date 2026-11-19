@@ -34,7 +34,7 @@ class CommissionSettlement(models.Model):
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Paciente",
-        related="sale_order_id.partner_id",
+        compute="_compute_sale_order_info",
         readonly=True,
     )
     prontuario = fields.Char(
@@ -55,7 +55,11 @@ class CommissionSettlement(models.Model):
                 if settlement.sale_order_id
                 else False
             )
-
+            settlement.partner_id = (
+                settlement.sale_order_id.partner_id
+                if settlement.sale_order_id
+                else False
+            )
 
 class CommissionSettlementLine(models.Model):
     _inherit = "commission.settlement.line"
