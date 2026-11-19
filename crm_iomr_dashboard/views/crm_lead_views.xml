@@ -30,4 +30,17 @@
             </xpath>
         </field>
     </record>
+
+    <record id="view_crm_lead_list_activities_dates_iomr" model="ir.ui.view">
+        <field name="name">crm.lead.list.activities.dates.iomr.dashboard</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_list_activities"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='stage_id']" position="before">
+                <field name="surgery_date" optional="hide"/>
+                <field name="first_response_date" optional="hide"/>
+                <field name="transferred_date" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>

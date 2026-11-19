@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <record id="crm_lead_view_list_activities_dates_iomr" model="ir.ui.view">
+    <field name="name">crm.lead.list.activities.dates.iomr</field>
+    <field name="model">crm.lead</field>
+    <field name="inherit_id" ref="crm.crm_lead_view_list_activities"/>
+    <field name="arch" type="xml">
+
+      <!-- Campos Date/Datetime do crm.lead como colunas opcionais (ocultas por padrão) -->
+      <xpath expr="//field[@name='stage_id']" position="before">
+        <field name="date" optional="hide"/>
+        <field name="date_contact" optional="hide"/>
+        <field name="activity_date_deadline" optional="hide"/>
+        <field name="cnpj_status_date" optional="hide"/>
+        <field name="opening_date" optional="hide"/>
+        <field name="simples_option_date" optional="hide"/>
+        <field name="date_conversion" optional="hide"/>
+        <field name="date_closed" optional="hide"/>
+        <field name="date_open" optional="hide"/>
+        <field name="date_automation_last" optional="hide"/>
+        <field name="date_last_stage_update" optional="hide"/>
+        <field name="date_assigned_to_seller" optional="hide"/>
+        <field name="last_activity_date" optional="hide"/>
+        <field name="meeting_display_date" optional="hide"/>
+        <field name="write_date" optional="hide"/>
+      </xpath>
+
+    </field>
+  </record>
+</odoo>
