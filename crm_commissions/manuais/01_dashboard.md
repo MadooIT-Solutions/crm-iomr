@@ -64,3 +64,12 @@ Os pedidos são agrupados da seguinte forma:
 -   **Não Faturados:** `to invoice` e `no` (sem valor a faturar)
 
 Os cartões usam o valor total do pedido, enquanto a coluna **Meu Repasse** apresenta somente a comissão individual.
+
+### 6. Indicadores da SDR
+
+Esse bloco aparece somente para usuários do grupo **SDR** e considera os leads recebidos por rotação no período selecionado (data da rotação para a SDR):
+
+-   **Rotacionados para SDR:** quantidade de leads distintos transferidos para a SDR no período
+-   **Nutridos e Esquentados:** quantidade desses leads que tiveram ao menos uma mensagem registrada no lead após a atribuição (mensagens internas do sistema não são contadas)
+-   **Convertidos:** quantidade de leads nutridos e esquentados que possuem pedido confirmado (`sale` ou `done`) vinculado à oportunidade
+-   **Tempo Médio até Conversão:** média de dias entre a atribuição à SDR e a confirmação do pedido, considerando apenas os leads convertidos

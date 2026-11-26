@@ -105,6 +105,61 @@
                     </div>
                 </div>
 
+                <t t-if="show_sdr_metrics">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4>Desempenho da SDR</h4>
+                            <p class="text-muted">
+                                Leads atribuídos à SDR no período selecionado.
+                            </p>
+                        </div>
+                        <div class="col-md-3">
+                            <div
+                                class="card text-bg-primary h-100"
+                                title="Leads recebidos por rotação no período"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title">Rotacionados para SDR</h5>
+                                    <h3><t t-esc="sdr_rotated_leads_count"/></h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div
+                                class="card text-bg-info h-100"
+                                title="Leads rotacionados para a SDR que receberam alguma mensagem após a atribuição"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title">Nutridos e Esquentados</h5>
+                                    <h3><t t-esc="sdr_nurtured_leads_count"/></h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div
+                                class="card text-bg-success h-100"
+                                title="Leads nutridos e esquentados com pedido confirmado"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title">Convertidos</h5>
+                                    <h3><t t-esc="sdr_converted_leads_count"/></h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div
+                                class="card text-bg-warning h-100"
+                                title="Média de dias entre a atribuição à SDR e a confirmação do pedido"
+                            >
+                                <div class="card-body">
+                                    <h5 class="card-title">Tempo Médio até Conversão</h5>
+                                    <h3><t t-esc="sdr_avg_days_to_conversion_fmt"/> dias</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+
                 <div class="row mb-4">
                     <div class="col-12">
                         <h4>Progresso das Metas</h4>

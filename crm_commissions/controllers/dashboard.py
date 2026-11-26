@@ -20,6 +20,7 @@ _DASHBOARD_GROUPS = (
 )
 _INVOICED_STATUSES = frozenset({"invoiced", "upselling"})
 _UNINVOICED_STATUSES = frozenset({"to invoice", "no"})
+_CONFIRMED_ORDER_STATES = ("sale", "done")
 _SETTLEMENT_ROWS_LIMIT = 10
 
 
@@ -158,6 +159,75 @@ def _get_datetime_period_bounds(env, date_from, date_to):
     utc_start = user_timezone.localize(local_start).astimezone(pytz.utc)
     utc_end = user_timezone.localize(local_end_exclusive).astimezone(pytz.utc)
     return utc_start.replace(tzinfo=None), utc_end.replace(tzinfo=None)
+
+
+def _get_sdr_metrics(env, user, datetime_from, datetime_to_exclusive):
+    """Build the SDR funnel for leads assigned in the selected period.
+
+    A lead is "nurtured/warmed" when it was rotated to the SDR and has at least
+    one non-system message posted after that assignment. It is "converted"
+    when it has a confirmed sale order; the average is measured from the
+    assignment date to the confirmation date of that order.
+    """
+    rotations = (
+        env["crm.lead.rotation"]
+        .sudo()
+        .search(
+            [
+                ("user_to_id", "=", user.id),
+                ("lead_id.company_id", "=", env.company.id),
+                ("date_rotation", ">=", datetime_from),
+                ("date_rotation", "<", datetime_to_exclusive),
+            ]
+        )
+    )
+    assigned_dates = {}
+    for rotation in rotations:
+        lead_id = rotation.lead_id.id
+        rotation_date = rotation.date_rotation
+        if not lead_id or not rotation_date:
+            continue
+        if lead_id not in assigned_dates or rotation_date < assigned_dates[lead_id]:
+            assigned_dates[lead_id] = rotation_date
+
+    leads = env["crm.lead"].sudo().browse(list(assigned_dates))
+    communicated_leads = leads.filtered(
+        lambda lead: any(
+            message.date >= assigned_dates[lead.id]
+            and message.message_type != "notification"
+            for message in lead.message_ids.sudo()
+        )
+    )
+
+    conversion_days = []
+    for lead in communicated_leads:
+        order = (
+            env["sale.order"]
+            .sudo()
+            .search(
+                [
+                    ("opportunity_id", "=", lead.id),
+                    ("company_id", "=", env.company.id),
+                    ("state", "in", _CONFIRMED_ORDER_STATES),
+                    ("date_order", ">=", assigned_dates[lead.id]),
+                ],
+                order="date_order asc, id asc",
+                limit=1,
+            )
+        )
+        if order:
+            conversion_days.append(
+                (order.date_order - assigned_dates[lead.id]).total_seconds() / 86400.0
+            )
+
+    avg_days = sum(conversion_days) / len(conversion_days) if conversion_days else 0.0
+    return {
+        "sdr_rotated_leads_count": len(assigned_dates),
+        "sdr_nurtured_leads_count": len(communicated_leads),
+        "sdr_converted_leads_count": len(conversion_days),
+        "sdr_avg_days_to_conversion": avg_days,
+        "sdr_avg_days_to_conversion_fmt": f"{avg_days:.1f}",
+    }
 
 
 def _serialize_order(env, order, partner_commission):
@@ -384,6 +454,18 @@ def get_dashboard_values(env, date_from, date_to):
         for bonus in quarterly_bonuses
     ]
 
+    sdr_metrics = (
+        _get_sdr_metrics(env, env.user, datetime_from, datetime_to_exclusive)
+        if is_sdr
+        else {
+            "sdr_rotated_leads_count": 0,
+            "sdr_nurtured_leads_count": 0,
+            "sdr_converted_leads_count": 0,
+            "sdr_avg_days_to_conversion": 0.0,
+            "sdr_avg_days_to_conversion_fmt": "0.0",
+        }
+    )
+
     return {
         "partner": partner,
         "date_from": date_from,
@@ -434,6 +516,8 @@ def get_dashboard_values(env, date_from, date_to):
         "uninvoiced_count": len(uninvoiced_orders),
         "uninvoiced_total_fmt": _fmt(uninvoiced_total),
         "uninvoiced_order_data": uninvoiced_order_data,
+        "show_sdr_metrics": is_sdr,
+        **sdr_metrics,
     }
 
 

@@ -1,7 +1,7 @@
 # Copyright 2026 IOMR - Rodrigo
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from odoo.tests.common import TransactionCase
 
@@ -96,12 +96,14 @@ class TestCommissionDashboard(TransactionCase):
         price_unit=100.0,
         quantity=10.0,
         salesperson=None,
+        opportunity=None,
     ):
         order = cls.env["sale.order"].create(
             {
                 "partner_id": cls.customer.id,
                 "date_order": date_order,
                 "user_id": salesperson.id if salesperson else cls.env.user.id,
+                "opportunity_id": opportunity.id if opportunity else False,
                 "order_line": [
                     (
                         0,
@@ -611,3 +613,71 @@ class TestCommissionDashboard(TransactionCase):
         )
 
         self.assertAlmostEqual(values["estimated_pipeline_commission"], 35.0, places=2)
+
+    def _create_lead_rotated_to(self, user, name, rotation_date):
+        lead = self.env["crm.lead"].create(
+            {
+                "name": name,
+                "type": "opportunity",
+                "partner_id": self.customer.id,
+                "user_id": user.id,
+                "date_assigned_to_seller": rotation_date,
+            }
+        )
+        self.env["crm.lead.rotation"].create(
+            {
+                "lead_id": lead.id,
+                "user_to_id": user.id,
+                "date_rotation": rotation_date,
+            }
+        )
+        return lead
+
+    def test_17_sdr_metrics_count_rotated_nurtured_and_converted_leads(self):
+        assignment = datetime(2026, 8, 5, 10, 0)
+        converted_lead = self._create_lead_rotated_to(
+            self.own_user, "Lead SDR convertido", assignment
+        )
+        converted_lead.message_post(
+            body="Contato realizado pela SDR", message_type="comment"
+        )
+        self._create_order(
+            assignment + timedelta(days=5),
+            (self._agent_line_vals(self.own_partner, 100.0),),
+            opportunity=converted_lead,
+        )
+
+        self._create_lead_rotated_to(
+            self.own_user, "Lead SDR sem contato", datetime(2026, 8, 10, 10, 0)
+        )
+        other_lead = self._create_lead_rotated_to(
+            self.other_user, "Lead de outra SDR", assignment
+        )
+        other_lead.message_post(body="Contato de outra SDR", message_type="comment")
+        outside_lead = self._create_lead_rotated_to(
+            self.own_user, "Lead fora do período", datetime(2026, 7, 31, 10, 0)
+        )
+        outside_lead.message_post(
+            body="Contato fora do período", message_type="comment"
+        )
+        self.env.flush_all()
+
+        values = get_dashboard_values(
+            self.dashboard_env, date(2026, 8, 1), date(2026, 8, 31)
+        )
+
+        self.assertTrue(values["show_sdr_metrics"])
+        self.assertEqual(values["sdr_rotated_leads_count"], 2)
+        self.assertEqual(values["sdr_nurtured_leads_count"], 1)
+        self.assertEqual(values["sdr_converted_leads_count"], 1)
+        self.assertAlmostEqual(values["sdr_avg_days_to_conversion"], 5.0)
+        self.assertEqual(values["sdr_avg_days_to_conversion_fmt"], "5.0")
+
+    def test_18_sdr_metrics_are_hidden_for_other_dashboard_users(self):
+        values = get_dashboard_values(self.env, date(2026, 8, 1), date(2026, 8, 31))
+
+        self.assertFalse(values["show_sdr_metrics"])
+        self.assertEqual(values["sdr_rotated_leads_count"], 0)
+        self.assertEqual(values["sdr_nurtured_leads_count"], 0)
+        self.assertEqual(values["sdr_converted_leads_count"], 0)
+        self.assertEqual(values["sdr_avg_days_to_conversion_fmt"], "0.0")
